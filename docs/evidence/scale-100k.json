@@ -1,0 +1,344 @@
+{
+  "artifact_hash_note": "artifact_sha256 records retained local bytes used for the experiment. Git normalizes text to LF, so git_source_sha256 separately identifies the published source bytes; the batch engine was unchanged from fcd4f2009a1835ac9c17733da703d88d91ed2ad5.",
+  "artifact_sha256": {
+    "runtime/scale/events-100k.jsonl": "511754c38cfd56775c19248d1d67309d83234555e6878ccf8378f7aa9547760f",
+    "runtime/scale/golden-01.json": "b363ae856c2cc9f76b2f4dc66c0071bb3333ca059e3be3858323e7ff7af0b121",
+    "runtime/scale/performance-100k.plans.json": "1aa05b0b3d6c411c180c6d97f3623463a7818d3d4aece4966813c9a08c4943c4",
+    "runtime/scale/scale-100k-01.json": "e33777a6363fac3b5a22a4f15353595faa9379a3956fbb468a0310813eec083b",
+    "src/snow_statistics/scale_fixture.py": "d84e13805b219b6c107a6a745eda6ecb5116a4d95042954d19b6fa717de3900e",
+    "tools/spark_yarn_scale.sh": "a038b5ba822d99dea06c5aee43cbbb624fb6729d5f386160589b2c38e1df96a6",
+    "warehouse/spark/batch.py": "7c24308d03a59e16d8b40ec19332d24a6fb731e56bfafa4f1fe2306c1eab0947",
+    "warehouse/spark/event_input.py": "cd9c18408abe6e0dd44d5a1ffb30dcab51d013abfc8f7c34c47ee259e3a06ffb"
+  },
+  "date": "2026-09-11",
+  "fsck": {
+    "input": {
+      "healthy": true,
+      "logical_bytes": 5693277,
+      "minimum_live_replicas": 2,
+      "nonempty_blocks": 4,
+      "sha256": "2f839a5e6533f6f425c9009fdf0ee9cc4f95ded5e21047113b441e7b7a3a1d9d"
+    },
+    "output": {
+      "healthy": true,
+      "logical_bytes": 10203441,
+      "minimum_live_replicas": 2,
+      "nonempty_blocks": 38,
+      "sha256": "001b5617716d99489bd24e2293ce9bdadf6bcc4713f24d6c64b7fae8c7e879cf"
+    }
+  },
+  "git_source_sha256": {
+    "src/snow_statistics/scale_fixture.py": "d84e13805b219b6c107a6a745eda6ecb5116a4d95042954d19b6fa717de3900e",
+    "tools/spark_yarn_scale.sh": "a038b5ba822d99dea06c5aee43cbbb624fb6729d5f386160589b2c38e1df96a6",
+    "warehouse/spark/batch.py": "57da326fccc9eb179c3bf8d30eba93fa262f6c58e8f2266e77bcf0dfc87a6092",
+    "warehouse/spark/event_input.py": "cd9c18408abe6e0dd44d5a1ffb30dcab51d013abfc8f7c34c47ee259e3a06ffb"
+  },
+  "golden": {
+    "application_id": "application_1789131936007_0001",
+    "cutoff": "2026-01-05T00:00:00Z",
+    "date_from": "2026-01-01",
+    "date_to": "2026-01-04",
+    "engine": "Spark 3.5.7",
+    "generated_at": "2026-09-11T13:07:11.045367+00:00",
+    "hive_table": null,
+    "input": "/snow/ods/synthetic/events/fixture.jsonl",
+    "master": "yarn",
+    "output": "/snow/warehouse/runs/scale-golden-01",
+    "quality": {
+      "after_cutoff": 0,
+      "duplicates": 28,
+      "quarantined": 0,
+      "raw": 56,
+      "valid": 28
+    },
+    "run_id": "scale-golden-01",
+    "schema_version": 1,
+    "source": "synthetic"
+  },
+  "input_manifest": {
+    "cutoff": "2026-01-09T00:00:00Z",
+    "date_from": "2026-01-01",
+    "date_to": "2026-01-08",
+    "events": 100000,
+    "generator": "scale_fixture v1",
+    "schema_version": 1,
+    "seed": 42,
+    "shards": [
+      {
+        "bytes": 1358468,
+        "name": "events-00.jsonl.gz",
+        "sha256": "232176a5f87aa983a9dfc7ad320ee7668533fd7abe74d8de38a070e96ec7805c"
+      },
+      {
+        "bytes": 1488818,
+        "name": "events-01.jsonl.gz",
+        "sha256": "ac7d5565662eb3dcd0147e0c7cab309756dd5f82ce3479abb64a8f87786c3d25"
+      },
+      {
+        "bytes": 1359725,
+        "name": "events-02.jsonl.gz",
+        "sha256": "fbafd4e2e6f5aed38ebe40feb253e1532af74fb0fa26fb46f3a27025acb5a632"
+      },
+      {
+        "bytes": 1486266,
+        "name": "events-03.jsonl.gz",
+        "sha256": "3759f9ee5fa97b9775387545ff3d7fafdf55015419a94ebff5ba6812aabf8c6e"
+      }
+    ],
+    "source": "synthetic"
+  },
+  "limitations": [
+    "No Hive metastore running or new Hive registration in this scale run",
+    "No 100k publication to Doris or equivalent Flink scale run",
+    "No million-event Spark acceptance yet",
+    "No sustained load/production SLA or optimized speedup claim",
+    "New run_scale_guarded wrapper has not undergone automatic-stop fault injection; original live preflight refusal was observed"
+  ],
+  "million_gate": {
+    "compressed_bytes": 56914743,
+    "copied_to_control_vm": true,
+    "gate_enforced": true,
+    "hdfs_landing_started": false,
+    "host_available_mib_observed_after_shutdown": 5895,
+    "input_generated": true,
+    "reason": "Host available RAM 740 MiB below 1024 + 4096 MiB preflight requirement; stopped only project services and VMs",
+    "spark_job_started": false
+  },
+  "performance": {
+    "application_id": "application_1789131936007_0002",
+    "application_seconds": 41.851,
+    "disk_bytes_spilled": 0,
+    "engine": "Spark 3.5.7",
+    "eventlog_sha256": "511754c38cfd56775c19248d1d67309d83234555e6878ccf8378f7aa9547760f",
+    "executor_cpu_seconds": 11.709720047,
+    "executor_run_seconds": 15.015,
+    "executors": [
+      {
+        "cores": 1,
+        "host": "snow-compute",
+        "id": "1"
+      }
+    ],
+    "input_bytes_across_tasks": 201463974,
+    "input_records_across_tasks": 200104,
+    "job_outcomes": {
+      "JobSucceeded": 25
+    },
+    "max_task_peak_execution_memory": 46137344,
+    "memory_bytes_spilled": 0,
+    "note": "Application timing includes executor allocation but excludes input landing and pre-Spark JVM startup. Task counters include rescans/cache work and are not source row counts or process RSS peaks.",
+    "output_bytes_across_tasks": 10203441,
+    "plans_sha256": "1aa05b0b3d6c411c180c6d97f3623463a7818d3d4aece4966813c9a08c4943c4",
+    "shuffle_bytes_written": 27892228,
+    "sql_plan_observations": 34,
+    "task_jvm_gc_seconds": 1.375,
+    "task_outcomes": {
+      "Success": 48
+    },
+    "tasks": 48
+  },
+  "resources": {
+    "container_limits_mib": {
+      "analysis_datanode": 512,
+      "compute_datanode": 384,
+      "driver": 1280,
+      "namenode": 512,
+      "nodemanager": 1536,
+      "resourcemanager": 384
+    },
+    "host_free_gib_after_100k": 50.04,
+    "host_free_gib_after_shutdown": 54.51,
+    "host_free_reserve_gib": 35,
+    "host_ram_reserve_mib": 4096,
+    "job_reserve_mib": 1024,
+    "observations_not_peaks": {
+      "compute_available_mib_during_golden": 800,
+      "control_available_mib_during_golden": 770,
+      "control_driver_container_used_mib_during_golden": 417.4
+    },
+    "prior_ods_compact_vmem_gib": 7.5,
+    "project_cap_gib": 60,
+    "project_files_gib_after_100k": 58.91,
+    "project_files_gib_after_shutdown": 53.97,
+    "running_vms_at_end": 0,
+    "spark_heap_mib": {
+      "application_master": 256,
+      "driver": 640,
+      "executor": 512
+    },
+    "spark_overhead_mib": {
+      "application_master": 128,
+      "executor": 256
+    },
+    "stored_data_preserved": true,
+    "vm_mib": {
+      "analysis": 1024,
+      "compute": 2048,
+      "control": 2048
+    },
+    "vmem_reserved_gib": 5,
+    "yarn_advertised_memory_mib": 1280
+  },
+  "result": {
+    "daily": [
+      {
+        "app": "mywebsite",
+        "date": "2026-01-01",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-01",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-02",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-02",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1072,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-03",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-03",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1072,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-04",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-04",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1072,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-05",
+        "pv": 2856,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-05",
+        "pv": 1428,
+        "requests": 1428,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-06",
+        "pv": 2856,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-06",
+        "pv": 1428,
+        "requests": 1428,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-07",
+        "pv": 2856,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-07",
+        "pv": 1428,
+        "requests": 1428,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      }
+    ],
+    "manifest": {
+      "application_id": "application_1789131936007_0002",
+      "cutoff": "2026-01-09T00:00:00Z",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-08",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T13:11:15.186123+00:00",
+      "hive_table": null,
+      "input": "/snow/ods/synthetic/scale/input-100k-v1/*.jsonl.gz",
+      "master": "yarn",
+      "output": "/snow/warehouse/scale/runs/scale-100k-01",
+      "quality": {
+        "after_cutoff": 0,
+        "duplicates": 10000,
+        "quarantined": 0,
+        "raw": 100000,
+        "valid": 90000
+      },
+      "run_id": "scale-100k-01",
+      "schema_version": 1,
+      "source": "synthetic"
+    },
+    "schema_version": 1
+  },
+  "schema_version": 1,
+  "scope": "Synthetic Spark/YARN capacity and correctness on three VMs of one physical host; one remote executor, not physical disaster recovery or full-stack scale acceptance",
+  "validation": {
+    "browser_tests": 7,
+    "guard_tests": "Mocked subprocess refusal and continued scoped shutdown; no live automatic-stop fault injection",
+    "java_tests": 8,
+    "java_unchanged": true,
+    "python_tests": 87
+  }
+}

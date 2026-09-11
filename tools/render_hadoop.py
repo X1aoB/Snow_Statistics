@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--control", required=True)
 parser.add_argument("--compute", required=True)
 parser.add_argument("--output", type=Path, default=Path("lab/generated/hadoop"))
+parser.add_argument("--scale-small", action="store_true", help="One bounded YARN job; Hive/Airflow are stopped during compute")
 args = parser.parse_args()
 args.control = str(ipaddress.ip_address(args.control))
 args.compute = str(ipaddress.ip_address(args.compute))
@@ -31,6 +32,9 @@ files = {
     },
     "hive-site.xml": {"hive.metastore.uris": f"thrift://{args.control}:9083", "hive.metastore.warehouse.dir": "/snow/warehouse", "javax.jdo.option.ConnectionURL": "jdbc:derby:;databaseName=/opt/hive/data/metastore_db;create=true"},
 }
+if args.scale_small:
+    files["yarn-site.xml"].update({"yarn.nodemanager.resource.memory-mb": "1280",
+                                   "yarn.scheduler.maximum-allocation-mb": "1024"})
 for name, properties in files.items():
     root = ET.Element("configuration")
     for key, value in properties.items():

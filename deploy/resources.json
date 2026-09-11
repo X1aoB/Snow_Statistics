@@ -15,6 +15,36 @@
     "vm_root": "runtime/vmware",
     "vm_names": ["snow-control", "snow-compute", "snow-analysis"],
     "compose_projects": ["snow-lab-control", "snow-lab-compute", "snow-lab-analysis", "snow-lab-orchestration", "snow-lab-ha", "snow-lab-realtime"],
+    "scale_acceptance": {
+      "hosts": [
+        "snow-control",
+        "snow-compute",
+        "snow-analysis"
+      ],
+      "vm_profile": "scale: 2048 / 2048 / 1024 MiB; sequential startup capacity checks",
+      "reused_services": [
+        "snow-lab-control-namenode-1",
+        "snow-lab-control-resourcemanager-1",
+        "snow-lab-compute-datanode-1",
+        "snow-lab-compute-nodemanager-1",
+        "snow-lab-analysis-datanode-1"
+      ],
+      "temporary_driver": "snow-spark-yarn on snow-control",
+      "reused_volumes": [
+        "snow-lab-control_namenode",
+        "snow-lab-compute_datanode",
+        "snow-lab-compute_yarn",
+        "snow-lab-analysis_datanode"
+      ],
+      "artifacts_and_inputs": "runtime/scale on host and control VM",
+      "driver_eventlogs": "runtime/scale/eventlogs/<application-id> on control VM",
+      "namenode_copy_cache": "/tmp/snow-scale-events-<00..03>.jsonl.gz inside the project NameNode container",
+      "hdfs_inputs": "/snow/ods/synthetic/scale/{input-100k-v1,input-1m-v1}",
+      "hdfs_outputs": "/snow/warehouse/scale/runs/<attempt>",
+      "hdfs_golden_output": "/snow/warehouse/runs/<scale-golden-attempt>",
+      "yarn_logs": "/snow/yarn-logs in HDFS; existing NodeManager volume log/local directories",
+      "shutdown": "Stop only the named driver, then services via tools/stop_scale_node.sh and project VMs. Preserve raw inputs, accepted packages, event logs, HDFS data and existing volumes. Do not prune or remove data on phase change."
+    },
     "freshness_acceptance": {
       "host": "Windows loopback collector and observer; snow-analysis NAT warehouse",
       "artifacts": "runtime/freshness/<lane>",

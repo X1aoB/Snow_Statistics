@@ -62,6 +62,8 @@ python3 governance/lineage.py status
 
 治理阶段曾以 `ods-compact`（3.5 / 3 / 1 GiB）完成同一小样本 DAG，保留 1 GiB 作业前余量；治理使用分析 VM 2 GiB。此后实时镜像与数据继续增长，这个三 VM 组合已不能直接满足当前 60 GiB 预算。这里保留历史验收条件，重现前必须按[最新运行手册](runbook.md)检查容量，不能沿用当时的可用空间估计。
 
+后续 `scale`（2/2/1 GiB）完成了 10 万条日指标 YARN 计算，但治理、Hive、Airflow 均关闭；未验证本页 DAG 或血缘在此配置下运行，见[扩样记录](scale.md)。
+
 ## 保留和退出
 
 Marquez 与 PostgreSQL 的卷、日志和确认副本登记在 `deploy/resources.json`；关闭服务不删除数据。原有轻量汇总与模型归档不需要 Marquez 在线。清理必须先导出所需事件、运行状态和图，再按独立资源清单审阅。

@@ -81,6 +81,7 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [OpenLineage 本地日志、补发与 Marquez](docs/lineage.md)
 - [Flink 恢复、Doris 2PC 与 Spark 迟到校正](docs/realtime.md)
 - [HTTP 接收至 Doris 新鲜度及数仓停机验收](docs/freshness.md)
+- [2/2/1 GiB 三 VM 的 Spark/YARN 10 万条扩样](docs/scale.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)

@@ -1,0 +1,8 @@
+# Dedicated bounded batch phase; do not start Hive, Airflow or ingest concurrently.
+services:
+  namenode:
+    mem_limit: 512m
+    environment: {HADOOP_HEAPSIZE_MAX: "256"}
+  resourcemanager:
+    mem_limit: 384m
+    environment: {HADOOP_HEAPSIZE_MAX: "192"}

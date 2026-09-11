@@ -1,0 +1,7 @@
+services:
+  datanode:
+    mem_limit: 384m
+    environment: {HADOOP_HEAPSIZE_MAX: "192"}
+  nodemanager:
+    mem_limit: 1536m
+    environment: {HADOOP_HEAPSIZE_MAX: "192"}

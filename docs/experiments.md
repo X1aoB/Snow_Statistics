@@ -15,6 +15,8 @@
 
 先运行 `snow-stats benchmark --events 100000`，通过后运行 1000000；这是 Python 正确性基准。Spark 分布式实验单独生成 JSONL，保存输入 SHA、分区数、executor/driver 参数、EXPLAIN FORMATTED、Spark event log、CPU/RAM/磁盘证据。至少比较分区裁剪、广播小维表和压缩小文件三项。
 
+已完成的首个实际 [10 万条 YARN 基线](scale.md)使用 2/2/1 GiB 三 VM、单远端 executor，应用时长 41.851 秒，保留 34 次物理计划观察及任务 CPU/GC/spill 指标。没有进程峰值 RSS 或优化前后对比；百万条受宿主 RAM 门禁阻止，尚未计算。下一次扩样必须重新检查资源，不能拿 Python 百万条成绩替代 Spark 验证。
+
 实时新鲜度只在无历史积压且资源满足时评价 P95≤60秒。开始/结束标记、源接收时间、Kafka offset、Doris查询轮询间隔都写进实验记录；历史回放不可混入当前实时成绩。近似分位数不能与整数指标一样声称完全一致。
 
 ## 高可用专题
