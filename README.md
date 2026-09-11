@@ -84,6 +84,7 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [Flink 恢复、Doris 2PC 与 Spark 迟到校正](docs/realtime.md)
 - [HTTP 接收至 Doris 新鲜度及数仓停机验收](docs/freshness.md)
 - [2/2/1 GiB 三 VM 的 Spark/YARN 10 万及百万条扩样](docs/scale.md)
+- [10 万条 Flink/Doris、轻量与 YARN 对账及恢复](docs/realtime-scale.md)
 - [低流量部署与按需实验资源](docs/resources.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)

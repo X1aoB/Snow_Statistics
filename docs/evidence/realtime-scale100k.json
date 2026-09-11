@@ -1,0 +1,678 @@
+{
+  "archives": {
+    "duplicates": {
+      "begin": 0,
+      "end": 11000,
+      "gzip_sha256": "f9f0753c836fd7c5db595d8c93c57720303b189f1ac040352ea0ecfb18f4fc1d",
+      "records": 11000,
+      "topic": "snow.synthetic.scale100k01.duplicates.v1",
+      "wire_sha256": "a534d390af351654988f67a7ff3f88b2d31a3e7ecb1a28abe3d73057204e78c9"
+    },
+    "events": {
+      "begin": 0,
+      "end": 101000,
+      "gzip_sha256": "a84418a025ec532414c63461c5f732d78c8a28f1809fdfaa5c3a13dbea318bb5",
+      "records": 101000,
+      "topic": "snow.synthetic.scale100k01.events.v1",
+      "wire_sha256": "1aa1c060e7d73f082da5a40407ad8f1fdbb8719a7132065a541dad9d0ac2f045"
+    },
+    "late": {
+      "begin": 0,
+      "end": 0,
+      "gzip_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "records": 0,
+      "topic": "snow.synthetic.scale100k01.late.v1",
+      "wire_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "quarantine": {
+      "begin": 0,
+      "end": 0,
+      "gzip_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "records": 0,
+      "topic": "snow.synthetic.scale100k01.quarantine.v1",
+      "wire_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "artifact_sha256": {
+    "runtime/realtime-scale/scale100k01/checkpoint-before.json": "14db9aac951c778e7b1d1694c29f7f6f2f00045c4f35a380677ef1ad5c7e9e80",
+    "runtime/realtime-scale/scale100k01/checkpoint-restored.json": "724533826709bda319a4633cf5707b7cee54babc39e43daadf5ef0bafb694e8b",
+    "runtime/realtime-scale/scale100k01/expected-facts.json": "9265998360cfdbd380322bfb89e736ad4f1151050eac50d4edcae0fb028482c2",
+    "runtime/realtime-scale/scale100k01/expected.json": "cd432bb797391ebb44ace29df28da3b2fe8545668649501f149522080a193d45",
+    "runtime/realtime-scale/scale100k01/initial-observer-failure-shutdown.json": "fed7b2a8e834328ec8fe25a8fddfa5af68b45da5ae5ce8dbd050f1137b1ecc21",
+    "runtime/realtime-scale/scale100k01/initial-readiness-failure-shutdown.json": "64e704561348706199fd9b4270f6c8202a899e6fcb61eb3a530e6acd955a9f16",
+    "runtime/realtime-scale/scale100k01/initial-ssh-failure-shutdown.json": "c3ea347eec3368ba35321ac8c84f0ef7e99b7221089c12f4210fa81fabf748cd",
+    "runtime/realtime-scale/scale100k01/job.json": "6602babecf03cf22cfd76bb71f10f505314a3bec3b3b1a868b0cf8fa8ba9a977",
+    "runtime/realtime-scale/scale100k01/lite-receipt.json": "f28a8c048498da4e4ddb21d0369f90ebd8458b0f33b6dee539cd22a6bce7056d",
+    "runtime/realtime-scale/scale100k01/manifest.json": "4e5032669d5ad14dbcb8f230fafbae1a1c0d843f5856661067792d77530905c8",
+    "runtime/realtime-scale/scale100k01/memory-after-recovery.json": "15cecb79c13f053e460b431c3055af5f7dcdf2023fd89bc98e38b2b402d95b48",
+    "runtime/realtime-scale/scale100k01/memory-before-recovery.json": "92d47c55dc622419318ee9be8dbfd7f5212ab37b61511feae28675243717bfba",
+    "runtime/realtime-scale/scale100k01/memory-before.json": "afb452711df12b7e8a721e40486f90b5b81c0faea6b4a8dde5e939f5017d0713",
+    "runtime/realtime-scale/scale100k01/preflight.json": "4ad7ddc8ac6953b352628b7f5a6e1d1e731ae6c9270e35cef2487912cbf7435e",
+    "runtime/realtime-scale/scale100k01/producer.json": "ed10560b95fae40c9b96980c17eaece6725e08ab85b0167bb94205e13e305237",
+    "runtime/realtime-scale/scale100k01/receipt.json": "10d8217c042888fa4026c424f9824f7bdb8d74c6d9675ea93e0ea0272709435f",
+    "runtime/realtime-scale/scale100k01/replay-producer.json": "9f1b1f75133ad5ee6975681e8a04bc88a22394a885b05f0bdbfaf8a36637097e",
+    "runtime/realtime-scale/scale100k01/resources.json": "12151a039377d36fb1485d5e48fa5266dd85c5df924f78b6a63799c159bcb614",
+    "runtime/realtime-scale/scale100k01/shutdown.json": "f643ebf1b4079394e5bcbdf68e934c463230d9ac540990975019347b6a38385f"
+  },
+  "base_code_revision": "a0057c7657b9624dbe2547a9699aadcb12f61f6d",
+  "daily": [
+    {
+      "app": "mywebsite",
+      "date": "2026-01-01",
+      "pv": 2858,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 1000
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-01-01",
+      "pv": 1429,
+      "requests": 1429,
+      "source": "synthetic",
+      "successes": 1071,
+      "uv": 800
+    },
+    {
+      "app": "mywebsite",
+      "date": "2026-01-02",
+      "pv": 2858,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 1000
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-01-02",
+      "pv": 1429,
+      "requests": 1429,
+      "source": "synthetic",
+      "successes": 1072,
+      "uv": 800
+    },
+    {
+      "app": "mywebsite",
+      "date": "2026-01-03",
+      "pv": 2858,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 1000
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-01-03",
+      "pv": 1429,
+      "requests": 1429,
+      "source": "synthetic",
+      "successes": 1072,
+      "uv": 800
+    },
+    {
+      "app": "mywebsite",
+      "date": "2026-01-04",
+      "pv": 2858,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 1000
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-01-04",
+      "pv": 1429,
+      "requests": 1429,
+      "source": "synthetic",
+      "successes": 1072,
+      "uv": 800
+    },
+    {
+      "app": "mywebsite",
+      "date": "2026-01-05",
+      "pv": 2856,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 1000
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-01-05",
+      "pv": 1428,
+      "requests": 1428,
+      "source": "synthetic",
+      "successes": 1071,
+      "uv": 800
+    },
+    {
+      "app": "mywebsite",
+      "date": "2026-01-06",
+      "pv": 2856,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 1000
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-01-06",
+      "pv": 1428,
+      "requests": 1428,
+      "source": "synthetic",
+      "successes": 1071,
+      "uv": 800
+    },
+    {
+      "app": "mywebsite",
+      "date": "2026-01-07",
+      "pv": 2856,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 1000
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-01-07",
+      "pv": 1428,
+      "requests": 1428,
+      "source": "synthetic",
+      "successes": 1071,
+      "uv": 800
+    }
+  ],
+  "date": "2026-09-12",
+  "engine": "Kafka 3.9.1 / Flink 1.20.3 / Doris 3.0.6.2; unchanged JAR from local freshness acceptance",
+  "fact_digest": {
+    "rows": 90000,
+    "sha256": "ff5e0eab1614b266b80e274a4fb63d5c76a0bf6ec648290e2811e8d9fd9febae"
+  },
+  "git_source_sha256": {
+    "src/snow_statistics/history_replay.py": "2aaa357797baef1ed3c86abaf44fbdaeb241a445504c14ca7be3c1aa8dfa585d",
+    "tools/observe_realtime_memory.sh": "6c506b87c166cd2660ad1b5213a47249763fdc1273e32558bb3db148e59613fd",
+    "tools/prepare_realtime_scale.py": "a8c1d2e68d500a4283779134fe4882d25afc5e4d9f554f2aa673925f44cadd07",
+    "tools/smoke_realtime_scale.py": "e7ee9c30e22b12da530c2416544ac6ac7a7f2435df77db7739bd1eb8c0d7982b",
+    "tools/verify_scale_lite.py": "40d2547e4fe3d475d08b5bbb7c8a5f3f87b082be8f53b8ce75d68ce2e9b9a71b",
+    "warehouse/flink/src/main/java/dev/xiaob/snow/RealtimeJob.java": "4502a808325486a0e2afa3a1f38607811c1c8c0af78cd840b0c49cfad070ca9b"
+  },
+  "input": {
+    "events": 100000,
+    "note": "Historical replay in a new lane, not original arrival disorder or production freshness",
+    "ordering": "occurred_at then original seq; first event/request winners validated unchanged",
+    "original_positions_preserved": true,
+    "original_shards": [
+      {
+        "bytes": 1358468,
+        "name": "events-00.jsonl.gz",
+        "sha256": "232176a5f87aa983a9dfc7ad320ee7668533fd7abe74d8de38a070e96ec7805c"
+      },
+      {
+        "bytes": 1488818,
+        "name": "events-01.jsonl.gz",
+        "sha256": "ac7d5565662eb3dcd0147e0c7cab309756dd5f82ce3479abb64a8f87786c3d25"
+      },
+      {
+        "bytes": 1359725,
+        "name": "events-02.jsonl.gz",
+        "sha256": "fbafd4e2e6f5aed38ebe40feb253e1532af74fb0fa26fb46f3a27025acb5a632"
+      },
+      {
+        "bytes": 1486266,
+        "name": "events-03.jsonl.gz",
+        "sha256": "3759f9ee5fa97b9775387545ff3d7fafdf55015419a94ebff5ba6812aabf8c6e"
+      }
+    ],
+    "replay_bytes": 4173566,
+    "replay_sha256": "bfa259e07d3ed9d913f1936587f757784b4cac31c730cde53079a8528113cc35",
+    "schema_version": 1,
+    "source": "synthetic",
+    "yarn_application_id": "application_1789131936007_0002"
+  },
+  "jar_sha256": "11c8e63a304da2d6c708c8270cb5b340422acc18b9ac09715bd415d32f495fef",
+  "job_id": "30ce03a68badb8018edb95a770e383f8",
+  "limitations": [
+    "One single-partition event-time-ordered historical replay, not original arrival disorder, sustained load, production freshness or a million-row realtime claim",
+    "Lite fixed-clock Store/aggregate directly; not HTTP ingestion or retention/capacity validation",
+    "Diagnostic Kafka topics remain at least once; exact raw counts describe this observed recovery only",
+    "Container peaks include cgroup file caches; TaskManager restarts reset its peak. Sparse guest snapshots and periodic host samples are not continuous whole-process RSS",
+    "Same host virtual nodes do not provide physical host disaster recovery"
+  ],
+  "lite_store": {
+    "daily": [
+      {
+        "app": "mywebsite",
+        "date": "2026-01-01",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-01",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-02",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-02",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1072,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-03",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-03",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1072,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-04",
+        "pv": 2858,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-04",
+        "pv": 1429,
+        "requests": 1429,
+        "source": "synthetic",
+        "successes": 1072,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-05",
+        "pv": 2856,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-05",
+        "pv": 1428,
+        "requests": 1428,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-06",
+        "pv": 2856,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-06",
+        "pv": 1428,
+        "requests": 1428,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-07",
+        "pv": 2856,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-07",
+        "pv": 1428,
+        "requests": 1428,
+        "source": "synthetic",
+        "successes": 1071,
+        "uv": 800
+      }
+    ],
+    "elapsed_seconds": 33.109,
+    "event_id_accepted": 95000,
+    "event_id_duplicates": 5000,
+    "input_events": 100000,
+    "note": "Actual Store/aggregate with fixed clock advanced per batch; not HTTP ingestion, original receive times, production freshness or retention-capacity evidence",
+    "public_synthetic_rows": 0,
+    "source": "synthetic",
+    "state_file_bytes": 67317760
+  },
+  "lite_yarn_doris_equal": true,
+  "quality": {
+    "duplicates": 10000,
+    "final_duplicate_diagnostics": 11000,
+    "final_kafka_records": 101000,
+    "late": 0,
+    "quarantined": 0,
+    "raw": 100000,
+    "replayed_after_recovery": 1000,
+    "valid": 90000
+  },
+  "recovery": {
+    "before_completed_id": 4,
+    "final_checkpoint_state_bytes": 36108302,
+    "final_completed_id": 8,
+    "final_counts": {
+      "completed": 7,
+      "failed": 7,
+      "in_progress": 0,
+      "restored": 1,
+      "total": 14
+    },
+    "restored_count": 1,
+    "restored_id": 4
+  },
+  "resource": {
+    "container_observed_lifetime_peak_bytes": {
+      "snow-lab-analysis-doris-be-1": 1772515328,
+      "snow-lab-analysis-doris-fe-1": 757694464,
+      "snow-lab-realtime-jobmanager-1": 478195712,
+      "snow-lab-realtime-kafka-1": 450719744,
+      "snow-lab-realtime-taskmanager-1": 787267584
+    },
+    "host_min_available_mib": 10326,
+    "host_min_free_disk_gib": 48.3,
+    "minimum_guest_available_snapshot_mib": 1051,
+    "observations": [
+      {
+        "available_mib": 1455,
+        "containers": [
+          {
+            "current_bytes": 416743424,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 671088640,
+            "name": "snow-lab-realtime-kafka-1",
+            "peak_bytes": 421294080
+          },
+          {
+            "current_bytes": 321708032,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 939524096,
+            "name": "snow-lab-realtime-jobmanager-1",
+            "peak_bytes": 323833856
+          },
+          {
+            "current_bytes": 412536832,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1610612736,
+            "name": "snow-lab-realtime-taskmanager-1",
+            "peak_bytes": 415391744
+          },
+          {
+            "current_bytes": 745824256,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1342177280,
+            "name": "snow-lab-analysis-doris-fe-1",
+            "peak_bytes": 748011520
+          },
+          {
+            "current_bytes": 1718308864,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1879048192,
+            "name": "snow-lab-analysis-doris-be-1",
+            "peak_bytes": 1720086528
+          }
+        ],
+        "measured_at": "2026-09-11T16:05:36.588076+00:00",
+        "node": "snow-analysis",
+        "note": "cgroup peaks since each container start; TaskManager peak resets on recovery; guest available memory is a snapshot"
+      },
+      {
+        "available_mib": 1051,
+        "containers": [
+          {
+            "current_bytes": 404172800,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 671088640,
+            "name": "snow-lab-realtime-kafka-1",
+            "peak_bytes": 450719744
+          },
+          {
+            "current_bytes": 399908864,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 939524096,
+            "name": "snow-lab-realtime-jobmanager-1",
+            "peak_bytes": 478195712
+          },
+          {
+            "current_bytes": 747933696,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1610612736,
+            "name": "snow-lab-realtime-taskmanager-1",
+            "peak_bytes": 787267584
+          },
+          {
+            "current_bytes": 650153984,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1342177280,
+            "name": "snow-lab-analysis-doris-fe-1",
+            "peak_bytes": 757694464
+          },
+          {
+            "current_bytes": 1677586432,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1879048192,
+            "name": "snow-lab-analysis-doris-be-1",
+            "peak_bytes": 1772515328
+          }
+        ],
+        "measured_at": "2026-09-11T16:07:17.568157+00:00",
+        "node": "snow-analysis",
+        "note": "cgroup peaks since each container start; TaskManager peak resets on recovery; guest available memory is a snapshot"
+      },
+      {
+        "available_mib": 1099,
+        "containers": [
+          {
+            "current_bytes": 405078016,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 671088640,
+            "name": "snow-lab-realtime-kafka-1",
+            "peak_bytes": 450719744
+          },
+          {
+            "current_bytes": 377942016,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 939524096,
+            "name": "snow-lab-realtime-jobmanager-1",
+            "peak_bytes": 478195712
+          },
+          {
+            "current_bytes": 738893824,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1610612736,
+            "name": "snow-lab-realtime-taskmanager-1",
+            "peak_bytes": 763027456
+          },
+          {
+            "current_bytes": 661827584,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1342177280,
+            "name": "snow-lab-analysis-doris-fe-1",
+            "peak_bytes": 757694464
+          },
+          {
+            "current_bytes": 1681764352,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 1879048192,
+            "name": "snow-lab-analysis-doris-be-1",
+            "peak_bytes": 1772515328
+          }
+        ],
+        "measured_at": "2026-09-11T16:08:42.309045+00:00",
+        "node": "snow-analysis",
+        "note": "cgroup peaks since each container start; TaskManager peak resets on recovery; guest available memory is a snapshot"
+      }
+    ],
+    "other_vms_running": 0,
+    "project_max_gib": 59.6,
+    "samples": 18,
+    "shutdown": {
+      "errors": [],
+      "resources": {
+        "free_disk_gib": 52.77,
+        "min_host_free_disk_gib": 35.0,
+        "project_files_gib": 55.1,
+        "project_limit_gib": 64.0,
+        "vm_files_gib": 54.44
+      }
+    },
+    "vm_mib": 4608
+  },
+  "source": "synthetic",
+  "startup_issues": [
+    "Windows text-mode SSH stdin converted LF to CRLF; fixed by byte input before producing data",
+    "Cold VM SSH and service readiness were attempted too early; no input was produced. Preserved failed shutdown receipts and checked actual VM off before retry. Added Doris/Flink readiness checks; operator waits for SSH/Docker before startup."
+  ],
+  "timezone": "Asia/Hong_Kong",
+  "timing": {
+    "method": "100k preloaded history in event-time order on one analysis VM; not production freshness, source arrival disorder or sustained throughput",
+    "producer_seconds": 26.703,
+    "submit_to_all_facts_observed_seconds": 32.922
+  }
+}

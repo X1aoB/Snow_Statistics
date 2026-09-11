@@ -48,6 +48,16 @@
       "yarn_logs": "/snow/yarn-logs in HDFS; existing NodeManager volume log/local directories",
       "shutdown": "Stop only the named driver, then services via tools/stop_scale_node.sh and project VMs. Preserve raw inputs, accepted packages, event logs, HDFS data and existing volumes. Do not prune or remove data on phase change."
     },
+    "realtime_scale_acceptance": {
+      "host": "snow-analysis only; realtime 4608 MiB VM; control and compute off",
+      "artifacts": "runtime/realtime-scale/<lane> on host; raw gzip, SQLite baseline, receipts, resource snapshots",
+      "input": "Verified runtime/scale/input-100k-v1 shards; original envelopes sorted only when first event/request winners are unchanged",
+      "baseline_database": "runtime/realtime-scale/<lane>/lite/statistics.db; synthetic, fixed-clock local Store",
+      "resources": "Reuse realtime_acceptance Kafka/Flink/Doris services and volumes, with new synthetic topics and database per lane",
+      "private_previous_env": "lab/secrets/realtime-before-<lane>.env on analysis VM; retain privately",
+      "rest": "Temporary verified SSH tunnel on dynamically allocated host loopback port",
+      "shutdown": "Export checkpoint, cancel job, stop the named realtime services and always attempt soft VM shutdown. Preserve histories and inspect errors; no implicit deletion."
+    },
     "freshness_acceptance": {
       "host": "Windows loopback collector and observer; snow-analysis NAT warehouse",
       "artifacts": "runtime/freshness/<lane>",
