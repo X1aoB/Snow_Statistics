@@ -1,0 +1,49 @@
+name: snow-lab-compute
+services:
+  datanode:
+    image: ${HADOOP_IMAGE:?}
+    profiles: [batch]
+    network_mode: host
+    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "384"}
+    volumes: [./generated/hadoop:/etc/hadoop:ro, datanode:/data/dn]
+    entrypoint: [hdfs, datanode]
+    mem_limit: 768m
+  nodemanager:
+    image: ${HADOOP_IMAGE:?}
+    profiles: [batch]
+    network_mode: host
+    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "384"}
+    volumes: [./generated/hadoop:/etc/hadoop:ro, yarn:/data/yarn]
+    entrypoint: [yarn, nodemanager]
+    mem_limit: 4g
+  flink-jobmanager:
+    image: ${FLINK_IMAGE:?}
+    profiles: [realtime]
+    network_mode: host
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: ${COMPUTE_IP:?}
+        rest.bind-address: 0.0.0.0
+        jobmanager.memory.process.size: 1024m
+        state.checkpoints.dir: file:///checkpoints
+        state.savepoints.dir: file:///checkpoints/savepoints
+    volumes: [flink:/checkpoints, ../warehouse/flink/target:/opt/flink/usrlib:ro]
+    mem_limit: 1280m
+  flink-taskmanager:
+    image: ${FLINK_IMAGE:?}
+    profiles: [realtime]
+    network_mode: host
+    command: taskmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: ${COMPUTE_IP}
+        taskmanager.numberOfTaskSlots: 2
+        taskmanager.memory.process.size: 2560m
+        state.checkpoints.dir: file:///checkpoints
+    volumes: [flink:/checkpoints, ../warehouse/flink/target:/opt/flink/usrlib:ro]
+    mem_limit: 3g
+volumes:
+  datanode:
+  yarn:
+  flink:

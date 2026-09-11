@@ -1,0 +1,184 @@
+{
+  "$defs": {
+    "Daily": {
+      "additionalProperties": false,
+      "properties": {
+        "app": {
+          "enum": [
+            "mywebsite",
+            "project_snow"
+          ],
+          "title": "App",
+          "type": "string"
+        },
+        "date": {
+          "title": "Date",
+          "type": "string"
+        },
+        "pv": {
+          "title": "Pv",
+          "type": "integer"
+        },
+        "requests": {
+          "title": "Requests",
+          "type": "integer"
+        },
+        "success_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Success Rate"
+        },
+        "successes": {
+          "title": "Successes",
+          "type": "integer"
+        },
+        "uv": {
+          "title": "Uv",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "app",
+        "date",
+        "pv",
+        "uv",
+        "requests",
+        "successes",
+        "success_rate"
+      ],
+      "title": "Daily",
+      "type": "object"
+    },
+    "Popularity": {
+      "additionalProperties": false,
+      "properties": {
+        "app": {
+          "enum": [
+            "mywebsite",
+            "project_snow"
+          ],
+          "title": "App",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "date": {
+          "title": "Date",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "page",
+            "character"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "app",
+        "date",
+        "kind",
+        "name",
+        "count"
+      ],
+      "title": "Popularity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "completeness": {
+      "const": "accepted_events_only",
+      "default": "accepted_events_only",
+      "title": "Completeness",
+      "type": "string"
+    },
+    "daily": {
+      "items": {
+        "$ref": "#/$defs/Daily"
+      },
+      "title": "Daily",
+      "type": "array"
+    },
+    "date_from": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Date From"
+    },
+    "date_to": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Date To"
+    },
+    "generated_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Generated At"
+    },
+    "popularity": {
+      "items": {
+        "$ref": "#/$defs/Popularity"
+      },
+      "title": "Popularity",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "empty",
+        "stale",
+        "unavailable",
+        "archived"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "generated_at",
+    "date_from",
+    "date_to",
+    "status",
+    "daily",
+    "popularity"
+  ],
+  "title": "Summary",
+  "type": "object"
+}

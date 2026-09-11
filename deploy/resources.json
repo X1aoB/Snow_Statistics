@@ -1,0 +1,25 @@
+{
+  "owner": "Snow_Statistics",
+  "version": 1,
+  "online": {
+    "compose_project": "snow-statistics-lite",
+    "network": "snow-statistics-lite",
+    "state_root": "/var/lib/snow-statistics",
+    "state_quota_bytes": 2147483648,
+    "loopback_port": 8100,
+    "public_routes": ["/analytics/v1/events", "/analytics/public/v1/summary.json"],
+    "private_route": "/analytics/private/v1/events"
+  },
+  "local": {
+    "vm_root": "runtime/vmware",
+    "vm_names": ["snow-control", "snow-compute", "snow-analysis"],
+    "compose_projects": ["snow-lab-control", "snow-lab-compute", "snow-lab-analysis", "snow-lab-orchestration", "snow-lab-ha"],
+    "max_project_bytes": 64424509440,
+    "min_host_free_bytes": 37580963840
+  },
+  "retirement": {
+    "lite": "Stop local consumers and laboratory Compose projects; keep online collector and summary API unchanged.",
+    "off": "Disable product adapters, drain accepted events, export aggregates, archive/remove public page, stop collector.",
+    "delete": "Separate explicit export and reviewed resource-specific removal. No global prune; no automatic deletion on mode switch."
+  }
+}

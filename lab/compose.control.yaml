@@ -1,0 +1,83 @@
+name: snow-lab-control
+services:
+  kafka:
+    image: ${KAFKA_IMAGE:?locked image required}
+    profiles: [ingest, realtime]
+    hostname: snow-control
+    network_mode: host
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${CONTROL_IP:?}:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${CONTROL_IP}:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes: [kafka:/var/lib/kafka/data]
+    mem_limit: 1g
+  mysql:
+    image: ${MYSQL_IMAGE:?}
+    profiles: [ingest]
+    network_mode: host
+    environment:
+      MYSQL_ROOT_PASSWORD: ${LAB_MYSQL_ROOT_PASSWORD:?}
+      MYSQL_DATABASE: snow_ops
+      MYSQL_USER: snow_simulator
+      MYSQL_PASSWORD: ${LAB_MYSQL_PASSWORD:?}
+    command: [--server-id=1001, --log-bin=mysql-bin, --binlog-format=ROW, --binlog-row-image=FULL, --binlog-expire-logs-seconds=604800]
+    volumes: [mysql:/var/lib/mysql, ./mysql/001-schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro]
+    mem_limit: 768m
+  connect:
+    image: ${CONNECT_IMAGE:?}
+    profiles: [ingest]
+    network_mode: host
+    environment:
+      BOOTSTRAP_SERVERS: ${CONTROL_IP}:9092
+      GROUP_ID: snow-connect
+      CONFIG_STORAGE_TOPIC: snow.internal.connect.config
+      OFFSET_STORAGE_TOPIC: snow.internal.connect.offset
+      STATUS_STORAGE_TOPIC: snow.internal.connect.status
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      HEAP_OPTS: -Xms256m -Xmx512m
+    mem_limit: 1g
+  namenode:
+    image: ${HADOOP_IMAGE:?}
+    profiles: [batch]
+    network_mode: host
+    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "512"}
+    volumes: [./generated/hadoop:/etc/hadoop:ro, namenode:/data/name]
+    entrypoint: [/bin/bash, -ec]
+    command: ["test -d /data/name/current || hdfs namenode -format -nonInteractive; exec hdfs namenode"]
+    mem_limit: 1g
+  resourcemanager:
+    image: ${HADOOP_IMAGE:?}
+    profiles: [batch]
+    network_mode: host
+    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "512"}
+    volumes: [./generated/hadoop:/etc/hadoop:ro]
+    entrypoint: [yarn, resourcemanager]
+    mem_limit: 768m
+  hive:
+    image: ${HIVE_IMAGE:?}
+    profiles: [batch]
+    network_mode: host
+    environment:
+      SERVICE_NAME: metastore
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+    volumes: [./generated/hadoop:/hive_custom_conf:ro, hive:/opt/hive/data]
+    mem_limit: 1g
+volumes:
+  kafka:
+  mysql:
+  namenode:
+  hive:

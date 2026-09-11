@@ -1,0 +1,26 @@
+name: independent-synthetic-checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  python-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: {version: "0.11.28"}
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - run: uv sync --frozen --extra dev
+      - run: uv run ruff check .
+      - run: uv run pytest -q
+      - run: node --test adapters/browser/*.test.mjs
+      - run: uv run snow-stats demo --users 100
+      - run: uv run python tools/check_contracts.py
+  flink-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: "11", cache: maven}
+      - run: mvn -B -q -f warehouse/flink/pom.xml package

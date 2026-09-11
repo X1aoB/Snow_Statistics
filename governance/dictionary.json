@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "timezone": "Asia/Hong_Kong",
+  "metrics": {
+    "pv": "Unique event IDs with event_type=page_view, per source/app/business date",
+    "uv": "Distinct non-null app-scoped anonymous_id across accepted activity events, per source/app/business date. Never sum as period uniques.",
+    "requests": "First accepted trusted request_complete per source/app/request_id. Covers generation completions, not all incoming HTTP requests.",
+    "successes": "Count of those request completions with success=true",
+    "success_rate": "successes/requests; null when requests=0",
+    "character_popularity": "Unique character_select events, not message count",
+    "conversion": "click -> arrival -> selection -> observed request -> trusted success within 30m; latest valid click, once per click"
+  },
+  "dimensions": {"content": "SCD2 [valid_from,valid_to); tombstones close historical membership; current regrouping is a separate lookup"},
+  "quality": ["raw=valid+duplicates+quarantined+after_cutoff", "successes<=requests", "no negative counts", "integer metrics equal at a shared accepted_at cutoff"],
+  "privacy": {"public_source": "real", "raw_days": 7, "anonymous_auxiliary_days": 30, "rollup_days": 90}
+}

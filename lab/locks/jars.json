@@ -1,0 +1,7 @@
+{
+  "iceberg-spark-runtime-3.5_2.12-1.10.0.jar": {
+    "url": "https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.10.0/iceberg-spark-runtime-3.5_2.12-1.10.0.jar",
+    "sha256": "70f9471870b2d456167d703c829f098a446b86bb1379eee338c0efa03a341026",
+    "bytes": 47130096
+  }
+}

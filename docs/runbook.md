@@ -1,0 +1,50 @@
+# 本地运行与资源门禁
+
+## 已知工具
+
+VMware：`C:\Program Files (x86)\VMware\VMware Workstation\vmware.exe`；同目录 `vmrun.exe`、`vmware-vdiskmanager.exe`。
+
+FinalShell：`C:\Users\25685\AppData\Local\finalshell\finalshell.exe`。可导入本地实验 SSH 连接；脚本使用 SSH，便于重复验证。不要导出生产密码或私钥到仓库。
+
+## 虚拟机
+
+```powershell
+uv run --with pycdlib==1.14.0 python tools/vmware_lab.py prepare
+uv run python tools/vmware_lab.py start --node snow-control
+uv run python tools/vmware_lab.py status
+```
+
+生成三个仅属于本项目的 NAT Linux 节点：control 6 GiB/2 vCPU、compute 6 GiB/4 vCPU、analysis 最高 10 GiB/4 vCPU；18 GiB 薄置备系统盘各一块。Ubuntu 镜像固定 release-20260826 并验证 SHA256。seed、SSH 凭据、VMX、磁盘都在忽略的 `runtime/vmware`。从 VMware 界面打开各节点的 VMX 即可手动管理。
+
+启动会检查宿主空闲磁盘至少 35 GiB、实验文件预算 60 GiB，并保留 4 GiB 当前可用内存。薄置备逻辑容量与物理实占不同，VM 运行还会创建 .vmem；扩样前必须统计工作区、依赖缓存和 Docker 数据，而不是只看输入文件大小。
+
+首次 SSH 主机公钥在本地 seed 中生成，以 `HostKeyAlias=snow-control` 等名称记录在 `runtime/vmware/known_hosts`，使用 `StrictHostKeyChecking=yes`。IP 可从 VMware NAT DHCP 租约按本节点 MAC 查询；不要关闭全局 SSH 校验。初始化脚本 `tools/bootstrap_guest.sh` 只接受三个指定实验主机名。
+
+每台复制本仓库到 `/home/snow/Snow_Statistics`，镜像摘要在 `lab/locks/images.env`。`lab/.env`（忽略）设置三节点 IP 与 LAB_MYSQL_PASSWORD、LAB_MYSQL_ROOT_PASSWORD、LAB_CDC_PASSWORD、LAB_GOVERNANCE_PASSWORD，不复用生产密码。渲染并分发 Hadoop 配置：
+
+```sh
+uv run python tools/render_hadoop.py --control CONTROL_IP
+sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f lab/compose.control.yaml --profile ingest up -d
+```
+
+控制节点：ingest（Kafka/MySQL/Connect）、batch（NameNode/RM/Hive）；计算节点：batch（DN/NM）、realtime（Flink）；分析节点：batch（第二 DN）、olap（Doris）、governance（Marquez）。按阶段启动，避免在同一预算内同时运行重算、实时、治理和 HA。实验端口只用于 NAT 网络和 SSH 转发，不能发布到公网。
+
+## 模拟、CDC、离线及实时
+
+1. `uv run snow-stats demo` 生成固定样例；运行 `tools/mysql_simulator.py --host CONTROL_IP` 向独立 snow_ops 写入事务。
+2. `tools/register_cdc.py` 创建专用 CDC 用户、注册 Debezium。Connect 配置含凭据，只可通过私网访问；不把 REST 返回的配置写日志。
+3. `tools/consume_cdc.py --bootstrap CONTROL_IP:9092` 保存 CDC 原始批次；每批持久化后才提交 Kafka offset。
+4. `snow-stats sync` 读取 collector 私有 API，先归档后发 Kafka；`tools/archive_to_jsonl.py` 校验原始归档并转换为 Spark JSONL。
+5. 将 JSONL 放入独立 HDFS ODS 路径。Spark `batch.py` 必须显式指定日期、共享截止时间和新 run-id；相同路径不会覆盖既有结果。`ops.py` 用归档 CDC 建立内容及工单模型。
+6. 在 Doris 执行 `warehouse/doris/schema.sql`。`tools/maven_build.ps1` 用下载并校验的 Maven 构建 Java 11 字节码；在 Flink 1.20.3 Java 11 运行。配置 KAFKA_BOOTSTRAP、SNOW_SOURCE、DORIS_FE、DORIS_USER、DORIS_PASSWORD 和可选 SNOW_REPLAY_LANE。
+7. 启用 Airflow DAG 前配置 `/opt/snow` 挂载及 Spark/Hadoop 路径。按实际任务 START/COMPLETE/FAIL 调用 `governance/lineage.py`；一条任务生命周期使用同一 run UUID。
+
+组件镜像 digest 已固定不代表组合已通过集成测试。进入下一阶段前必须保存实测结果，检查 `docs/status.md`。
+
+## 线上轻量部署
+
+独立目录 `/var/lib/snow-statistics`，使用 `deploy/prepare-state.sh` 创建 2 GiB 文件系统；检测到已有数据会拒绝格式化。持久化挂载及重启顺序需要在部署候选中配置，确认 mountpoint 后才启动 Compose，避免写入挂载点底层磁盘。
+
+以两个不同随机令牌配置服务端完成日志和私有读取；`SNOW_STATE_DIR` 必须是已挂载的专用目录。镜像用 `deploy/lite.Dockerfile` 构建，只开放本机 8100。代理仅加入两条公开路由，私有读取经 SSH 隧道。访问统计请求和代理不记录 IP/URL，生产代理需设置有界限流。
+
+共享线上主机仍存在宿主故障共同边界。先运行本地合成验收，生成候选资源/路由/CSP/隐私配置及回退清单，再按产品发布流程推广。

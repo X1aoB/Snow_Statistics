@@ -1,0 +1,35 @@
+name: snow-statistics-lite
+services:
+  collector:
+    build:
+      context: ..
+      dockerfile: deploy/lite.Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:?use lab/locks/images.env}
+    image: snow-statistics-lite:0.1.0
+    restart: unless-stopped
+    ports: ["127.0.0.1:8100:8100"]
+    env_file: ../.env
+    environment:
+      SNOW_DB: /state/statistics.db
+    volumes: ["${SNOW_STATE_DIR:?dedicated quota directory required}:/state"]
+    read_only: true
+    tmpfs: [/tmp:size=32m]
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging:
+      driver: local
+      options: {max-size: 5m, max-file: "2"}
+    healthcheck:
+      test: [CMD, /app/.venv/bin/python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8100/healthz', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    labels:
+      org.snow-statistics.owner: Snow_Statistics
+networks:
+  default:
+    name: snow-statistics-lite

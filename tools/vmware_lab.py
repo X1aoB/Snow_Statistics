@@ -1,0 +1,133 @@
+"""Create isolated NAT VMware guests with verified Ubuntu image and local SSH trust.
+
+Artifacts, private keys and VM disks stay under ignored runtime/vmware only.
+No existing VM or VMware global configuration is changed.
+"""
+import argparse
+import hashlib
+import io
+import json
+import shutil
+import subprocess
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+RUNTIME = ROOT / "runtime/vmware"
+VMWARE = Path(r"C:\Program Files (x86)\VMware\VMware Workstation")
+BASE_URL = "https://cloud-images.ubuntu.com/releases/noble/release-20260826/"
+IMAGE = "ubuntu-24.04-server-cloudimg-amd64.vmdk"
+NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": (10240, 4)}
+
+
+def run(*args):
+    return subprocess.run([str(a) for a in args], text=True, capture_output=True, check=True).stdout.strip()
+
+
+def capacity(memory_mb=0):
+    free = shutil.disk_usage(ROOT).free
+    if free < 35 * 1024**3:
+        raise RuntimeError("35 GiB host disk reserve gate failed")
+    used = sum(p.stat().st_size for p in RUNTIME.rglob("*") if p.is_file()) if RUNTIME.exists() else 0
+    if used > 60 * 1024**3:
+        raise RuntimeError("60 GiB project gate failed")
+    if memory_mb:
+        available = int(run("powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory")) // 1024
+        if available < memory_mb + 4096:
+            raise RuntimeError(f"Free RAM {available} MiB below VM {memory_mb} MiB + 4096 MiB host reserve")
+    return {"free_disk_gib": round(free / 1024**3, 2), "vm_files_gib": round(used / 1024**3, 2)}
+
+
+def download():
+    RUNTIME.mkdir(parents=True, exist_ok=True)
+    sums = urllib.request.urlopen(BASE_URL + "SHA256SUMS", timeout=30).read().decode()
+    expected = next(line.split()[0] for line in sums.splitlines() if line.endswith(IMAGE))
+    target = RUNTIME / IMAGE
+    if not target.exists():
+        print("Downloading pinned Ubuntu 24.04 image (~566 MiB)", flush=True)
+        with urllib.request.urlopen(BASE_URL + IMAGE, timeout=60) as response, target.with_suffix(".download").open("wb") as stream:
+            shutil.copyfileobj(response, stream)
+        target.with_suffix(".download").replace(target)
+    with target.open("rb") as stream:
+        actual = hashlib.file_digest(stream, "sha256").hexdigest()
+    if actual != expected:
+        raise RuntimeError("Ubuntu image SHA256 mismatch")
+    (RUNTIME / "image.lock.json").write_text(json.dumps({"url": BASE_URL + IMAGE, "sha256": actual}, indent=2))
+    return target
+
+
+def keypair(path):
+    if not path.exists():
+        run("ssh-keygen", "-t", "ed25519", "-N", "", "-C", "snow-statistics-local-lab", "-f", path)
+
+
+def prepare():
+    import pycdlib
+    print(json.dumps(capacity()), flush=True)
+    image = download()
+    client_key = RUNTIME / "id_ed25519"
+    keypair(client_key)
+    known = []
+    for name, (ram, cores) in NODES.items():
+        directory = RUNTIME / name
+        directory.mkdir(exist_ok=True)
+        host_key = directory / "ssh_host_ed25519_key"
+        keypair(host_key)
+        known.append(name + " " + host_key.with_suffix(".pub").read_text().strip())
+        userdata = {"hostname": name, "manage_etc_hosts": True, "ssh_pwauth": False, "disable_root": True,
+                    "users": [{"name": "snow", "groups": "sudo", "shell": "/bin/bash", "sudo": "ALL=(ALL) NOPASSWD:ALL",
+                               "lock_passwd": True, "ssh_authorized_keys": [client_key.with_suffix(".pub").read_text().strip()]}],
+                    "ssh_keys": {"ed25519_private": host_key.read_text(), "ed25519_public": host_key.with_suffix(".pub").read_text()},
+                    "package_update": False,
+                    "runcmd": [["systemctl", "enable", "--now", "ssh"]]}
+        iso = directory / "seed.iso"
+        if not iso.exists():
+            disk = pycdlib.PyCdlib()
+            disk.new(interchange_level=3, joliet=3, vol_ident="cidata")
+            for filename, text in {"user-data": "#cloud-config\n" + json.dumps(userdata),
+                                    "meta-data": f"instance-id: {name}-v1\nlocal-hostname: {name}\n"}.items():
+                data = text.encode()
+                disk.add_fp(io.BytesIO(data), len(data), iso_path="/" + filename.upper().replace("-", "_") + ";1", joliet_path="/" + filename)
+            disk.write(str(iso))
+            disk.close()
+        vmdk = directory / "system.vmdk"
+        if not vmdk.exists():
+            run(VMWARE / "vmware-vdiskmanager.exe", "-r", image, "-t", "0", vmdk)
+            run(VMWARE / "vmware-vdiskmanager.exe", "-x", "18GB", vmdk)
+        vmx = directory / f"{name}.vmx"
+        if not vmx.exists():
+            config = {".encoding": "UTF-8", "config.version": "8", "virtualHW.version": "20", "displayName": name,
+                      "guestOS": "ubuntu-64", "memsize": str(ram), "numvcpus": str(cores),
+                      "scsi0.present": "TRUE", "scsi0.virtualDev": "lsilogic", "scsi0:0.present": "TRUE", "scsi0:0.fileName": "system.vmdk",
+                      "ide1:0.present": "TRUE", "ide1:0.deviceType": "cdrom-image", "ide1:0.fileName": "seed.iso",
+                      "pciBridge0.present": "TRUE", "ethernet0.present": "TRUE", "ethernet0.connectionType": "nat", "ethernet0.virtualDev": "e1000",
+                      "ethernet0.addressType": "generated", "uuid.action": "create", "msg.autoAnswer": "TRUE",
+                      "tools.syncTime": "TRUE", "mks.enable3d": "FALSE", "floppy0.present": "FALSE"}
+            vmx.write_text("\n".join(f'{k} = "{v}"' for k, v in config.items()) + "\n", encoding="utf-8")
+        print(f"Prepared {name}: {ram} MiB, {cores} vCPU", flush=True)
+    (RUNTIME / "known_hosts").write_text("\n".join(known) + "\n")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", choices=["prepare", "start", "stop", "ip", "status"])
+    parser.add_argument("--node", choices=list(NODES), default="snow-control")
+    args = parser.parse_args()
+    vmrun = VMWARE / "vmrun.exe"
+    vmx = RUNTIME / args.node / f"{args.node}.vmx"
+    if args.action == "prepare":
+        prepare()
+    elif args.action == "status":
+        print(json.dumps(capacity()))
+        print(run(vmrun, "-T", "ws", "list"))
+    elif args.action == "start":
+        capacity(NODES[args.node][0])
+        print(run(vmrun, "-T", "ws", "start", vmx, "nogui"))
+    elif args.action == "stop":
+        print(run(vmrun, "-T", "ws", "stop", vmx, "soft"))
+    else:
+        print(run(vmrun, "-T", "ws", "getGuestIPAddress", vmx))
+
+
+if __name__ == "__main__":
+    main()

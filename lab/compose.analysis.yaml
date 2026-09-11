@@ -1,0 +1,55 @@
+name: snow-lab-analysis
+services:
+  datanode:
+    image: ${HADOOP_IMAGE:?}
+    profiles: [batch]
+    network_mode: host
+    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "384"}
+    volumes: [./generated/hadoop:/etc/hadoop:ro, datanode:/data/dn]
+    entrypoint: [hdfs, datanode]
+    mem_limit: 768m
+  doris-fe:
+    image: ${DORIS_FE_IMAGE:?}
+    profiles: [olap]
+    network_mode: host
+    environment:
+      FE_SERVERS: fe1:${ANALYSIS_IP:?}:9010
+      FE_ID: 1
+    volumes: [doris-fe:/opt/apache-doris/fe/doris-meta, ./doris/fe.conf:/opt/apache-doris/fe/conf/fe.conf:ro]
+    mem_limit: 2560m
+  doris-be:
+    image: ${DORIS_BE_IMAGE:?}
+    profiles: [olap]
+    network_mode: host
+    environment:
+      FE_SERVERS: fe1:${ANALYSIS_IP}:9010
+      BE_ADDR: ${ANALYSIS_IP}:9050
+    volumes: [doris-be:/opt/apache-doris/be/storage, ./doris/be.conf:/opt/apache-doris/be/conf/be.conf:ro]
+    mem_limit: 5g
+  governance-db:
+    image: ${POSTGRES_IMAGE:?}
+    profiles: [governance]
+    environment:
+      POSTGRES_USER: marquez
+      POSTGRES_PASSWORD: ${LAB_GOVERNANCE_PASSWORD:?}
+      POSTGRES_DB: marquez
+    volumes: [governance-db:/var/lib/postgresql/data]
+    mem_limit: 384m
+  marquez:
+    image: ${MARQUEZ_IMAGE:?}
+    profiles: [governance]
+    ports: ["127.0.0.1:5000:5000", "127.0.0.1:5001:5001"]
+    environment:
+      MARQUEZ_PORT: 5000
+      MARQUEZ_ADMIN_PORT: 5001
+      POSTGRES_HOST: governance-db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: marquez
+      POSTGRES_PASSWORD: ${LAB_GOVERNANCE_PASSWORD}
+      POSTGRES_DB: marquez
+    mem_limit: 1g
+volumes:
+  datanode:
+  doris-fe:
+  doris-be:
+  governance-db:

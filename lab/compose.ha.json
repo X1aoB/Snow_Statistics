@@ -1,0 +1,157 @@
+{
+  "name": "snow-lab-ha",
+  "services": {
+    "broker1": {
+      "image": "${KAFKA_IMAGE:?}",
+      "profiles": [
+        "kafka-ha"
+      ],
+      "hostname": "broker1",
+      "mem_limit": "768m",
+      "cpus": 1,
+      "environment": {
+        "KAFKA_NODE_ID": 1,
+        "KAFKA_PROCESS_ROLES": "broker,controller",
+        "KAFKA_LISTENERS": "PLAINTEXT://:9092,CONTROLLER://:9093",
+        "KAFKA_ADVERTISED_LISTENERS": "PLAINTEXT://broker1:9092",
+        "KAFKA_CONTROLLER_LISTENER_NAMES": "CONTROLLER",
+        "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP": "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
+        "KAFKA_CONTROLLER_QUORUM_VOTERS": "1@broker1:9093,2@broker2:9093,3@broker3:9093",
+        "KAFKA_DEFAULT_REPLICATION_FACTOR": 3,
+        "KAFKA_MIN_INSYNC_REPLICAS": 2,
+        "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": 3,
+        "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR": 3,
+        "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR": 2,
+        "KAFKA_HEAP_OPTS": "-Xms256m -Xmx384m",
+        "KAFKA_LOG_DIRS": "/var/lib/kafka/data",
+        "KAFKA_LOG_RETENTION_BYTES": 134217728,
+        "CLUSTER_ID": "V2U3OEVBNTcwNTJENDM2Qk"
+      },
+      "volumes": [
+        "broker1:/var/lib/kafka/data"
+      ]
+    },
+    "zk1": {
+      "image": "${ZOOKEEPER_IMAGE:?}",
+      "profiles": [
+        "zookeeper"
+      ],
+      "hostname": "zk1",
+      "mem_limit": "512m",
+      "cpus": 0.5,
+      "environment": {
+        "ZOO_MY_ID": 1,
+        "ZOO_SERVERS": "server.1=zk1:2888:3888;2181 server.2=zk2:2888:3888;2181 server.3=zk3:2888:3888;2181",
+        "JVMFLAGS": "-Xms128m -Xmx256m",
+        "ZOO_4LW_COMMANDS_WHITELIST": "ruok,srvr,mntr"
+      },
+      "volumes": [
+        "zk1:/data"
+      ]
+    },
+    "broker2": {
+      "image": "${KAFKA_IMAGE:?}",
+      "profiles": [
+        "kafka-ha"
+      ],
+      "hostname": "broker2",
+      "mem_limit": "768m",
+      "cpus": 1,
+      "environment": {
+        "KAFKA_NODE_ID": 2,
+        "KAFKA_PROCESS_ROLES": "broker,controller",
+        "KAFKA_LISTENERS": "PLAINTEXT://:9092,CONTROLLER://:9093",
+        "KAFKA_ADVERTISED_LISTENERS": "PLAINTEXT://broker2:9092",
+        "KAFKA_CONTROLLER_LISTENER_NAMES": "CONTROLLER",
+        "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP": "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
+        "KAFKA_CONTROLLER_QUORUM_VOTERS": "1@broker1:9093,2@broker2:9093,3@broker3:9093",
+        "KAFKA_DEFAULT_REPLICATION_FACTOR": 3,
+        "KAFKA_MIN_INSYNC_REPLICAS": 2,
+        "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": 3,
+        "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR": 3,
+        "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR": 2,
+        "KAFKA_HEAP_OPTS": "-Xms256m -Xmx384m",
+        "KAFKA_LOG_DIRS": "/var/lib/kafka/data",
+        "KAFKA_LOG_RETENTION_BYTES": 134217728,
+        "CLUSTER_ID": "V2U3OEVBNTcwNTJENDM2Qk"
+      },
+      "volumes": [
+        "broker2:/var/lib/kafka/data"
+      ]
+    },
+    "zk2": {
+      "image": "${ZOOKEEPER_IMAGE:?}",
+      "profiles": [
+        "zookeeper"
+      ],
+      "hostname": "zk2",
+      "mem_limit": "512m",
+      "cpus": 0.5,
+      "environment": {
+        "ZOO_MY_ID": 2,
+        "ZOO_SERVERS": "server.1=zk1:2888:3888;2181 server.2=zk2:2888:3888;2181 server.3=zk3:2888:3888;2181",
+        "JVMFLAGS": "-Xms128m -Xmx256m",
+        "ZOO_4LW_COMMANDS_WHITELIST": "ruok,srvr,mntr"
+      },
+      "volumes": [
+        "zk2:/data"
+      ]
+    },
+    "broker3": {
+      "image": "${KAFKA_IMAGE:?}",
+      "profiles": [
+        "kafka-ha"
+      ],
+      "hostname": "broker3",
+      "mem_limit": "768m",
+      "cpus": 1,
+      "environment": {
+        "KAFKA_NODE_ID": 3,
+        "KAFKA_PROCESS_ROLES": "broker,controller",
+        "KAFKA_LISTENERS": "PLAINTEXT://:9092,CONTROLLER://:9093",
+        "KAFKA_ADVERTISED_LISTENERS": "PLAINTEXT://broker3:9092",
+        "KAFKA_CONTROLLER_LISTENER_NAMES": "CONTROLLER",
+        "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP": "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
+        "KAFKA_CONTROLLER_QUORUM_VOTERS": "1@broker1:9093,2@broker2:9093,3@broker3:9093",
+        "KAFKA_DEFAULT_REPLICATION_FACTOR": 3,
+        "KAFKA_MIN_INSYNC_REPLICAS": 2,
+        "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": 3,
+        "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR": 3,
+        "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR": 2,
+        "KAFKA_HEAP_OPTS": "-Xms256m -Xmx384m",
+        "KAFKA_LOG_DIRS": "/var/lib/kafka/data",
+        "KAFKA_LOG_RETENTION_BYTES": 134217728,
+        "CLUSTER_ID": "V2U3OEVBNTcwNTJENDM2Qk"
+      },
+      "volumes": [
+        "broker3:/var/lib/kafka/data"
+      ]
+    },
+    "zk3": {
+      "image": "${ZOOKEEPER_IMAGE:?}",
+      "profiles": [
+        "zookeeper"
+      ],
+      "hostname": "zk3",
+      "mem_limit": "512m",
+      "cpus": 0.5,
+      "environment": {
+        "ZOO_MY_ID": 3,
+        "ZOO_SERVERS": "server.1=zk1:2888:3888;2181 server.2=zk2:2888:3888;2181 server.3=zk3:2888:3888;2181",
+        "JVMFLAGS": "-Xms128m -Xmx256m",
+        "ZOO_4LW_COMMANDS_WHITELIST": "ruok,srvr,mntr"
+      },
+      "volumes": [
+        "zk3:/data"
+      ]
+    }
+  },
+  "volumes": {
+    "broker1": {},
+    "zk1": {},
+    "broker2": {},
+    "zk2": {},
+    "broker3": {},
+    "zk3": {}
+  }
+}
