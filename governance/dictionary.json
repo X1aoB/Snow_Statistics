@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "timezone": "Asia/Hong_Kong",
   "metrics": {
     "pv": "Unique event IDs with event_type=page_view, per source/app/business date",
@@ -8,7 +8,9 @@
     "successes": "Count of those request completions with success=true",
     "success_rate": "successes/requests; null when requests=0",
     "character_popularity": "Unique character_select events, not message count",
-    "conversion": "click -> arrival -> selection -> observed request -> trusted success within 30m; latest valid click, once per click"
+    "conversion": "click -> arrival -> observed request -> trusted success within 30m inclusive; latest valid click, once per click without fallback. Character selection is optional diagnostic activity.",
+    "sessions": "New session at >=30m inactivity per source/app/anonymous_id; whole session assigned to HK start date, including cross-midnight events. Closed only after 30m silence at cutoff.",
+    "retained_d1_d7": "Cohort is first observed HK date in the complete frozen input history. Eligible only once the D1/D7 HK observation day ends; retained is null before maturity. Daily rates use their eligible cohort denominator."
   },
   "dimensions": {"content": "SCD2 [valid_from,valid_to); tombstones close historical membership; current regrouping is a separate lookup"},
   "quality": ["raw=valid+duplicates+quarantined+after_cutoff", "successes<=requests", "no negative counts", "integer metrics equal at a shared accepted_at cutoff"],

@@ -1,0 +1,535 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-11",
+  "scope": "Synthetic small-data validation on one physical host; not throughput or realtime SLA",
+  "resources": {
+    "vm_mib": {
+      "control": 3584,
+      "compute": 4096,
+      "analysis": 1024
+    },
+    "project_files_gib_running": 58.93,
+    "host_free_gib_running": 51.28,
+    "control_available_mib_observation": 1036,
+    "host_cap_gib": 60,
+    "host_free_reserve_gib": 35,
+    "project_files_gib_after_shutdown": 50.43,
+    "host_free_gib_after_shutdown": 59.78,
+    "running_vms_at_end": 0,
+    "airflow_dags_paused": true
+  },
+  "boundary": {
+    "schema_version": 1,
+    "manifest": {
+      "schema_version": 1,
+      "kind": "behavior",
+      "source": "synthetic",
+      "run_id": "boundary-01",
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/behavior-fixture-v1/events.jsonl",
+      "input_snapshot": null,
+      "output": "hdfs://192.168.216.131:9000/snow/warehouse/behavior-tests/boundary-01",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-09",
+      "cutoff": "2026-01-09T16:00:00Z",
+      "complete_through": "2026-01-09",
+      "cohort_definition": "first_observed_in_input",
+      "quality": {
+        "raw": 31,
+        "valid": 27,
+        "quarantined": 0,
+        "after_cutoff": 0,
+        "duplicates": 4
+      },
+      "counts": {
+        "sessions": 13,
+        "session_daily": 5,
+        "retention": 3,
+        "conversions": 2,
+        "funnel": 1
+      },
+      "hive_tables": {
+        "sessions": "snow_synthetic.behavior_boundary_01_sessions",
+        "session_daily": "snow_synthetic.behavior_boundary_01_session_daily",
+        "retention": "snow_synthetic.behavior_boundary_01_retention",
+        "conversions": "snow_synthetic.behavior_boundary_01_conversions",
+        "funnel": "snow_synthetic.behavior_boundary_01_funnel"
+      },
+      "engine": "Spark 3.5.7",
+      "master": "yarn",
+      "application_id": "application_1789117389380_0001",
+      "golden_equal": true,
+      "generated_at": "2026-09-11T09:05:10.161309+00:00"
+    },
+    "aggregates": {
+      "session_daily": [
+        {
+          "source": "synthetic",
+          "app": "mywebsite",
+          "date": "2026-01-09",
+          "sessions": 1,
+          "users": 1,
+          "events": 1,
+          "duration_seconds": 0.0,
+          "closed_sessions": 0
+        },
+        {
+          "source": "synthetic",
+          "app": "mywebsite",
+          "date": "2026-01-08",
+          "sessions": 1,
+          "users": 1,
+          "events": 1,
+          "duration_seconds": 0.0,
+          "closed_sessions": 1
+        },
+        {
+          "source": "synthetic",
+          "app": "mywebsite",
+          "date": "2026-01-02",
+          "sessions": 2,
+          "users": 2,
+          "events": 2,
+          "duration_seconds": 0.0,
+          "closed_sessions": 2
+        },
+        {
+          "source": "synthetic",
+          "app": "mywebsite",
+          "date": "2026-01-01",
+          "sessions": 5,
+          "users": 5,
+          "events": 7,
+          "duration_seconds": 1809.0,
+          "closed_sessions": 5
+        },
+        {
+          "source": "synthetic",
+          "app": "project_snow",
+          "date": "2026-01-01",
+          "sessions": 4,
+          "users": 4,
+          "events": 11,
+          "duration_seconds": 3626.0,
+          "closed_sessions": 4
+        }
+      ],
+      "retention": [
+        {
+          "source": "synthetic",
+          "app": "mywebsite",
+          "cohort_date": "2026-01-01",
+          "users": 5,
+          "retained_d1": 2,
+          "retained_d7": 1,
+          "eligible_d1": 5,
+          "eligible_d7": 5
+        },
+        {
+          "source": "synthetic",
+          "app": "mywebsite",
+          "cohort_date": "2026-01-09",
+          "users": 1,
+          "retained_d1": null,
+          "retained_d7": null,
+          "eligible_d1": 0,
+          "eligible_d7": 0
+        },
+        {
+          "source": "synthetic",
+          "app": "project_snow",
+          "cohort_date": "2026-01-01",
+          "users": 4,
+          "retained_d1": 2,
+          "retained_d7": 0,
+          "eligible_d1": 4,
+          "eligible_d7": 4
+        }
+      ],
+      "funnel": [
+        {
+          "source": "synthetic",
+          "channel": "portfolio",
+          "date": "2026-01-01",
+          "clicks": 5,
+          "arrived": 5,
+          "selected": 1,
+          "requested": 5,
+          "converted": 2
+        }
+      ]
+    }
+  },
+  "airflow": [
+    {
+      "engine": "Airflow 2.10.5",
+      "dag_id": "snow_models",
+      "runs": [
+        {
+          "run_id": "models-e2e-20260911",
+          "state": "success",
+          "execution_date": "2026-09-11 09:06:30.000000",
+          "start_date": "2026-09-11 09:06:31.674000",
+          "end_date": "2026-09-11 09:08:45.242166"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "compute_behavior",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:07:28.938391",
+          "end_date": "2026-09-11 09:08:39.778848"
+        },
+        {
+          "task_id": "compute_operations",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:06:38.822132",
+          "end_date": "2026-09-11 09:07:24.808495"
+        },
+        {
+          "task_id": "publish",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:08:44.297175",
+          "end_date": "2026-09-11 09:08:44.465025"
+        },
+        {
+          "task_id": "window",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:06:34.845278",
+          "end_date": "2026-09-11 09:06:34.990198"
+        }
+      ]
+    },
+    {
+      "engine": "Airflow 2.10.5",
+      "dag_id": "snow_models",
+      "runs": [
+        {
+          "run_id": "models-replay-20260911",
+          "state": "success",
+          "execution_date": "2026-09-11 09:09:21.000000",
+          "start_date": "2026-09-11 09:09:22.147062",
+          "end_date": "2026-09-11 09:11:33.868270"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "compute_behavior",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:10:22.841226",
+          "end_date": "2026-09-11 09:11:28.079832"
+        },
+        {
+          "task_id": "compute_operations",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:09:29.553923",
+          "end_date": "2026-09-11 09:10:18.103208"
+        },
+        {
+          "task_id": "publish",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:11:32.719814",
+          "end_date": "2026-09-11 09:11:32.892732"
+        },
+        {
+          "task_id": "window",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 09:09:25.504435",
+          "end_date": "2026-09-11 09:09:25.661610"
+        }
+      ]
+    }
+  ],
+  "first": {
+    "golden_aggregates_equal": true,
+    "source": "synthetic",
+    "users": 2,
+    "content_hash": "f7b2bd19c95366d6c4dc77dc30f77c4f09e1a40100f02646461bfad71ad2f92f",
+    "operations": {
+      "application_id": "application_1789117389380_0002",
+      "as_of": "2026-01-04",
+      "changes": 19,
+      "counts": {
+        "dim_content_scd2": 4,
+        "fact_ticket_daily": 8,
+        "fact_ticket_round": 4
+      },
+      "cutoff": "2026-01-05T00:00:00+00:00",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T09:07:22.444121+00:00",
+      "golden_equal": false,
+      "hive_tables": {
+        "dim_content_scd2": "snow_synthetic.ops_af_f2212e38e59e79a2ed8f4a86_t1_dim_content_scd2",
+        "fact_ticket_daily": "snow_synthetic.ops_af_f2212e38e59e79a2ed8f4a86_t1_fact_ticket_daily",
+        "fact_ticket_round": "snow_synthetic.ops_af_f2212e38e59e79a2ed8f4a86_t1_fact_ticket_round"
+      },
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "input_snapshot": {
+        "batches": 2,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "source": "synthetic"
+      },
+      "kind": "operations",
+      "master": "yarn",
+      "output": "hdfs://snow-control:9000/snow/warehouse/model-runs/af-f2212e38e59e79a2ed8f4a86-t1/operations",
+      "run_id": "af-f2212e38e59e79a2ed8f4a86-t1",
+      "schema_version": 1,
+      "source": "synthetic"
+    },
+    "behavior": {
+      "application_id": "application_1789117389380_0003",
+      "cohort_definition": "first_observed_in_input",
+      "complete_through": "2026-01-04",
+      "counts": {
+        "conversions": 1,
+        "funnel": 3,
+        "retention": 2,
+        "session_daily": 6,
+        "sessions": 11
+      },
+      "cutoff": "2026-01-05T00:00:00+00:00",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T09:08:38.368363+00:00",
+      "golden_equal": false,
+      "hive_tables": {
+        "conversions": "snow_synthetic.behavior_af_f2212e38e59e79a2ed8f4a86_t1_conversions",
+        "funnel": "snow_synthetic.behavior_af_f2212e38e59e79a2ed8f4a86_t1_funnel",
+        "retention": "snow_synthetic.behavior_af_f2212e38e59e79a2ed8f4a86_t1_retention",
+        "session_daily": "snow_synthetic.behavior_af_f2212e38e59e79a2ed8f4a86_t1_session_daily",
+        "sessions": "snow_synthetic.behavior_af_f2212e38e59e79a2ed8f4a86_t1_sessions"
+      },
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "input_snapshot": {
+        "batches": 2,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "source": "synthetic"
+      },
+      "kind": "behavior",
+      "master": "yarn",
+      "output": "hdfs://snow-control:9000/snow/warehouse/model-runs/af-f2212e38e59e79a2ed8f4a86-t1/behavior",
+      "quality": {
+        "after_cutoff": 0,
+        "duplicates": 36,
+        "quarantined": 0,
+        "raw": 64,
+        "valid": 28
+      },
+      "run_id": "af-f2212e38e59e79a2ed8f4a86-t1",
+      "schema_version": 1,
+      "source": "synthetic"
+    }
+  },
+  "replay": {
+    "golden_aggregates_equal": true,
+    "source": "synthetic",
+    "users": 2,
+    "content_hash": "f7b2bd19c95366d6c4dc77dc30f77c4f09e1a40100f02646461bfad71ad2f92f",
+    "operations": {
+      "application_id": "application_1789117389380_0004",
+      "as_of": "2026-01-04",
+      "changes": 19,
+      "counts": {
+        "dim_content_scd2": 4,
+        "fact_ticket_daily": 8,
+        "fact_ticket_round": 4
+      },
+      "cutoff": "2026-01-05T00:00:00+00:00",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T09:10:15.824980+00:00",
+      "golden_equal": false,
+      "hive_tables": {
+        "dim_content_scd2": "snow_synthetic.ops_af_f12793b80a8eb8b697cc26de_t1_dim_content_scd2",
+        "fact_ticket_daily": "snow_synthetic.ops_af_f12793b80a8eb8b697cc26de_t1_fact_ticket_daily",
+        "fact_ticket_round": "snow_synthetic.ops_af_f12793b80a8eb8b697cc26de_t1_fact_ticket_round"
+      },
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "input_snapshot": {
+        "batches": 2,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "source": "synthetic"
+      },
+      "kind": "operations",
+      "master": "yarn",
+      "output": "hdfs://snow-control:9000/snow/warehouse/model-runs/af-f12793b80a8eb8b697cc26de-t1/operations",
+      "run_id": "af-f12793b80a8eb8b697cc26de-t1",
+      "schema_version": 1,
+      "source": "synthetic"
+    },
+    "behavior": {
+      "application_id": "application_1789117389380_0005",
+      "cohort_definition": "first_observed_in_input",
+      "complete_through": "2026-01-04",
+      "counts": {
+        "conversions": 1,
+        "funnel": 3,
+        "retention": 2,
+        "session_daily": 6,
+        "sessions": 11
+      },
+      "cutoff": "2026-01-05T00:00:00+00:00",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T09:11:26.306162+00:00",
+      "golden_equal": false,
+      "hive_tables": {
+        "conversions": "snow_synthetic.behavior_af_f12793b80a8eb8b697cc26de_t1_conversions",
+        "funnel": "snow_synthetic.behavior_af_f12793b80a8eb8b697cc26de_t1_funnel",
+        "retention": "snow_synthetic.behavior_af_f12793b80a8eb8b697cc26de_t1_retention",
+        "session_daily": "snow_synthetic.behavior_af_f12793b80a8eb8b697cc26de_t1_session_daily",
+        "sessions": "snow_synthetic.behavior_af_f12793b80a8eb8b697cc26de_t1_sessions"
+      },
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "input_snapshot": {
+        "batches": 2,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "source": "synthetic"
+      },
+      "kind": "behavior",
+      "master": "yarn",
+      "output": "hdfs://snow-control:9000/snow/warehouse/model-runs/af-f12793b80a8eb8b697cc26de-t1/behavior",
+      "quality": {
+        "after_cutoff": 0,
+        "duplicates": 36,
+        "quarantined": 0,
+        "raw": 64,
+        "valid": 28
+      },
+      "run_id": "af-f12793b80a8eb8b697cc26de-t1",
+      "schema_version": 1,
+      "source": "synthetic"
+    }
+  },
+  "replay_content_equal": true,
+  "daily_regression": {
+    "manifest": {
+      "schema_version": 1,
+      "run_id": "models-daily-regression-01",
+      "cutoff": "2026-01-05T00:00:00Z",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "source": "synthetic",
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "output": "hdfs://192.168.216.131:9000/snow/warehouse/runs/models-daily-regression-01",
+      "quality": {
+        "raw": 64,
+        "valid": 28,
+        "quarantined": 0,
+        "after_cutoff": 0,
+        "duplicates": 36
+      },
+      "engine": "Spark 3.5.7",
+      "master": "yarn",
+      "application_id": "application_1789117389380_0006",
+      "hive_table": "snow_synthetic.ads_models_daily_regression_01",
+      "generated_at": "2026-09-11T09:13:23.278767+00:00",
+      "input_snapshot": {
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "batches": 2,
+        "source": "synthetic"
+      }
+    },
+    "daily_rows": 6,
+    "golden_equal": true,
+    "expected_argument": "/opt/snow/runtime/spark-fixture/expected.json"
+  },
+  "hdfs_and_runtime": {
+    "models": {
+      "healthy": true,
+      "nonempty_blocks": 20,
+      "minimum_replicas": 2
+    },
+    "boundary": {
+      "healthy": true,
+      "nonempty_blocks": 6,
+      "minimum_replicas": 2
+    },
+    "daily": {
+      "healthy": true,
+      "nonempty_blocks": 17,
+      "minimum_replicas": 2
+    },
+    "spark_runtime": {
+      "jar_count": 252,
+      "local_preinstalled_jars": true,
+      "spark_libs_archive_uploaded": false,
+      "uploaded_resources": [
+        "file:/opt/spark/python/lib/pyspark.zip",
+        "file:/opt/spark/python/lib/py4j-0.10.9.7-src.zip",
+        "file:/tmp/spark-c1f12744-9a10-4fa7-9da3-20bb4d094636/__spark_conf__17539673987391511757.zip"
+      ]
+    }
+  },
+  "dashboard": {
+    "engines": [
+      "Streamlit AppTest",
+      "Chromium"
+    ],
+    "aggregate_table_rows": [
+      6,
+      2,
+      3,
+      4,
+      1
+    ],
+    "immature_d7_not_zero": true,
+    "reads_local_archive": true
+  },
+  "source_sha256_lf": {
+    "warehouse/spark/behavior.py": "8619cbafa491edd6003fc9e6f50c1f96d4a25f0ce5bd3c3988e3f87c7cd62c16",
+    "warehouse/spark/ops.py": "8423adf6f0fa71ef86ae5011dc32d4f7e7f1cac94644c0023168b18921b73835",
+    "warehouse/spark/batch.py": "57da326fccc9eb179c3bf8d30eba93fa262f6c58e8f2266e77bcf0dfc87a6092",
+    "warehouse/spark/event_input.py": "cd9c18408abe6e0dd44d5a1ffb30dcab51d013abfc8f7c34c47ee259e3a06ffb",
+    "warehouse/spark/model_output.py": "621fa3f99e2258e73bb63ccfbfa94a24cfe668fe27e592d0eb9574ac7697db4a",
+    "src/snow_statistics/behavior.py": "dc4460b7f7fcbcbfe647694d2d0dfe468bb99629c5c86a58a9601f236d75094e",
+    "src/snow_statistics/behavior_fixture.py": "2c8080f9afe120b7959842859134080d48071113d3e74248c522a4f07feff020",
+    "src/snow_statistics/model_publication.py": "111d3eb7b076bb8ce3aab43e33a9e9f56c1a5b11e606874fd1cc103342d82317",
+    "orchestration/dags/snow_models.py": "ac56e7c0ff510168a7442a29f58f6f94d7d0da5d08c4687cd2f8d83ef646badc",
+    "tools/airflow_gateway.py": "fea1b45410ecd73b662cbf3aed721efbe4af1f81d382ae827d95b649f36903da",
+    "tools/spark_yarn.sh": "e40286d4ce56c99f8ed14766e356a69cf0238c659accb200ee2d212f40069bdd",
+    "lab/locks/spark-jars.sha256": "3985d3cd4eeb47feda6c8ca33a57edb57752ec11824758372da5d685ea42775a"
+  }
+}

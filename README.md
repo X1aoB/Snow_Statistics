@@ -34,6 +34,8 @@ uv run streamlit run dashboard/app.py --server.address 127.0.0.1
 
 无虚拟机时在侧栏选择“Python 正确性基准”。“Doris 已发布数仓结果”查询实际离线发布视图，需设置 `SNOW_DORIS_HOST` 并启动分析节点。已经验证的 HDFS/YARN/Hive → Doris → Streamlit 链路及分阶段 Airflow 调度，见[离线闭环手册](docs/offline-pipeline.md)。
 
+“Spark 已发布运营与行为模型”读取 `runtime/publication/models-latest.json`：展示实际 Spark / YARN 计算的会话、成熟期留存、渠道转化和工单状态，虚拟机关闭后仍可查看带日期的归档。计算、重跑和发布见[运营与行为模型](docs/behavior-models.md)。
+
 轻量 HTTP 服务：复制 `.env.example` 为本地 `.env`，配置路径/角色允许列表和独立令牌。命令行运行时需要将变量导入进程环境；Compose 会读取 `.env`。
 
 ```sh
@@ -75,6 +77,7 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [本地及虚拟机运行](docs/runbook.md)
 - [离线闭环、发布与 Airflow](docs/offline-pipeline.md)
 - [Kafka / CDC 增量落地与恢复](docs/incremental-ods.md)
+- [Spark 会话、留存、归因与 Airflow 模型发布](docs/behavior-models.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)

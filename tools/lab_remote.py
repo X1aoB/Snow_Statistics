@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--download", type=Path)
     parser.add_argument("--remote", help="Remote file path for SCP")
     parser.add_argument("--reserve-mib", type=int, default=0,
-                        help="Reserve host project capacity before a job (use 1024 for Spark JAR staging)")
+                        help="Reserve host project capacity before a job (use 1024 for bounded Spark work)")
     args = parser.parse_args()
     if sum(bool(v) for v in (args.script, args.upload, args.download)) != 1:
         parser.error("Choose exactly one of --script, --upload, --download")

@@ -12,11 +12,13 @@ sudo docker run --rm --name snow-spark-yarn --memory 1792m --cpus 2 --network ho
   --add-host "snow-control:$CONTROL_IP" --add-host "snow-compute:$COMPUTE_IP" --add-host "snow-analysis:$ANALYSIS_IP" \
   -e HADOOP_CONF_DIR=/etc/hadoop -e PYSPARK_PYTHON=/usr/bin/python3 \
   -v "$PWD:/opt/snow" -v "$PWD/lab/generated/hadoop:/etc/hadoop:ro" -w /tmp "$SPARK_IMAGE" \
-  /opt/spark/bin/spark-submit --master yarn --deploy-mode client --driver-memory 768m \
+  bash /opt/snow/lab/spark-submit-locked.sh --master yarn --deploy-mode client --driver-memory 768m \
   --executor-memory 768m --num-executors 1 --executor-cores 1 \
   --conf spark.executor.memoryOverhead=256 --conf spark.yarn.am.memory=512m \
   --conf spark.yarn.am.memoryOverhead=256 --conf spark.driver.host="$CONTROL_IP" \
   --conf spark.driver.bindAddress=0.0.0.0 --conf spark.yarn.submit.waitAppCompletion=true \
+  --conf 'spark.yarn.jars=local:/opt/spark/jars/*' \
+  --conf spark.yarn.am.clientModeTreatDisconnectAsFailed=true \
   --conf spark.sql.hive.metastore.version=3.1.3 --conf spark.sql.hive.metastore.jars=path \
   --conf 'spark.sql.hive.metastore.jars.path=file:///opt/snow/runtime/hive-client/*.jar' \
   "$@"

@@ -117,7 +117,7 @@ def ticket_snapshots(changes, as_of=None):
 
 
 def funnel(rows):
-    clicks, arrivals, observed, selections, completions = {}, {}, [], defaultdict(list), []
+    clicks, arrivals, observed, completions = {}, {}, [], []
     for row in rows:
         e, source = row["event"], row["source"]
         kind = e["event_type"]
@@ -125,8 +125,6 @@ def funnel(rows):
             clicks.setdefault((source, e["jump_id"]), e)
         elif kind == "entry_arrival" and e.get("anonymous_id"):
             arrivals.setdefault((source, e["jump_id"]), e)
-        elif kind == "character_select" and e.get("anonymous_id"):
-            selections[(source, e["anonymous_id"])].append(e)
         elif kind == "request_observed" and e.get("anonymous_id"):
             observed.append((source, e))
         elif kind == "request_complete" and e["success"]:
@@ -148,8 +146,6 @@ def funnel(rows):
                 continue
             start = datetime.fromisoformat(click["occurred_at"])
             if not start <= datetime.fromisoformat(arrival["occurred_at"]) <= datetime.fromisoformat(o["occurred_at"]) <= end <= start + timedelta(minutes=30):
-                continue
-            if not any(arrival["occurred_at"] <= e["occurred_at"] <= o["occurred_at"] for e in selections[(source, o["anonymous_id"])]):
                 continue
             candidates.append((click["occurred_at"], key, click))
         if candidates:

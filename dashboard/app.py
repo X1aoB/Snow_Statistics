@@ -5,12 +5,48 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from snow_statistics.model_publication import validate_model
 from snow_statistics.publication import connect, read_published
 
 st.set_page_config(page_title="Snow Statistics Lab", layout="wide")
 st.title("Snow Statistics · 数据开发实验室")
 st.caption("合成数据 / 本地实验结果；不是线上用户规模或生产性能证明")
-mode = st.sidebar.radio("数据来源", ["Doris 已发布数仓结果", "Python 正确性基准"])
+mode = st.sidebar.radio("数据来源", ["Doris 已发布数仓结果", "Spark 已发布运营与行为模型", "Python 正确性基准"])
+if mode == "Spark 已发布运营与行为模型":
+    path = Path(st.sidebar.text_input("私有模型发布文件", "runtime/publication/models-latest.json"))
+    if not path.is_file():
+        st.info("尚无模型发布文件。运行 snow_models 后，将验收通过的模型发布文件同步到本机。")
+        st.stop()
+    try:
+        data = json.loads(path.read_bytes())
+        operations = validate_model(data["operations"], "operations")
+        behavior = validate_model(data["behavior"], "behavior")
+        if any(operations[k] != behavior[k] for k in ("input_snapshot", "date_from", "date_to", "cutoff")):
+            raise ValueError("Different model windows")
+    except (ValueError, KeyError, TypeError, OSError):
+        st.error("模型文件未通过校验，无法展示。请重新同步验收通过的发布文件。")
+        st.stop()
+    st.caption(f"合成数据历史归档 · {behavior['date_from']} 至 {behavior['date_to']} · 截止 {behavior['cutoff']} · 发布 {data['run_id']}")
+    st.caption("由 Spark / YARN 计算并通过 Hive 读回验证；读取本机归档时无需运行虚拟机。")
+    sessions, retention, funnel, tickets = st.tabs(["会话", "留存", "渠道转化", "运营状态"])
+    with sessions:
+        st.dataframe(data["behavior"]["aggregates"]["session_daily"], use_container_width=True, hide_index=True)
+        st.caption("30 分钟无活动结束会话；会话整体归于开始日期，跨午夜不拆分。")
+    with retention:
+        rows = pd.DataFrame(data["behavior"]["aggregates"]["retention"])
+        if not rows.empty:
+            for lag in (1, 7):
+                rows[f"D{lag} 留存率"] = [f"{100 * r[f'retained_d{lag}'] / r[f'eligible_d{lag}']:.1f}%" if r[f"eligible_d{lag}"] else "尚未成熟" for r in rows.to_dict("records")]
+        st.dataframe(rows, use_container_width=True, hide_index=True)
+        st.caption("按固定输入历史中首次观察日期分群；尚未完成 D1 / D7 观察日的留存为空。匿名标识不会跨应用合并。")
+    with funnel:
+        st.dataframe(data["behavior"]["aggregates"]["funnel"], use_container_width=True, hide_index=True)
+        st.caption("成功对话归于 30 分钟内最近一次有效入口，每次入口最多转化一次。角色选择仅为诊断指标，不是转化前提。")
+    with tickets:
+        st.dataframe(data["operations"]["aggregates"]["ticket_daily"], use_container_width=True, hide_index=True)
+        st.dataframe(data["operations"]["aggregates"]["current_categories"], use_container_width=True, hide_index=True)
+        st.caption("工单为每日末次状态；分类为本次截止时间的有效分类。历史有效区间与处理轮次保存在 Hive 明细表。")
+    st.stop()
 if mode == "Doris 已发布数仓结果":
     st.caption("Spark → HDFS / Hive → 校验 → Doris 发布版本；仅查询 synthetic 来源")
     try:
@@ -55,6 +91,7 @@ with tab1:
         st.line_chart(daily.groupby("date")[["pv", "requests", "successes"]].sum())
         st.caption("UV 按应用、日期独立展示，未累加为跨日期去重人数。")
 with tab2:
+    st.caption("早期固定样例；未包含留存成熟期。完整口径请查看 Spark 已发布运营与行为模型。")
     st.dataframe(data["conversions"], use_container_width=True)
     st.dataframe(data["retention"], use_container_width=True)
 with tab3:

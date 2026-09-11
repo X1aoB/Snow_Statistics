@@ -23,6 +23,19 @@
       "publisher_lock_and_packages": "runtime/publication",
       "metadata_volume": "snow-lab-orchestration_airflow"
     },
+    "model_publication": {
+      "host": "snow-control",
+      "dag": "snow_models",
+      "hdfs_root": "/snow/warehouse/model-runs/<attempt-id>/<kind>",
+      "hive_database": "snow_synthetic",
+      "hive_tables": ["ops_<attempt-id>_*", "behavior_<attempt-id>_*"],
+      "accepted_packages": "runtime/publication/<attempt-id>.<kind>.json",
+      "release_history": "runtime/publication/model-releases",
+      "latest_pointer": "runtime/publication/models-latest.json",
+      "synthetic_boundary_input": "/snow/ods/synthetic/behavior-fixture-v1",
+      "synthetic_boundary_output": "/snow/warehouse/behavior-tests",
+      "shutdown": "Pause snow_models and stop project services. Preserve accepted packages, Hive metadata, HDFS tables and release history; export the latest private aggregates for offline demonstration."
+    },
     "incremental_ods": {
       "host": "snow-control",
       "single_writer_directory": "runtime/ods/<lane>",
