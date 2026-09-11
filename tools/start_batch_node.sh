@@ -13,10 +13,16 @@ case "$(hostname)" in
   *) echo 'Dedicated Snow Statistics guest required' >&2; exit 1 ;;
 esac
 mkdir -p runtime
+overlays=()
+if [[ "${1:-}" = --ods-small && "$role" = analysis ]]; then
+  overlays=(-f lab/compose.ods-small.yaml)
+elif [[ $# -gt 0 ]]; then
+  echo 'Only analysis accepts --ods-small' >&2; exit 2
+fi
 for service in $(sudo docker ps --filter "label=com.docker.compose.project=snow-lab-$role" --format '{{.Label "com.docker.compose.service"}}'); do
   case "$role:$service" in control:namenode|control:resourcemanager|control:hive|compute:datanode|compute:nodemanager|analysis:datanode) ;;
     *) echo "Stop $service before starting the batch profile" >&2; exit 1 ;;
   esac
 done
-sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f "lab/compose.$role.yaml" --profile batch up -d --build
-sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f "lab/compose.$role.yaml" --profile batch ps
+sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f "lab/compose.$role.yaml" "${overlays[@]}" --profile batch up -d --build
+sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f "lab/compose.$role.yaml" "${overlays[@]}" --profile batch ps

@@ -1,0 +1,215 @@
+{
+  "analysis_datanode_measurement": {
+    "container_limit_mib": 512,
+    "guest_available_mib": 434,
+    "heap_mib": 256,
+    "measurement": "after small-sample verification; not peak load",
+    "observed_container_mib": 216.8,
+    "vm_memory_mib": 1024
+  },
+  "batch_id": "3d7758b9cd1ac5ab0c6e7ecb98e7397842964e00f429698d16b714d4bd54eed1",
+  "capacity_interruption": {
+    "accepted_marker": false
+  },
+  "committed_offsets_equal": true,
+  "counts": {
+    "changes": 19,
+    "events": 61,
+    "quarantine": 0,
+    "raw": 81,
+    "tombstones": 1
+  },
+  "daily_runs": [
+    {
+      "application_id": "application_1789114187107_0001",
+      "cutoff": "2026-01-05T00:00:00Z",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T08:14:54.794496+00:00",
+      "hive_table": "snow_synthetic.ads_ods_events_01",
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/b8675ba2c5e30a6ab66318925bd2848c6b117ac5f295301e437eeb44ef7ffe24/_snapshot.json",
+      "input_snapshot": {
+        "batches": 1,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 61
+        },
+        "snapshot_id": "b8675ba2c5e30a6ab66318925bd2848c6b117ac5f295301e437eeb44ef7ffe24",
+        "source": "synthetic"
+      },
+      "master": "yarn",
+      "output": "/snow/warehouse/runs/ods-events-01",
+      "quality": {
+        "after_cutoff": 0,
+        "duplicates": 33,
+        "quarantined": 0,
+        "raw": 61,
+        "valid": 28
+      },
+      "run_id": "ods-events-01",
+      "schema_version": 1,
+      "source": "synthetic"
+    },
+    {
+      "application_id": "application_1789115517183_0001",
+      "cutoff": "2026-01-05T00:00:00Z",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T08:33:57.269542+00:00",
+      "hive_table": "snow_synthetic.ads_ods_events_03",
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "input_snapshot": {
+        "batches": 2,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "source": "synthetic"
+      },
+      "master": "yarn",
+      "output": "/snow/warehouse/runs/ods-events-03",
+      "quality": {
+        "after_cutoff": 0,
+        "duplicates": 36,
+        "quarantined": 0,
+        "raw": 64,
+        "valid": 28
+      },
+      "run_id": "ods-events-03",
+      "schema_version": 1,
+      "source": "synthetic"
+    }
+  ],
+  "doris_publication": {
+    "analysis_vm_mib": 6144,
+    "business_version": 1767571200000000,
+    "daily_rows": 6,
+    "published_dates": 4,
+    "published_view_equal": true,
+    "publisher": "Windows host; control VM stopped",
+    "readback_equal": true,
+    "replay_equal": true,
+    "run_id": "ods-events-03",
+    "snapshot_id": "745829fa07943e5ddd36776c52ceda1ed1f91dbb67f400e0407dfef4c1fe03ee",
+    "source": "synthetic"
+  },
+  "hdfs_readback_equal": true,
+  "hdfs_replica_gate": 2,
+  "incremental_capture": {
+    "counts": {
+      "changes": 0,
+      "events": 3,
+      "quarantine": 0,
+      "raw": 3,
+      "tombstones": 0
+    },
+    "ends": {
+      "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+      "snow.synthetic.cdc.snow_ops.contents:0": 7,
+      "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+      "snow.synthetic.events.v1:0": 64
+    },
+    "offsets_unchanged_before_land": true,
+    "parent": "b8675ba2c5e30a6ab66318925bd2848c6b117ac5f295301e437eeb44ef7ffe24",
+    "starts": {
+      "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+      "snow.synthetic.cdc.snow_ops.contents:0": 7,
+      "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+      "snow.synthetic.events.v1:0": 61
+    }
+  },
+  "incremental_commit": {
+    "empty_after_ack": true,
+    "offsets": {
+      "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+      "snow.synthetic.cdc.snow_ops.contents:0": 7,
+      "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+      "snow.synthetic.events.v1:0": 64
+    },
+    "pending_cleared": true,
+    "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1"
+  },
+  "incremental_daily_equal": true,
+  "initial_profile_mib": {
+    "snow-analysis": 2048,
+    "snow-compute": 4096,
+    "snow-control": 4096
+  },
+  "kafka_acked_during_land": false,
+  "offsets": {
+    "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+    "snow.synthetic.cdc.snow_ops.contents:0": 7,
+    "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+    "snow.synthetic.events.v1:0": 61
+  },
+  "operations": {
+    "application_id": "application_1789114782387_0002",
+    "as_of": "2026-01-04",
+    "changes": 19,
+    "counts": {
+      "dim_content_scd2": 4,
+      "fact_ticket_daily": 8,
+      "fact_ticket_round": 4
+    },
+    "engine": "Spark 3.5.7",
+    "generated_at": "2026-09-11T08:27:15.781817+00:00",
+    "golden_equal": true,
+    "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+    "input_snapshot": {
+      "batches": 2,
+      "offsets": {
+        "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+        "snow.synthetic.cdc.snow_ops.contents:0": 7,
+        "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+        "snow.synthetic.events.v1:0": 64
+      },
+      "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+      "source": "synthetic"
+    },
+    "master": "yarn",
+    "output": "/snow/warehouse/operations/ods-ops-02",
+    "schema_version": 1,
+    "source": "synthetic"
+  },
+  "ops_date_gate": {
+    "accepted_marker": false
+  },
+  "output_replication": {
+    "daily": {
+      "healthy": true,
+      "minimum_live_replicas": 2,
+      "nonempty_blocks": 17
+    },
+    "ops": {
+      "healthy": true,
+      "minimum_live_replicas": 2,
+      "nonempty_blocks": 4
+    }
+  },
+  "recovery_after_hdfs_commit": true,
+  "recovery_after_kafka_commit": true,
+  "repeated_capture_empty": true,
+  "replay_same_snapshot": true,
+  "resource_gate": {
+    "excess_reservation_rejected_before_ssh": true,
+    "interrupted_on_exceeded_limit": true,
+    "original_limit_gib": 60,
+    "project_files_gib_after_success": 58.91,
+    "spark_start_reservation_mib": 1024
+  },
+  "resource_profile_mib": {
+    "snow-analysis": 1024,
+    "snow-compute": 4096,
+    "snow-control": 3584
+  },
+  "snapshot_id": "b8675ba2c5e30a6ab66318925bd2848c6b117ac5f295301e437eeb44ef7ffe24",
+  "source": "synthetic",
+  "verified_date": "2026-09-11"
+}

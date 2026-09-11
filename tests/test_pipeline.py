@@ -26,6 +26,19 @@ def test_seed_clock_scd2_ticket_reopen_and_funnel():
     assert result["ticket_rounds"][0]["first_resolved_at"] != result["ticket_rounds"][0]["latest_resolved_at"]
 
 
+def test_operations_as_of_extends_daily_snapshots_and_excludes_future_changes():
+    fixture = generate(users=2)
+    january_fourth = build(fixture, operations_as_of="2026-01-04")
+    assert len(january_fourth["ticket_daily"]) == 8
+    assert {r["date"] for r in january_fourth["ticket_daily"]} == {"2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"}
+    january_first = build(fixture, operations_as_of="2026-01-01")
+    assert len(january_first["ticket_daily"]) == 2
+    assert classify(january_first["content_scd2"], "content-1")["category"] == "data"
+    assert classify(january_first["content_scd2"], "content-2") is not None
+    assert january_fourth["daily"] == january_first["daily"]  # Independent behavior metric window.
+    assert build(fixture, operations_as_of="2025-12-31")["ticket_daily"] == []
+
+
 def test_replay_and_bad_rows_reconcile():
     fixture = generate(users=2)
     bad = {"seq": 999, "source": "synthetic", "event": {"body": "not retained"}}

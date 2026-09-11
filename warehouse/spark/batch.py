@@ -9,6 +9,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from ods_input import spark_inputs
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import LongType, StringType, StructField, StructType
@@ -34,7 +35,10 @@ event_schema = StructType([StructField(name, StringType()) for name in
     ("event_id", "schema_version", "app", "event_type", "occurred_at", "anonymous_id", "session_id", "path", "character_id", "jump_id", "channel", "request_id", "success", "elapsed_ms")])
 schema = StructType([StructField("seq", LongType()), StructField("source", StringType()),
                      StructField("accepted_at", StringType()), StructField("event", event_schema), StructField("_corrupt_record", StringType())])
-raw = spark.read.schema(schema).json(args.input).cache()
+input_paths, input_snapshot = spark_inputs(spark, args.input, "events")
+if input_snapshot and args.source != input_snapshot["source"]:
+    raise ValueError("Snapshot source differs from the requested model")
+raw = spark.read.schema(schema).json(input_paths).cache()
 base = raw.select("source", "seq", "accepted_at", "_corrupt_record", "event.*").withColumn("event_time", F.to_timestamp("occurred_at"))
 valid_condition = (F.col("_corrupt_record").isNull() & (F.col("source") == args.source) &
                    F.to_timestamp("accepted_at").isNotNull() & (F.col("seq") > 0) &
@@ -90,6 +94,8 @@ manifest = dict(schema_version=1, run_id=args.run_id, cutoff=args.cutoff, date_f
                 engine="Spark " + spark.version, master=spark.sparkContext.master,
                 application_id=spark.sparkContext.applicationId, hive_table=hive_table,
                 generated_at=datetime.now(timezone.utc).isoformat())
+if input_snapshot:
+    manifest["input_snapshot"] = input_snapshot
 package = dict(schema_version=1, manifest=manifest, daily=rows)
 spark.range(1).coalesce(1).select(F.lit(json.dumps(package)).alias("value")).write.mode("errorifexists").text(run + "/publication")
 spark.range(1).coalesce(1).select(F.lit(json.dumps(manifest)).alias("value")).write.mode("errorifexists").text(run + "/accepted")

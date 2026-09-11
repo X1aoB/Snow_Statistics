@@ -22,6 +22,7 @@ IMAGE_SHA256 = "fb3ba097a9013d759fa13ab22d2b4118bd55452c617ca3758a55303eea96de6e
 NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": (10240, 4)}
 DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 24}
 PROFILES = {"batch": {"snow-control": 4096, "snow-compute": 4096, "snow-analysis": 2048},
+            "ods": {"snow-control": 3584, "snow-compute": 4096, "snow-analysis": 1024},
             "olap": {"snow-control": 4096, "snow-analysis": 6144}, "standard": {}}
 
 
@@ -64,7 +65,7 @@ def capacity(memory_mb=0):
         except FileNotFoundError:
             continue  # VMware can rotate transient runtime files during inspection.
     if used + memory_mb * 1024**2 > 60 * 1024**3:
-        raise RuntimeError("60 GiB project gate failed")
+        raise RuntimeError(f"60 GiB project gate failed: files {used / 1024**3:.2f} GiB + reservation {memory_mb / 1024:.2f} GiB")
     if memory_mb:
         available = int(run("powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory")) // 1024
         if available < memory_mb + 4096:

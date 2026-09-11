@@ -3,7 +3,7 @@ import argparse
 import subprocess
 from pathlib import Path
 
-from vmware_lab import NODES, RUNTIME, VMWARE, guest_ip
+from vmware_lab import NODES, RUNTIME, VMWARE, capacity, guest_ip
 
 
 def main():
@@ -13,9 +13,15 @@ def main():
     parser.add_argument("--upload", type=Path)
     parser.add_argument("--download", type=Path)
     parser.add_argument("--remote", help="Remote file path for SCP")
+    parser.add_argument("--reserve-mib", type=int, default=0,
+                        help="Reserve host project capacity before a job (use 1024 for Spark JAR staging)")
     args = parser.parse_args()
     if sum(bool(v) for v in (args.script, args.upload, args.download)) != 1:
         parser.error("Choose exactly one of --script, --upload, --download")
+    if not 0 <= args.reserve_mib <= 4096 or args.reserve_mib and not args.script:
+        parser.error("Reservation is only for scripts and must be within 0..4096 MiB")
+    if args.reserve_mib:
+        print(capacity(args.reserve_mib), flush=True)
     ip = guest_ip(VMWARE / "vmrun.exe", RUNTIME / args.node / f"{args.node}.vmx")
     options = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=yes",
                "-o", f"HostKeyAlias={args.node}", "-o", f"UserKnownHostsFile={RUNTIME / 'known_hosts'}",

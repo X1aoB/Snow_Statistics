@@ -23,6 +23,15 @@
       "publisher_lock_and_packages": "runtime/publication",
       "metadata_volume": "snow-lab-orchestration_airflow"
     },
+    "incremental_ods": {
+      "host": "snow-control",
+      "single_writer_directory": "runtime/ods/<lane>",
+      "consumer_group": "snow-ods-<lane>",
+      "hdfs_root": "/snow/ods/synthetic/kafka/<lane>",
+      "staging_root": "/snow/ods/synthetic/kafka/<lane>/_staging",
+      "hdfs_operations": "/snow/warehouse/operations/<run-id>",
+      "shutdown": "Stop commands without deleting journal, raw archives, HDFS batches or snapshots. Review pending and landed state before resuming."
+    },
     "max_project_bytes": 64424509440,
     "min_host_free_bytes": 37580963840
   },

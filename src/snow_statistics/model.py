@@ -1,6 +1,6 @@
 """Small-data correctness oracle for Spark/Flink acceptance, not a scale claim."""
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from .contracts import Event, business_day
 
@@ -76,7 +76,7 @@ def classify(versions, key, at=None, source="synthetic"):
     return matches[0]["attributes"] if matches and not matches[0]["deleted"] else None
 
 
-def ticket_snapshots(changes):
+def ticket_snapshots(changes, as_of=None):
     groups, rounds, daily = defaultdict(dict), [], []
     for c in changes:
         if c["table"] == "tickets":
@@ -105,7 +105,8 @@ def ticket_snapshots(changes):
             round_["latest_resolved_at"] = completed[-1] if completed else None
         first, last = [datetime.fromisoformat(ordered[i]["at"]) for i in (0, -1)]
         day = datetime.fromisoformat(business_day(first)).date()
-        while day <= datetime.fromisoformat(business_day(last + timedelta(days=1))).date():
+        end_day = date.fromisoformat(as_of) if as_of else datetime.fromisoformat(business_day(last + timedelta(days=1))).date()
+        while day <= end_day:
             observed = [c for c in ordered if business_day(datetime.fromisoformat(c["at"])) <= day.isoformat()]
             if observed:
                 latest = observed[-1]
@@ -186,11 +187,15 @@ def activity(rows):
     return sessions, retention
 
 
-def build(fixture):
+def build(fixture, operations_as_of=None):
     rows, quality, quarantine = deduplicate(fixture["events"])
-    rounds, snapshots = ticket_snapshots(fixture.get("changes", []))
+    changes = fixture.get("changes", [])
+    if operations_as_of:
+        operations_as_of = date.fromisoformat(operations_as_of).isoformat()
+        changes = [c for c in changes if business_day(datetime.fromisoformat(c["at"])) <= operations_as_of]
+    rounds, snapshots = ticket_snapshots(changes, operations_as_of)
     sessions, retention = activity(rows)
     assert quality["raw"] == sum(quality[k] for k in ("valid", "duplicates", "quarantined"))
     return dict(quality=quality, quarantine=quarantine, daily=daily_metrics(rows),
-                content_scd2=scd2(fixture.get("changes", [])), ticket_rounds=rounds, ticket_daily=snapshots,
+                content_scd2=scd2(changes), ticket_rounds=rounds, ticket_daily=snapshots,
                 conversions=funnel(rows), sessions=sessions, retention=retention)

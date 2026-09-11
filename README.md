@@ -74,6 +74,7 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [架构与口径](docs/architecture.md)
 - [本地及虚拟机运行](docs/runbook.md)
 - [离线闭环、发布与 Airflow](docs/offline-pipeline.md)
+- [Kafka / CDC 增量落地与恢复](docs/incremental-ods.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)

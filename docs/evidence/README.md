@@ -16,5 +16,6 @@
 | `yarn.json` | `tools/smoke_yarn.sh` 及故障注入日志整理；4/6/2 GiB 三 VM，真实 YARN、Hive 3.1.3、HDFS 双副本，56 条黄金输入；停止 analysis DN 后校验读取 SHA256 |
 | `publication.json` | `tools/smoke_publication.py`；实际 YARN 输出发布到 Doris，小配置 FE 2 GiB/BE 3 GiB；失败前后、重放、空日期及版本冲突验证 |
 | `airflow.json` | `tools/airflow_receipt.py` 从专用元数据库只读提取状态，并附计算导出的 manifest；4/4/2 GiB 计算阶段、4/关闭/6 GiB 发布阶段；所有任务成功，发布重试一次 |
+| `incremental-ods.json` | `tools/smoke_ods.py` 及连续增量运行日志；真实 Kafka/WebHDFS 双副本/YARN/Hive，原始 81 条及追加 3 条重放；HDFS 提交后、Kafka ACK 后恢复，SCD2/工单黄金对账；包含实际阶段资源与中断记录 |
 
 这些收据不代表尚未启动的集群、生产流量、并发负载或端到端实时延迟通过验收。持久化状态、原始合成归档、Spark 输出和运行日志位于被 Git 忽略的 runtime；仓库工具及固定输入可用于重建。

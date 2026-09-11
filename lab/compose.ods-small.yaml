@@ -1,0 +1,6 @@
+# DataNode-only analysis VM (1 GiB); never use this profile for Doris.
+services:
+  datanode:
+    mem_limit: 512m
+    environment:
+      HADOOP_HEAPSIZE_MAX: "256"
