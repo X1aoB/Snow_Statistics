@@ -1,0 +1,11 @@
+{
+  "deletes": 1,
+  "raw": 19,
+  "tables": [
+    "campaigns",
+    "contents",
+    "tickets"
+  ],
+  "transaction_metadata_records": 15,
+  "unique": 19
+}

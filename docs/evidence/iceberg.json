@@ -1,0 +1,9 @@
+{
+  "iceberg": "1.10.0",
+  "merge": true,
+  "snapshot_read": true,
+  "schema_evolution": true,
+  "partition_evolution": true,
+  "rewrite_data_files": true,
+  "rows": 3
+}

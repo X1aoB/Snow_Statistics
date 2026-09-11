@@ -1,0 +1,11 @@
+{
+  "scope": "isolated_loopback_fixture",
+  "quota_bytes": 2147483648,
+  "lite_without_warehouse": true,
+  "crash_restart_deduplication": true,
+  "full_to_lite_preserves_metrics": true,
+  "full_filesystem_rejects_without_losing_acknowledged_events": true,
+  "off_archives_without_deleting": true,
+  "public_field_allowlist": true,
+  "image_id": "sha256:af7659aa36df4d9867ce6dee8bfdd57240fbdcec18cbb7734d6f3bcd4e1777f9"
+}

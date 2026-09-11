@@ -2,6 +2,8 @@
 
 业务适配位于各自 `codex/snow-statistics` 分支，修改集中且可单独回退。
 
+当前审查入口：[MyWebsite #2](https://github.com/X1aoB/MyWebsite/pull/2)、[Project_Snow #59](https://github.com/X1aoB/Project_Snow/pull/59)。两者都是默认关闭的草稿候选；创建 PR 不启用生产采集。
+
 MyWebsite：复制 `analytics.mjs`、`bootstrap.mjs`、`public-summary.mjs` 到自己的静态目录；BaseLayout 添加单个可删除模块入口；统计页运行时读汇总。页脚入口由 `PUBLIC_STATISTICS_PAGE_ENABLED=true` 控制，构建不请求统计 API。
 
 Project_Snow：自己的静态 statistics 目录 + 单个初始化入口；聊天提交点通过可选回调只通知 request_id，回调仅在启用并同意后注册，关闭时不创建统计事件。不读取请求正文，不修改 wire API、签名、IndexedDB 或业务表。角色点击从已有 data-character 监听。后端完成事件通过外部日志适配，不加入生成路径。

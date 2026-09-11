@@ -1,0 +1,20 @@
+[Unit]
+Description=Snow Statistics collector (independent optional service)
+Requires=docker.service
+After=docker.service
+RequiresMountsFor=/var/lib/snow-statistics/state
+ConditionPathIsMountPoint=/var/lib/snow-statistics/state
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/snow-statistics
+Environment=SNOW_STATE_DIR=/var/lib/snow-statistics/state
+ExecStartPre=/usr/bin/mountpoint -q /var/lib/snow-statistics/state
+ExecStart=/usr/bin/docker compose --env-file lab/locks/images.env -f deploy/compose.lite.yaml up -d --wait
+ExecStop=/usr/bin/docker compose --env-file lab/locks/images.env -f deploy/compose.lite.yaml stop
+TimeoutStartSec=120
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

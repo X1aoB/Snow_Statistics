@@ -1,0 +1,14 @@
+{
+  "engine": "python correctness oracle (not distributed)",
+  "events": 1000000,
+  "free_disk_bytes": 105782472704,
+  "quality": {
+    "duplicates": 0,
+    "quarantined": 0,
+    "raw": 1000000,
+    "valid": 1000000
+  },
+  "seconds": 89.844,
+  "seed": 42,
+  "source": "synthetic"
+}

@@ -5,6 +5,7 @@
     "compose_project": "snow-statistics-lite",
     "network": "snow-statistics-lite",
     "state_root": "/var/lib/snow-statistics",
+    "systemd_service": "snow-statistics-lite.service",
     "state_quota_bytes": 2147483648,
     "loopback_port": 8100,
     "public_routes": ["/analytics/v1/events", "/analytics/public/v1/summary.json"],

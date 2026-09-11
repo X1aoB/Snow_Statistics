@@ -1,0 +1,8 @@
+{
+  "accepted": 28,
+  "archive_before_publish": true,
+  "kafka_acked_including_replay": 33,
+  "recovered_cursor": 28,
+  "source": "synthetic",
+  "synthetic_public_rows": 0
+}

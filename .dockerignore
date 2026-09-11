@@ -1,0 +1,16 @@
+.git
+.venv
+runtime
+artifacts
+data
+node_modules
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.env
+**/.env.*
+**/target
+*.pem
+*.key
+*.db
+*.sqlite*

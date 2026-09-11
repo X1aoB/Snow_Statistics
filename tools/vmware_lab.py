@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import io
 import json
+import re
 import shutil
 import subprocess
 import urllib.request
@@ -17,6 +18,7 @@ RUNTIME = ROOT / "runtime/vmware"
 VMWARE = Path(r"C:\Program Files (x86)\VMware\VMware Workstation")
 BASE_URL = "https://cloud-images.ubuntu.com/releases/noble/release-20260826/"
 IMAGE = "ubuntu-24.04-server-cloudimg-amd64.vmdk"
+IMAGE_SHA256 = "fb3ba097a9013d759fa13ab22d2b4118bd55452c617ca3758a55303eea96de6e"
 NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": (10240, 4)}
 
 
@@ -28,20 +30,49 @@ def capacity(memory_mb=0):
     free = shutil.disk_usage(ROOT).free
     if free < 35 * 1024**3:
         raise RuntimeError("35 GiB host disk reserve gate failed")
-    used = sum(p.stat().st_size for p in RUNTIME.rglob("*") if p.is_file()) if RUNTIME.exists() else 0
-    if used > 60 * 1024**3:
+    used = vm_used = 0
+    for path in ROOT.rglob("*"):
+        try:
+            if path.is_file():
+                size = path.stat().st_size
+                used += size
+                if path.is_relative_to(RUNTIME):
+                    vm_used += size
+        except FileNotFoundError:
+            continue  # VMware can rotate transient runtime files during inspection.
+    if used + memory_mb * 1024**2 > 60 * 1024**3:
         raise RuntimeError("60 GiB project gate failed")
     if memory_mb:
         available = int(run("powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory")) // 1024
         if available < memory_mb + 4096:
             raise RuntimeError(f"Free RAM {available} MiB below VM {memory_mb} MiB + 4096 MiB host reserve")
-    return {"free_disk_gib": round(free / 1024**3, 2), "vm_files_gib": round(used / 1024**3, 2)}
+    return {"free_disk_gib": round(free / 1024**3, 2), "project_files_gib": round(used / 1024**3, 2),
+            "vm_files_gib": round(vm_used / 1024**3, 2)}
+
+
+def guest_ip(vmrun, vmx):
+    try:
+        return run(vmrun, "-T", "ws", "getGuestIPAddress", vmx)
+    except subprocess.CalledProcessError:
+        # cloud-init precedes open-vm-tools; fall back to this VM's own NAT lease.
+        # SSH still must use the seeded host key and StrictHostKeyChecking=yes.
+        match = re.search(r'ethernet0.generatedAddress = "([0-9a-f:]+)"', vmx.read_text(), re.I)
+        if not match:
+            raise RuntimeError("VM has no generated MAC yet; boot it first") from None
+        leases = Path(r"C:\ProgramData\VMware\vmnetdhcp.leases").read_text()
+        blocks = re.findall(r"lease ([0-9.]+)\s*\{([^}]+)\}", leases)
+        found = [ip for ip, body in blocks if f"hardware ethernet {match[1].lower()};" in body.lower()]
+        if not found:
+            raise RuntimeError("No NAT lease yet; allow cloud-init to finish") from None
+        return found[-1]
 
 
 def download():
     RUNTIME.mkdir(parents=True, exist_ok=True)
     sums = urllib.request.urlopen(BASE_URL + "SHA256SUMS", timeout=30).read().decode()
     expected = next(line.split()[0] for line in sums.splitlines() if line.endswith(IMAGE))
+    if expected != IMAGE_SHA256:
+        raise RuntimeError("Pinned Ubuntu release checksum changed; review before updating lock")
     target = RUNTIME / IMAGE
     if not target.exists():
         print("Downloading pinned Ubuntu 24.04 image (~566 MiB)", flush=True)
@@ -126,7 +157,7 @@ def main():
     elif args.action == "stop":
         print(run(vmrun, "-T", "ws", "stop", vmx, "soft"))
     else:
-        print(run(vmrun, "-T", "ws", "getGuestIPAddress", vmx))
+        print(guest_ip(vmrun, vmx))
 
 
 if __name__ == "__main__":

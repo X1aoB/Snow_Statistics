@@ -11,12 +11,13 @@ FinalShell：`C:\Users\25685\AppData\Local\finalshell\finalshell.exe`。可导�
 ```powershell
 uv run --with pycdlib==1.14.0 python tools/vmware_lab.py prepare
 uv run python tools/vmware_lab.py start --node snow-control
+uv run python tools/vmware_lab.py ip --node snow-control
 uv run python tools/vmware_lab.py status
 ```
 
 生成三个仅属于本项目的 NAT Linux 节点：control 6 GiB/2 vCPU、compute 6 GiB/4 vCPU、analysis 最高 10 GiB/4 vCPU；18 GiB 薄置备系统盘各一块。Ubuntu 镜像固定 release-20260826 并验证 SHA256。seed、SSH 凭据、VMX、磁盘都在忽略的 `runtime/vmware`。从 VMware 界面打开各节点的 VMX 即可手动管理。
 
-启动会检查宿主空闲磁盘至少 35 GiB、实验文件预算 60 GiB，并保留 4 GiB 当前可用内存。薄置备逻辑容量与物理实占不同，VM 运行还会创建 .vmem；扩样前必须统计工作区、依赖缓存和 Docker 数据，而不是只看输入文件大小。
+启动会检查宿主空闲磁盘至少 35 GiB、整个项目文件预算 60 GiB（含本次启动可能新增的 .vmem），并保留 4 GiB 当前可用内存。文件长度是保守预算近似，不等于底层精确分配量；外部共享 uv/Maven 缓存不纳入本目录计数，扩样前还需核查依赖缓存和宿主空闲空间。薄置备逻辑容量与物理实占不同，不能只看输入文件大小。
 
 首次 SSH 主机公钥在本地 seed 中生成，以 `HostKeyAlias=snow-control` 等名称记录在 `runtime/vmware/known_hosts`，使用 `StrictHostKeyChecking=yes`。IP 可从 VMware NAT DHCP 租约按本节点 MAC 查询；不要关闭全局 SSH 校验。初始化脚本 `tools/bootstrap_guest.sh` 只接受三个指定实验主机名。
 
@@ -44,6 +45,8 @@ sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f lab/c
 ## 线上轻量部署
 
 独立目录 `/var/lib/snow-statistics`，使用 `deploy/prepare-state.sh` 创建 2 GiB 文件系统；检测到已有数据会拒绝格式化。持久化挂载及重启顺序需要在部署候选中配置，确认 mountpoint 后才启动 Compose，避免写入挂载点底层磁盘。
+
+`deploy/start-lite.sh` 拒绝在未挂载目录启动。部署候选将代码放在 `/opt/snow-statistics` 后，可安装 `deploy/snow-statistics-lite.service`；该服务依赖专用持久化挂载。容器使用 `on-failure:5`，不会随 Docker 重启绕过挂载门禁。先配置并验证该文件系统的持久化 mount unit/fstab，再启用本项目 systemd 服务；此仓库不会修改共享 Docker 服务的启动条件。
 
 以两个不同随机令牌配置服务端完成日志和私有读取；`SNOW_STATE_DIR` 必须是已挂载的专用目录。镜像用 `deploy/lite.Dockerfile` 构建，只开放本机 8100。代理仅加入两条公开路由，私有读取经 SSH 隧道。访问统计请求和代理不记录 IP/URL，生产代理需设置有界限流。
 

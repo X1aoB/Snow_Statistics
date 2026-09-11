@@ -1,0 +1,9 @@
+{
+  "kafka_records": 28,
+  "sample_records": 28,
+  "mysql_tickets": 2,
+  "connector": "RUNNING",
+  "tasks": [
+    "RUNNING"
+  ]
+}

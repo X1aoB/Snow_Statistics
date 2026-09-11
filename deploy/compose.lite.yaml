@@ -7,7 +7,9 @@ services:
       args:
         PYTHON_IMAGE: ${PYTHON_IMAGE:?use lab/locks/images.env}
     image: snow-statistics-lite:0.1.0
-    restart: unless-stopped
+    # Reboot start belongs to our mount-dependent systemd unit. Docker must not
+    # auto-start against the directory underneath a missing quota mount.
+    restart: "on-failure:5"
     ports: ["127.0.0.1:8100:8100"]
     env_file: ../.env
     environment:
