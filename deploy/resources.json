@@ -15,6 +15,14 @@
     "vm_root": "runtime/vmware",
     "vm_names": ["snow-control", "snow-compute", "snow-analysis"],
     "compose_projects": ["snow-lab-control", "snow-lab-compute", "snow-lab-analysis", "snow-lab-orchestration", "snow-lab-ha", "snow-lab-realtime"],
+    "freshness_acceptance": {
+      "host": "Windows loopback collector and observer; snow-analysis NAT warehouse",
+      "artifacts": "runtime/freshness/<lane>",
+      "collector_database": "runtime/freshness/<lane>/collector/statistics.db",
+      "sync_archive_and_target": "runtime/freshness/<lane>/sync",
+      "credentials": "Two ephemeral in-process tokens; never recorded or shared with product configuration",
+      "shutdown": "Stop sync, preserve checkpoint, cancel synthetic job, stop realtime services and VM; verify collector continues, then close the loopback test server. Keep archives and SQLite."
+    },
     "realtime_acceptance": {
       "host": "snow-analysis",
       "env": "lab/secrets/realtime.env",

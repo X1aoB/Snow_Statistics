@@ -1,0 +1,200 @@
+{
+  "checkpoints": {
+    "counts": {
+      "completed": 11,
+      "failed": 0,
+      "in_progress": 0,
+      "restored": 0,
+      "total": 11
+    },
+    "latest_completed": 11
+  },
+  "date": "2026-09-11",
+  "engines": "HTTP/FastAPI + SQLite FULL WAL -> archived sync -> Kafka 3.9.1 -> Flink 1.20.3 -> Doris 3.0.6.2",
+  "freshness": {
+    "ack_to_first_query_completion_seconds": {
+      "max": 14.032,
+      "p50": 7.032,
+      "p95": 12.0,
+      "p99": 14.032
+    },
+    "missing": 0,
+    "note": "Send-to-query is an upper bound on durable acceptance-to-visibility; includes HTTP, query and polling overhead",
+    "observed": 300,
+    "passed": true,
+    "quantile_method": "nearest-rank",
+    "send_to_first_query_completion_seconds": {
+      "max": 14.047,
+      "p50": 7.047,
+      "p95": 12.016,
+      "p99": 14.047
+    },
+    "target_seconds": 60
+  },
+  "guest_clock_before": {
+    "corrected": false,
+    "measured_epoch": 1789129120.992929,
+    "node": "snow-analysis",
+    "offset_after_seconds": -0.295,
+    "offset_before_seconds": -0.289,
+    "reference": "host UTC; HTTPS Date checked before correction",
+    "within_two_seconds": true
+  },
+  "jar_sha256": "11c8e63a304da2d6c708c8270cb5b340422acc18b9ac09715bd415d32f495fef",
+  "job_id": "c47f9d44ec213f5d861e5d760e6f34d0",
+  "lane": "freshness01",
+  "latency_histogram": [
+    {
+      "count": 15,
+      "lower_seconds_inclusive": 0,
+      "upper_seconds_exclusive": 2
+    },
+    {
+      "count": 45,
+      "lower_seconds_inclusive": 2,
+      "upper_seconds_exclusive": 4
+    },
+    {
+      "count": 45,
+      "lower_seconds_inclusive": 4,
+      "upper_seconds_exclusive": 6
+    },
+    {
+      "count": 60,
+      "lower_seconds_inclusive": 6,
+      "upper_seconds_exclusive": 8
+    },
+    {
+      "count": 65,
+      "lower_seconds_inclusive": 8,
+      "upper_seconds_exclusive": 10
+    },
+    {
+      "count": 50,
+      "lower_seconds_inclusive": 10,
+      "upper_seconds_exclusive": 12
+    },
+    {
+      "count": 15,
+      "lower_seconds_inclusive": 12,
+      "upper_seconds_exclusive": 14
+    },
+    {
+      "count": 5,
+      "lower_seconds_inclusive": 14,
+      "upper_seconds_exclusive": 16
+    },
+    {
+      "count": 0,
+      "lower_seconds_inclusive": 16,
+      "upper_seconds_exclusive": 60
+    }
+  ],
+  "limitations": [
+    "60 correlated HTTP batches, not 300 independent trials",
+    "Actual send phase 84.218 seconds including synchronous query/resource-check overhead; not a fixed five-events-per-second load generator",
+    "Single ordered Kafka partition; one collector generation",
+    "Public JSON intentionally excludes every synthetic event",
+    "No production deployment, Internet path or sustained workload SLA",
+    "Full-to-lite acceptance stopped warehouse services while keeping the collector process and 60-second worker running; no product configuration changed"
+  ],
+  "lite_after_shutdown": {
+    "accepted_additional": 5,
+    "aggregate_cursor": 305,
+    "aggregate_interval_seconds": 60,
+    "metrics": [
+      {
+        "app": "mywebsite",
+        "date": "2026-09-11",
+        "pv": 61,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 12
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-09-11",
+        "pv": 61,
+        "requests": 61,
+        "source": "synthetic",
+        "successes": 48,
+        "uv": 10
+      }
+    ],
+    "public_snapshot_refreshed": true,
+    "public_synthetic_rows": 0,
+    "running_vms": 0,
+    "sync_cursor_preserved": 300,
+    "warehouse_not_required": true
+  },
+  "measurement": {
+    "checkpoint_interval_seconds": 10,
+    "events": 300,
+    "events_per_wave": 5,
+    "host_wall_vs_monotonic_drift_seconds": 0.008466720581054688,
+    "query_poll_seconds_approx": 1,
+    "send_duration_seconds": 84.21800000000803,
+    "started_with_no_backlog": true,
+    "sync_poll_seconds": 1,
+    "waves": 60
+  },
+  "metrics": [
+    {
+      "app": "mywebsite",
+      "date": "2026-09-11",
+      "pv": 60,
+      "requests": 0,
+      "source": "synthetic",
+      "successes": 0,
+      "uv": 12
+    },
+    {
+      "app": "project_snow",
+      "date": "2026-09-11",
+      "pv": 60,
+      "requests": 60,
+      "source": "synthetic",
+      "successes": 48,
+      "uv": 10
+    }
+  ],
+  "reconciliation": {
+    "accepted": 300,
+    "archived": 300,
+    "doris": 300,
+    "duplicates": 0,
+    "kafka": 300,
+    "late": 0,
+    "lite_doris_oracle_equal": true,
+    "quarantine": 0
+  },
+  "resources_after_shutdown": {
+    "free_disk_gib": 55.55,
+    "project_files_gib": 53.88,
+    "vm_files_gib": 53.36
+  },
+  "resources_before": {
+    "free_disk_gib": 51.06,
+    "project_files_gib": 58.37,
+    "vm_files_gib": 57.86
+  },
+  "schema_version": 1,
+  "scope": "Local synthetic single-host small sample. Collector and observer use host loopback, warehouse uses NAT. No production Internet latency or sustained load claim",
+  "source": "synthetic",
+  "source_and_receipt_sha256": {
+    "runtime/freshness/freshness01/accepted.json": "5842c0ea6210f09e525740e45c8e691b5a565d385f1980d500836ad6b1fd498f",
+    "runtime/freshness/freshness01/latency-samples.json": "2f36af46d0b9c539414bf8333a14148e44e53c1cce40f106d4b86e99847cb649",
+    "runtime/freshness/freshness01/receipt.json": "cfaf3ddabe4e832e81907a200485c03fb346f1cbb03f364bdb683f1ac52ea7b9",
+    "runtime/freshness/freshness01/sync-batches.json": "bbe2eb834f4320d69e7b4f54e27158fed0caca694f905b88511e86d8b698e124",
+    "src/snow_statistics/freshness.py": "b26824b7d5479e8a1433eb611173ac4795b4d81a2d5fafa2391b603059ea00b6",
+    "src/snow_statistics/sync.py": "2bada9da9b09c95dc8631f76135442c7a66ced38624ed247eb1ca99360b897c9",
+    "tools/smoke_freshness.py": "bcde194fb7670b7941d89898b23cdca800643410eb3d15914bc68c49ea6dfe60"
+  },
+  "validation": {
+    "browser_tests": 7,
+    "java_code_unchanged_since_prior_verified_build": true,
+    "java_tests": 8,
+    "python_tests": 81
+  }
+}

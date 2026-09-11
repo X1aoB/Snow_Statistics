@@ -1,6 +1,10 @@
 """Archive before publish. A crash may replay Kafka records; it cannot skip them."""
 import json
+import math
+import re
+import threading
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -8,8 +12,17 @@ from .contracts import Event
 from .io import digest, exclusive, write_json
 
 
-def sync_once(directory: Path, fetch, publish):
+def sync_once(directory: Path, fetch, publish, *, identity=None):
     with exclusive(directory):
+        if identity is not None:
+            target = directory / "target.json"
+            if target.exists():
+                if json.loads(target.read_bytes()) != identity:
+                    raise ValueError("Sync source or destination changed; reconcile into a separate directory")
+            else:
+                if any((directory / name).exists() for name in ("cursor.json", "pending.json", "batches")):
+                    raise ValueError("Existing archive has no target identity; explicit reconciliation required")
+                write_json(target, identity)
         state = directory / "cursor.json"
         after = json.loads(state.read_text())["cursor"] if state.exists() else 0
         pending = directory / "pending.json"
@@ -50,10 +63,27 @@ def sync_once(directory: Path, fetch, publish):
         return len(response["events"])
 
 
-def kafka_sync(url, token, bootstrap, directory):
+def kafka_sync(url, token, bootstrap, directory, *, lane=None, source=None, follow=False,
+               poll_seconds=1.0, stop=None, on_batch=None):
+    """Optional continuous reader; errors stop with its durable pending batch intact.
+
+    Reuses connections between bounded polls. The caller/supervisor decides when
+    to restart after errors; credentials never enter the target identity or logs.
+    """
     from kafka import KafkaProducer
     if not token:
         raise ValueError("SNOW_READER_TOKEN required")
+    endpoint = urlsplit(url)
+    if endpoint.scheme not in {"http", "https"} or not endpoint.netloc or endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
+        raise ValueError("Use an HTTP(S) service URL without credentials, query or fragment")
+    if lane is not None and not re.fullmatch(r"[a-z0-9_]{1,24}", lane):
+        raise ValueError("Invalid replay lane")
+    if source not in {None, "real", "synthetic"}:
+        raise ValueError("Invalid expected source")
+    if not math.isfinite(poll_seconds) or not 0.1 <= poll_seconds <= 60:
+        raise ValueError("poll_seconds must be 0.1..60")
+    stop = stop or threading.Event()
+    identity = dict(schema_version=1, url=url.rstrip("/"), bootstrap=bootstrap, lane=lane, source=source)
     producer = KafkaProducer(bootstrap_servers=bootstrap, acks="all", retries=3,
                              max_in_flight_requests_per_connection=1,
                              value_serializer=lambda value: json.dumps(value).encode())
@@ -64,9 +94,20 @@ def kafka_sync(url, token, bootstrap, directory):
                 response.raise_for_status()
                 return response.json()
             def publish(row):
+                if source is not None and row["source"] != source:
+                    raise ValueError("Unexpected source; pending archive retained")
                 event = row["event"]
-                producer.send(f"snow.{row['source']}.events.v1",
+                topic = f"snow.{row['source']}" + (f".{lane}" if lane else "") + ".events.v1"
+                producer.send(topic,
                               key=f"{event['app']}:{event['event_id']}".encode(), value=row).get(timeout=20)
-            return sync_once(directory, fetch, publish)
+            total = 0
+            while not stop.is_set():
+                count = sync_once(directory, fetch, publish, identity=identity)
+                total += count
+                if on_batch:
+                    on_batch(count)
+                if not follow or stop.wait(poll_seconds):
+                    break
+            return total
     finally:
         producer.close(timeout=10)

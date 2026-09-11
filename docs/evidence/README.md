@@ -20,5 +20,6 @@
 | `behavior-models.json` | 31 行手算边界 → Spark 五表逐行对账；固定 ODS → 两次 Airflow `snow_models` → 相同发布哈希；独立汇总基准、日指标回归、Hive 读回、HDFS 双副本；3.5/4/1 GiB VM，252 个预装 JAR，Streamlit / Chromium 归档验证 |
 | `lineage.json` | 四个实际 Airflow DAG，24 条协议校验事件/12 次运行；Marquez 输入输出读回、停机补发、HTTP 接收后本地确认前重放、容器重建；16 节点/16 边，3.5/3/1 GiB 压缩资源 DAG 与本地 SVG 图验证 |
 | `realtime.json` | 单 4.5 GiB VM 实际 Flink TaskManager / session 恢复，17 条边界与累计 20 条输入；Doris DUPLICATE KEY 2PC 探针；单控制 VM Spark local[2] 校正为 12 条事实、四行汇总，Doris 重复发布一致；记录容量失败及未验收范围 |
+| `freshness.json` | 宿主真实 HTTP 合成采集 → 增量归档 → 单分析 VM Kafka/Flink/Doris；300/300 可见，发送至查询 P95 12.016 秒，三方日指标一致；关闭全部 VM 后新增 5 条仍由原有 60 秒聚合线程处理 |
 
 这些收据不代表尚未启动的集群、生产流量、并发负载或端到端实时延迟通过验收。持久化状态、原始合成归档、Spark 输出和运行日志位于被 Git 忽略的 runtime；仓库工具及固定输入可用于重建。

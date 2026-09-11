@@ -2,6 +2,8 @@
 
 当前镜像与实验数据增长后，旧三 VM `ods-compact`（3.5/3/1 GiB）已不能直接满足 60 GiB 总预算；历史通过记录不代表当前可以同时启动。最新小样本采用单分析 VM `realtime`（4.5 GiB）和单控制 VM Spark（3.5 GiB）分阶段运行，作业前保留 `--reserve-mib 1024` 检查。三节点重算前须先完成范围明确的资源回收或重新验证配置。详见[实时验收与资源边界](realtime.md)。
 
+最新冷态文件约 53.88 GiB；三节点 ods-compact 的内存后备文件预计再增加 7.5 GiB，加 1 GiB 作业余量，共约 62.38 GiB。因此恢复该组合至少需要腾出约 2.38 GiB 的实际项目文件占用，且还未计入扩样数据增长。仅删除 guest 内文件不保证 VMDK 自动缩小，磁盘压缩还需要独立临时副本空间，不能绕过维护门禁。单分析 VM 的[300 条端到端验收](freshness.md)已在原预算内完成。
+
 ## 已知工具
 
 VMware：`C:\Program Files (x86)\VMware\VMware Workstation\vmware.exe`；同目录 `vmrun.exe`、`vmware-vdiskmanager.exe`。

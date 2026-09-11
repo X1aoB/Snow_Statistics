@@ -80,6 +80,7 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [Spark 会话、留存、归因与 Airflow 模型发布](docs/behavior-models.md)
 - [OpenLineage 本地日志、补发与 Marquez](docs/lineage.md)
 - [Flink 恢复、Doris 2PC 与 Spark 迟到校正](docs/realtime.md)
+- [HTTP 接收至 Doris 新鲜度及数仓停机验收](docs/freshness.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)
