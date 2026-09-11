@@ -17,6 +17,8 @@ jobs:
       - run: node --test adapters/browser/*.test.mjs
       - run: uv run snow-stats demo --users 100
       - run: uv run python tools/check_contracts.py
+      - run: uv run python tools/smoke_lineage_interrupt.py --output runtime/ci-lineage-interrupt
+      - run: uv run python tools/smoke_retirement.py --output runtime/ci-retirement
   flink-build:
     runs-on: ubuntu-latest
     steps:

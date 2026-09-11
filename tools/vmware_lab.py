@@ -30,6 +30,7 @@ PROFILES = {"batch": {"snow-control": 4096, "snow-compute": 4096, "snow-analysis
             "ods": {"snow-control": 3584, "snow-compute": 4096, "snow-analysis": 1024},
             "ods-compact": {"snow-control": 3584, "snow-compute": 3072, "snow-analysis": 1024},
             "governance": {"snow-analysis": 2048},
+            "ha": {"snow-analysis": 3072},
             "realtime": {"snow-analysis": 4608},
             "olap": {"snow-control": 4096, "snow-analysis": 6144}, "standard": {}}
 

@@ -23,8 +23,15 @@ token = os.environ.get("SNOW_SERVER_TOKEN", "")
 if not token:
     raise SystemExit("SNOW_SERVER_TOKEN required")
 with httpx.Client(timeout=2, headers={"Authorization": "Bearer " + token}) as client:
-    for line in sys.stdin:
-        if len(line) > 65536 or '"public_generation_complete"' not in line:
+    # Bounded reads also cover an unterminated or arbitrarily large log record.
+    while line := sys.stdin.readline(65537):
+        if len(line) > 65536:
+            while not line.endswith("\n"):
+                line = sys.stdin.readline(65537)
+                if not line:
+                    break
+            continue
+        if '"public_generation_complete"' not in line:
             continue
         try:
             timestamp = line.split(" ", 1)[0]

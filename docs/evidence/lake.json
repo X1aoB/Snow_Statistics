@@ -1,0 +1,356 @@
+{
+  "accepted": {
+    "application_id": "application_1789144357700_0002",
+    "before_rewrite_snapshot": 64906156056247863,
+    "catalog": "hdfs://192.168.216.131:9000/snow/lake/lake-01",
+    "current_files": [
+      {
+        "files": 8,
+        "records": 90001,
+        "spec_id": 1
+      }
+    ],
+    "delete": true,
+    "exact_migration_equal": true,
+    "exact_original_time_travel_equal": true,
+    "exact_rewrite_equal": true,
+    "final_rows": 90001,
+    "final_snapshot": 2077898771536498172,
+    "iceberg": "1.10.0",
+    "input": "/snow/warehouse/scale/runs/scale-100k-01/dwd",
+    "master": "yarn",
+    "merge": true,
+    "original_rows": 90000,
+    "original_snapshot": 1622158363550742658,
+    "partition_evolution": true,
+    "retention": "All snapshots and source Parquet preserved; no orphan/snapshot deletion",
+    "rewritten": [
+      {
+        "added_data_files_count": 8,
+        "failed_data_files_count": 0,
+        "removed_delete_files_count": 0,
+        "rewritten_bytes_count": 4977920,
+        "rewritten_data_files_count": 2
+      }
+    ],
+    "schema_evolution": true,
+    "schema_version": 1,
+    "snapshots": [
+      {
+        "operation": "append",
+        "parent_id": null,
+        "snapshot_id": 1622158363550742658,
+        "summary": {
+          "added-data-files": "1",
+          "added-files-size": "4915007",
+          "added-records": "90000",
+          "app-id": "application_1789144357700_0002",
+          "changed-partition-count": "1",
+          "engine-name": "spark",
+          "engine-version": "3.5.7",
+          "iceberg-version": "Apache Iceberg 1.10.0 (commit 2114bf631e49af532d66e2ce148ee49dd1dd1f1f)",
+          "spark.app.id": "application_1789144357700_0002",
+          "total-data-files": "1",
+          "total-delete-files": "0",
+          "total-equality-deletes": "0",
+          "total-files-size": "4915007",
+          "total-position-deletes": "0",
+          "total-records": "90000"
+        }
+      },
+      {
+        "operation": "overwrite",
+        "parent_id": 1622158363550742658,
+        "snapshot_id": 7823685978618842192,
+        "summary": {
+          "added-data-files": "1",
+          "added-files-size": "4971554",
+          "added-records": "90000",
+          "app-id": "application_1789144357700_0002",
+          "changed-partition-count": "1",
+          "deleted-data-files": "1",
+          "deleted-records": "90000",
+          "engine-name": "spark",
+          "engine-version": "3.5.7",
+          "iceberg-version": "Apache Iceberg 1.10.0 (commit 2114bf631e49af532d66e2ce148ee49dd1dd1f1f)",
+          "removed-files-size": "4915007",
+          "spark.app.id": "application_1789144357700_0002",
+          "total-data-files": "1",
+          "total-delete-files": "0",
+          "total-equality-deletes": "0",
+          "total-files-size": "4971554",
+          "total-position-deletes": "0",
+          "total-records": "90000"
+        }
+      },
+      {
+        "operation": "append",
+        "parent_id": 7823685978618842192,
+        "snapshot_id": 5541468254852908317,
+        "summary": {
+          "added-data-files": "1",
+          "added-files-size": "6366",
+          "added-records": "1",
+          "app-id": "application_1789144357700_0002",
+          "changed-partition-count": "1",
+          "engine-name": "spark",
+          "engine-version": "3.5.7",
+          "iceberg-version": "Apache Iceberg 1.10.0 (commit 2114bf631e49af532d66e2ce148ee49dd1dd1f1f)",
+          "spark.app.id": "application_1789144357700_0002",
+          "total-data-files": "2",
+          "total-delete-files": "0",
+          "total-equality-deletes": "0",
+          "total-files-size": "4977920",
+          "total-position-deletes": "0",
+          "total-records": "90001"
+        }
+      },
+      {
+        "operation": "append",
+        "parent_id": 5541468254852908317,
+        "snapshot_id": 8554710489763985892,
+        "summary": {
+          "added-data-files": "1",
+          "added-files-size": "6366",
+          "added-records": "1",
+          "app-id": "application_1789144357700_0002",
+          "changed-partition-count": "1",
+          "engine-name": "spark",
+          "engine-version": "3.5.7",
+          "iceberg-version": "Apache Iceberg 1.10.0 (commit 2114bf631e49af532d66e2ce148ee49dd1dd1f1f)",
+          "spark.app.id": "application_1789144357700_0002",
+          "total-data-files": "3",
+          "total-delete-files": "0",
+          "total-equality-deletes": "0",
+          "total-files-size": "4984286",
+          "total-position-deletes": "0",
+          "total-records": "90002"
+        }
+      },
+      {
+        "operation": "delete",
+        "parent_id": 8554710489763985892,
+        "snapshot_id": 64906156056247863,
+        "summary": {
+          "app-id": "application_1789144357700_0002",
+          "changed-partition-count": "1",
+          "deleted-data-files": "1",
+          "deleted-records": "1",
+          "engine-name": "spark",
+          "engine-version": "3.5.7",
+          "iceberg-version": "Apache Iceberg 1.10.0 (commit 2114bf631e49af532d66e2ce148ee49dd1dd1f1f)",
+          "removed-files-size": "6366",
+          "spark.app.id": "application_1789144357700_0002",
+          "total-data-files": "2",
+          "total-delete-files": "0",
+          "total-equality-deletes": "0",
+          "total-files-size": "4977920",
+          "total-position-deletes": "0",
+          "total-records": "90001"
+        }
+      },
+      {
+        "operation": "replace",
+        "parent_id": 64906156056247863,
+        "snapshot_id": 2077898771536498172,
+        "summary": {
+          "added-data-files": "8",
+          "added-files-size": "5117398",
+          "added-records": "90001",
+          "app-id": "application_1789144357700_0002",
+          "changed-partition-count": "9",
+          "deleted-data-files": "2",
+          "deleted-records": "90001",
+          "engine-name": "spark",
+          "engine-version": "3.5.7",
+          "iceberg-version": "Apache Iceberg 1.10.0 (commit 2114bf631e49af532d66e2ce148ee49dd1dd1f1f)",
+          "removed-files-size": "4977920",
+          "total-data-files": "8",
+          "total-delete-files": "0",
+          "total-equality-deletes": "0",
+          "total-files-size": "5117398",
+          "total-position-deletes": "0",
+          "total-records": "90001"
+        }
+      }
+    ],
+    "source": "synthetic",
+    "spark": "3.5.7",
+    "table": "snow.synthetic.dwd"
+  },
+  "actual_guard_stop": {
+    "attempt": "guard-stop-01",
+    "cleanup": "complete",
+    "cleanup_errors": [],
+    "early_stop_reason": "Explicit synthetic stop-path fault injection; no actual resource exhaustion",
+    "elapsed_seconds": 46.89,
+    "exit_code": 143,
+    "initial": {
+      "free_disk_gib": 47.86,
+      "min_host_free_disk_gib": 35.0,
+      "project_files_gib": 60.37,
+      "project_limit_gib": 64.0,
+      "vm_files_gib": 59.7
+    },
+    "note": "Sampled process/file usage, not a hard filesystem quota; no original data removed",
+    "samples": [
+      {
+        "elapsed_seconds": 4.453,
+        "free_disk_gib": 47.86,
+        "host_available_mib": 12786,
+        "min_host_free_disk_gib": 35.0,
+        "project_files_gib": 60.37,
+        "project_limit_gib": 64.0,
+        "vm_files_gib": 59.7
+      },
+      {
+        "elapsed_seconds": 11.515,
+        "free_disk_gib": 47.86,
+        "host_available_mib": 12796,
+        "min_host_free_disk_gib": 35.0,
+        "project_files_gib": 60.37,
+        "project_limit_gib": 64.0,
+        "vm_files_gib": 59.7
+      },
+      {
+        "elapsed_seconds": 18.921,
+        "free_disk_gib": 47.86,
+        "host_available_mib": 12800,
+        "min_host_free_disk_gib": 35.0,
+        "project_files_gib": 60.37,
+        "project_limit_gib": 64.0,
+        "vm_files_gib": 59.7
+      },
+      {
+        "elapsed_seconds": 26.359,
+        "free_disk_gib": 47.86,
+        "host_available_mib": 12766,
+        "min_host_free_disk_gib": 35.0,
+        "project_files_gib": 60.37,
+        "project_limit_gib": 64.0,
+        "vm_files_gib": 59.7
+      }
+    ]
+  },
+  "applications": {
+    "create": {
+      "application_id": "application_1789144357700_0002",
+      "application_seconds": 74.987,
+      "disk_bytes_spilled": 0,
+      "engine": "Spark 3.5.7",
+      "executor_cpu_seconds": 23.533552225,
+      "executor_run_seconds": 30.608,
+      "executors": [
+        {
+          "cores": 1,
+          "host": "snow-compute",
+          "id": "1"
+        }
+      ],
+      "input_bytes_across_tasks": 108583847,
+      "input_records_across_tasks": 1723169,
+      "job_outcomes": {
+        "JobSucceeded": 53
+      },
+      "max_task_peak_execution_memory": 46137344,
+      "memory_bytes_spilled": 0,
+      "note": "Application timing includes executor allocation but excludes input landing and pre-Spark JVM startup. Task counters include rescans/cache work and are not source row counts or process RSS peaks.",
+      "output_bytes_across_tasks": 15016691,
+      "shuffle_bytes_written": 203516825,
+      "sql_plan_observations": 68,
+      "task_jvm_gc_seconds": 1.557,
+      "task_outcomes": {
+        "Success": 83
+      },
+      "tasks": 83
+    },
+    "verify": {
+      "application_id": "application_1789144357700_0003",
+      "application_seconds": 44.109,
+      "disk_bytes_spilled": 0,
+      "engine": "Spark 3.5.7",
+      "executor_cpu_seconds": 8.315021768,
+      "executor_run_seconds": 11.596,
+      "executors": [
+        {
+          "cores": 1,
+          "host": "snow-compute",
+          "id": "1"
+        }
+      ],
+      "input_bytes_across_tasks": 30254009,
+      "input_records_across_tasks": 462879,
+      "job_outcomes": {
+        "JobSucceeded": 17
+      },
+      "max_task_peak_execution_memory": 46137344,
+      "memory_bytes_spilled": 0,
+      "note": "Application timing includes executor allocation but excludes input landing and pre-Spark JVM startup. Task counters include rescans/cache work and are not source row counts or process RSS peaks.",
+      "output_bytes_across_tasks": 0,
+      "shuffle_bytes_written": 48347226,
+      "sql_plan_observations": 21,
+      "task_jvm_gc_seconds": 0.679,
+      "task_outcomes": {
+        "Success": 24
+      },
+      "tasks": 24
+    }
+  },
+  "artifact_sha256": {
+    "runtime/lake/lake-01-complete/create-events.jsonl": "241eb387b7685b4b8c3c1c04194688ea9defb2029a8b6fb1c61ab87f530201f5",
+    "runtime/lake/lake-01-complete/create-submit.log": "589f87aa418cbfed8f4570dbf52cedac818a383af45b02b9b229cf444b5e9699",
+    "runtime/lake/lake-01-complete/results/accepted.json": "3ac341b95b715dc6992599f8c3ab0efdf236e0f3b1ba11301c93d68a9c524f20",
+    "runtime/lake/lake-01-complete/results/fsck.txt": "8f9944406383c82d1d35eea904e1570bfdfac9f04c6de7d93559b16207a7e8df",
+    "runtime/lake/lake-01-complete/results/namenode-restart.json": "e04b44b218e6910a95f0f9faebac3581efd73ac4d1705c68f0189868b784581a",
+    "runtime/lake/lake-01-complete/results/namenode-unavailable.json": "95fc20da8a11447d6e205bd313d9ffd097ec6179f82cedfc9b0fcb355558d86d",
+    "runtime/lake/lake-01-complete/results/restored.json": "8cec5a581dfb72158767d4bf08f90a5a187efbd935b3101fbfd84ffe952a12b6",
+    "runtime/lake/lake-01-complete/verify-events.jsonl": "8260340396a76d031c8a23dd36010badc21dc314d0946c8dbe44ca75ee5a2936",
+    "runtime/lake/lake-01-complete/verify-submit.log": "91283b4e099bdc991f5c3e2d18399c0471cb63b1b904105941e2dcd3c79b947a"
+  },
+  "base_revision": "1fdd007566eae0d4792e09cc278d6c7e814da969",
+  "date": "2026-09-12",
+  "git_source_sha256": {
+    "tools/restart_lake_namenode.sh": "090e80a676b251d4d78170ccd1706cc3930b464c63d69c1beb194864794a5622",
+    "tools/run_iceberg_dwd.sh": "7e87346dd491b11a37337eefc68748d5e2d33f4fe50222bce1b32b186017d8d1",
+    "tools/run_scale_guarded.py": "3a4bd4f2500e87dbeb6c90b20cf85fa326d45a1ba615d7e416d9019891469838",
+    "warehouse/spark/iceberg_dwd.py": "2c79adc2dafcbcce69624550e55174026d0736c2f6365bfd25dda8e8bd472987"
+  },
+  "limitations": [
+    "Controlled NameNode restart is not automatic HA/fencing or physical host disaster recovery",
+    "One writer and bounded synthetic migration; no multiwriter/long-term maintenance claim",
+    "Rewriting from month to day partition specification produced more files (2 replaced by 8); it is not evidence of fewer files",
+    "No snapshot expiration, orphan deletion, or existing source overwrite",
+    "NameNode observation tool initially hit root-owned receipt permissions and checked loopback RPC although RPC bound the NAT address; fixed scoped sudo writes, actual binding readiness and restart-on-exit. Source data was retained."
+  ],
+  "namenode_restart": {
+    "fsck_sha256": "8f9944406383c82d1d35eea904e1570bfdfac9f04c6de7d93559b16207a7e8df",
+    "healthy": true,
+    "minimum_live_replicas": 2,
+    "nonempty_blocks": 36,
+    "note": "Controlled single NameNode restart, no HA or fencing claim",
+    "restarted": true
+  },
+  "resources": {
+    "host_min_available_mib": 12831,
+    "host_min_free_disk_gib": 47.88,
+    "project_max_gib": 60.37,
+    "samples": 20,
+    "vm_mib": [
+      2048,
+      2048,
+      1024
+    ]
+  },
+  "restored": {
+    "application_id": "application_1789144357700_0003",
+    "catalog_reopened": true,
+    "exact_original_equal": true,
+    "final_rows": 90001,
+    "final_snapshot": 2077898771536498172,
+    "master": "yarn",
+    "original_snapshot_rows": 90000,
+    "source": "synthetic"
+  },
+  "source": "synthetic",
+  "timezone": "Asia/Hong_Kong"
+}

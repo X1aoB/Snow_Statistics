@@ -1,0 +1,74 @@
+{
+  "consistent_export": true,
+  "date": "2026-09-12",
+  "false_complete": 0,
+  "killed_attempts_remain_open": 2,
+  "new_attempt_complete": true,
+  "outputs_declared": 0,
+  "results": [
+    {
+      "exit_code": 1,
+      "phase": "during",
+      "status": {
+        "acknowledged": 0,
+        "events": 1,
+        "open_runs": [
+          {
+            "job": "snow_models.compute_operations",
+            "run_id": "9f45f95b-29ec-566b-a92f-14e05cce93ee",
+            "run_key": "process-probe-during"
+          }
+        ],
+        "pending": 1
+      }
+    },
+    {
+      "exit_code": 1,
+      "phase": "terminal",
+      "status": {
+        "acknowledged": 0,
+        "events": 2,
+        "open_runs": [
+          {
+            "job": "snow_models.compute_operations",
+            "run_id": "2a09a197-8e52-5c38-81f0-24d0ee5b01bc",
+            "run_key": "process-probe-terminal"
+          },
+          {
+            "job": "snow_models.compute_operations",
+            "run_id": "9f45f95b-29ec-566b-a92f-14e05cce93ee",
+            "run_key": "process-probe-during"
+          }
+        ],
+        "pending": 2
+      }
+    },
+    {
+      "exit_code": 0,
+      "phase": "retry",
+      "status": {
+        "acknowledged": 0,
+        "events": 4,
+        "open_runs": [
+          {
+            "job": "snow_models.compute_operations",
+            "run_id": "2a09a197-8e52-5c38-81f0-24d0ee5b01bc",
+            "run_key": "process-probe-terminal"
+          },
+          {
+            "job": "snow_models.compute_operations",
+            "run_id": "9f45f95b-29ec-566b-a92f-14e05cce93ee",
+            "run_key": "process-probe-during"
+          }
+        ],
+        "pending": 4
+      }
+    }
+  ],
+  "scope": "Actual local subprocess lifecycle fixture, not Airflow/Spark execution or Marquez extension",
+  "side_effect_does_not_prove_completion": true,
+  "source_sha256": {
+    "src/snow_statistics/lineage.py": "31b43ae46d5596e2f92347644193ee8e338106ea22d5388fce5d9bfbe1a08035",
+    "tools/smoke_lineage_interrupt.py": "28763bfd2389c400e83e54cac66b7306935980590aaf0f723ec6e57a048bd5fe"
+  }
+}

@@ -1,0 +1,1795 @@
+{
+  "accepted": {
+    "application_id": "application_1789144357700_0001",
+    "attempt": "optimize-01",
+    "cases": [
+      "partition_expression-1",
+      "partition_column-1",
+      "join_merge-1",
+      "join_broadcast-1",
+      "join_salted-1",
+      "files_small-1",
+      "files_compact-1",
+      "files_compact-2",
+      "files_small-2",
+      "join_salted-2",
+      "join_broadcast-2",
+      "join_merge-2",
+      "partition_column-2",
+      "partition_expression-2",
+      "partition_expression-3",
+      "partition_column-3",
+      "join_merge-3",
+      "join_broadcast-3",
+      "join_salted-3",
+      "files_small-3",
+      "files_compact-3"
+    ],
+    "engine": "3.5.7",
+    "input_rows": 900000,
+    "master": "yarn",
+    "note": "Three ordered/reversed rounds; no Spark cache, OS/HDFS cache retained; one executor/core. Query timing excludes setup and result-equivalence checks; no production throughput claim.",
+    "result_rows_equal": true,
+    "schema_version": 1,
+    "settings": {
+      "spark.sql.adaptive.enabled": "false",
+      "spark.sql.autoBroadcastJoinThreshold": "-1",
+      "spark.sql.files.maxPartitionBytes": "33554432",
+      "spark.sql.files.openCostInBytes": "4194304",
+      "spark.sql.session.timeZone": "UTC",
+      "spark.sql.shuffle.partitions": "4"
+    },
+    "source": "synthetic",
+    "source_unchanged": true
+  },
+  "application": {
+    "application_id": "application_1789144357700_0001",
+    "application_seconds": 128.452,
+    "disk_bytes_spilled": 0,
+    "engine": "Spark 3.5.7",
+    "executor_cpu_seconds": 46.736739091,
+    "executor_run_seconds": 70.516,
+    "executors": [
+      {
+        "cores": 1,
+        "host": "snow-compute",
+        "id": "1"
+      }
+    ],
+    "input_bytes_across_tasks": 902072848,
+    "input_records_across_tasks": 29314392,
+    "job_outcomes": {
+      "JobSucceeded": 50
+    },
+    "max_task_peak_execution_memory": 96468992,
+    "memory_bytes_spilled": 0,
+    "note": "Application timing includes executor allocation but excludes input landing and pre-Spark JVM startup. Task counters include rescans/cache work and are not source row counts or process RSS peaks.",
+    "output_bytes_across_tasks": 75972095,
+    "shuffle_bytes_written": 449501202,
+    "sql_plan_observations": 33,
+    "task_jvm_gc_seconds": 2.49,
+    "task_outcomes": {
+      "Success": 404
+    },
+    "tasks": 404
+  },
+  "artifact_sha256": {
+    "runtime/optimization/optimize-01-complete/events.jsonl": "a8b86a60e0098f6e63e5a81acbeb721b873d58f55f97cc287dd5b41e5b7890d3",
+    "runtime/optimization/optimize-01-complete/results/accepted.json": "7b9c3f859fd5e669f5f47c208efa5f18e66e3d9c246f731f0379839d9c412f32",
+    "runtime/optimization/optimize-01-complete/results/files_compact-1.json": "ede196c591d1e33912cea6b1d3e2cd4cb66ce6ca1f475c104bf6b2a968d6b418",
+    "runtime/optimization/optimize-01-complete/results/files_compact-2.json": "90344e59f658e55938b922b80c6757dc9325353be5188b61da4ff2e26a3c2b4b",
+    "runtime/optimization/optimize-01-complete/results/files_compact-3.json": "e2548b8cf7c6444bb8f221d208d6988ef1bc746cf0e6e2844a371657fa7c02ab",
+    "runtime/optimization/optimize-01-complete/results/files_small-1.json": "640366f4f43a0a098e28160d671f1837ab241541d5c8dabaf2a4d33dd0e98817",
+    "runtime/optimization/optimize-01-complete/results/files_small-2.json": "7ec1636bb875f79268a672e61f7b0d90f49454d8fd7eada5617f49dd8e5722dd",
+    "runtime/optimization/optimize-01-complete/results/files_small-3.json": "4ffe8893f495f8fe4512e18176feafd54243de6f009539ee309643273d92c137",
+    "runtime/optimization/optimize-01-complete/results/join_broadcast-1.json": "81d84b46938ef0976ff5b354a1f0db0ef250b2957ebfd3065f496757a38201bf",
+    "runtime/optimization/optimize-01-complete/results/join_broadcast-2.json": "9c8525a0d68e10e8730466d3befe612dd55734170b7f41b90ce7f5821349a4c9",
+    "runtime/optimization/optimize-01-complete/results/join_broadcast-3.json": "c5e40a7c5e90fca8768dd8126d0dc60d6a2c3eee6e4c80a622e17061c87d58ec",
+    "runtime/optimization/optimize-01-complete/results/join_merge-1.json": "c073cf8739fb2ebf44430a54ba3e570c98f83f9c00b57714a90db0897915df23",
+    "runtime/optimization/optimize-01-complete/results/join_merge-2.json": "6f97e18178f1486ae29b48e28b93fcf4c1998aa3f855a87aa59d2eaa451074de",
+    "runtime/optimization/optimize-01-complete/results/join_merge-3.json": "dd87e614ddf658249d565553d3ae2273fe0293d8ae0027440e9061d99fe3a47c",
+    "runtime/optimization/optimize-01-complete/results/join_salted-1.json": "08b93812cdf7e8eb92336cd673ddd7d346c1bd979c2ed96462c22353aded8d00",
+    "runtime/optimization/optimize-01-complete/results/join_salted-2.json": "fc830f33834e828ecc35f6f9cf83976f597f3f95c0f01b4e1cfabad940cf3b38",
+    "runtime/optimization/optimize-01-complete/results/join_salted-3.json": "1daae96a2cf8ca3826017a4eeb064978ac847bdc224438152c4ecfc9c17b6071",
+    "runtime/optimization/optimize-01-complete/results/partition_column-1.json": "67449ae5abbc185baf712ac069d9a41c0d6d3b0a76ce35604ac6d58d2cc2dddb",
+    "runtime/optimization/optimize-01-complete/results/partition_column-2.json": "420c22dd98a6472acef47f7916700bbddc66408ea9ee12c5955dd28a0da0dc34",
+    "runtime/optimization/optimize-01-complete/results/partition_column-3.json": "060c35c75d01e2ba50eead50a54f99fc7ea9eebda8e63b1b54eb58695f619f44",
+    "runtime/optimization/optimize-01-complete/results/partition_expression-1.json": "5c674fc100829e35a3fdc143f0e3769e08d2702cd08eea093a9068a431a38a91",
+    "runtime/optimization/optimize-01-complete/results/partition_expression-2.json": "108cc2e3312a17ac62598d34233bea88fc9733ffb593f2d195472c0ee824f9b9",
+    "runtime/optimization/optimize-01-complete/results/partition_expression-3.json": "78c4062e48c02f53108b27889aab978863a35df2d39191426089ebe3eb413147",
+    "runtime/optimization/optimize-01-complete/results/setup.json": "36589289579e1fe1dbb5d90aa6ba3f9fc3b226352c4058baecc98165c11bb9db"
+  },
+  "base_revision": "1fdd007566eae0d4792e09cc278d6c7e814da969",
+  "cases": {
+    "files_compact": [
+      {
+        "name": "files_compact-1",
+        "result_sha256": "3b4df6afdbbb2dcb1e7cc81e07f564263c92bb64d92831c1e6db6d8658b8927f",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 4
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 288
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 37924642
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 0.699998,
+        "task_metrics": {
+          "cpu_seconds": 0.36473120800000003,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.523,
+          "input_bytes": 36948849,
+          "outcomes": {
+            "Success": 4
+          },
+          "shuffle_read_bytes": 148,
+          "shuffle_write_bytes": 148,
+          "tasks": 4
+        }
+      },
+      {
+        "name": "files_compact-2",
+        "result_sha256": "3b4df6afdbbb2dcb1e7cc81e07f564263c92bb64d92831c1e6db6d8658b8927f",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 4
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 197
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 1
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 37924642
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 0.60544,
+        "task_metrics": {
+          "cpu_seconds": 0.35207078799999997,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.427,
+          "input_bytes": 36948849,
+          "outcomes": {
+            "Success": 4
+          },
+          "shuffle_read_bytes": 148,
+          "shuffle_write_bytes": 148,
+          "tasks": 4
+        }
+      },
+      {
+        "name": "files_compact-3",
+        "result_sha256": "3b4df6afdbbb2dcb1e7cc81e07f564263c92bb64d92831c1e6db6d8658b8927f",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 4
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 186
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 37924642
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 0.56709,
+        "task_metrics": {
+          "cpu_seconds": 0.338375445,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.41300000000000003,
+          "input_bytes": 36948849,
+          "outcomes": {
+            "Success": 4
+          },
+          "shuffle_read_bytes": 148,
+          "shuffle_write_bytes": 148,
+          "tasks": 4
+        }
+      }
+    ],
+    "files_small": [
+      {
+        "name": "files_small-1",
+        "result_sha256": "3b4df6afdbbb2dcb1e7cc81e07f564263c92bb64d92831c1e6db6d8658b8927f",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 64
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 1213
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 3
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 38047453
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 1.765741,
+        "task_metrics": {
+          "cpu_seconds": 0.7486218080000001,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 1.503,
+          "input_bytes": 37042920,
+          "outcomes": {
+            "Success": 12
+          },
+          "shuffle_read_bytes": 739,
+          "shuffle_write_bytes": 739,
+          "tasks": 12
+        }
+      },
+      {
+        "name": "files_small-2",
+        "result_sha256": "3b4df6afdbbb2dcb1e7cc81e07f564263c92bb64d92831c1e6db6d8658b8927f",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 64
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 1103
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 1
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 38047453
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 1.585719,
+        "task_metrics": {
+          "cpu_seconds": 0.666784063,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 1.3519999999999999,
+          "input_bytes": 37042920,
+          "outcomes": {
+            "Success": 12
+          },
+          "shuffle_read_bytes": 739,
+          "shuffle_write_bytes": 739,
+          "tasks": 12
+        }
+      },
+      {
+        "name": "files_small-3",
+        "result_sha256": "3b4df6afdbbb2dcb1e7cc81e07f564263c92bb64d92831c1e6db6d8658b8927f",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 64
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 1061
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 38047453
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 1.50258,
+        "task_metrics": {
+          "cpu_seconds": 0.6398288620000001,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 1.307,
+          "input_bytes": 37042920,
+          "outcomes": {
+            "Success": 12
+          },
+          "shuffle_read_bytes": 739,
+          "shuffle_write_bytes": 739,
+          "tasks": 12
+        }
+      }
+    ],
+    "join_broadcast": [
+      {
+        "name": "join_broadcast-1",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 527
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 2
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 1.766766,
+        "task_metrics": {
+          "cpu_seconds": 0.46177049499999995,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.8869999999999999,
+          "input_bytes": 242040,
+          "outcomes": {
+            "Success": 12
+          },
+          "shuffle_read_bytes": 937,
+          "shuffle_write_bytes": 937,
+          "tasks": 12
+        }
+      },
+      {
+        "name": "join_broadcast-2",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 505
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 2
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 1.138383,
+        "task_metrics": {
+          "cpu_seconds": 0.354227787,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.75,
+          "input_bytes": 242040,
+          "outcomes": {
+            "Success": 12
+          },
+          "shuffle_read_bytes": 937,
+          "shuffle_write_bytes": 937,
+          "tasks": 12
+        }
+      },
+      {
+        "name": "join_broadcast-3",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 478
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 2
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 1.090066,
+        "task_metrics": {
+          "cpu_seconds": 0.34224201199999993,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.733,
+          "input_bytes": 242040,
+          "outcomes": {
+            "Success": 12
+          },
+          "shuffle_read_bytes": 937,
+          "shuffle_write_bytes": 937,
+          "tasks": 12
+        }
+      }
+    ],
+    "join_merge": [
+      {
+        "name": "join_merge-1",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 543
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 2
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 3.211469,
+        "task_metrics": {
+          "cpu_seconds": 1.001067679,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 2.2760000000000002,
+          "input_bytes": 242040,
+          "outcomes": {
+            "Success": 16
+          },
+          "shuffle_read_bytes": 64376,
+          "shuffle_write_bytes": 64376,
+          "tasks": 16
+        }
+      },
+      {
+        "name": "join_merge-2",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 511
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 2
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 1.320862,
+        "task_metrics": {
+          "cpu_seconds": 0.48887023300000004,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.8909999999999999,
+          "input_bytes": 242040,
+          "outcomes": {
+            "Success": 16
+          },
+          "shuffle_read_bytes": 64376,
+          "shuffle_write_bytes": 64376,
+          "tasks": 16
+        }
+      },
+      {
+        "name": "join_merge-3",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 475
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 2
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 1.228875,
+        "task_metrics": {
+          "cpu_seconds": 0.44805404900000007,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.821,
+          "input_bytes": 242040,
+          "outcomes": {
+            "Success": 16
+          },
+          "shuffle_read_bytes": 64376,
+          "shuffle_write_bytes": 64376,
+          "tasks": 16
+        }
+      }
+    ],
+    "join_salted": [
+      {
+        "name": "join_salted-1",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 663
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 4
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 2.668459,
+        "task_metrics": {
+          "cpu_seconds": 1.123515535,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 1.7969999999999995,
+          "input_bytes": 31871708,
+          "outcomes": {
+            "Success": 18
+          },
+          "shuffle_read_bytes": 1133926,
+          "shuffle_write_bytes": 1133926,
+          "tasks": 18
+        }
+      },
+      {
+        "name": "join_salted-2",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 653
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 4
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 1.872056,
+        "task_metrics": {
+          "cpu_seconds": 0.8270311109999999,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 1.3379999999999996,
+          "input_bytes": 31871708,
+          "outcomes": {
+            "Success": 18
+          },
+          "shuffle_read_bytes": 1133926,
+          "shuffle_write_bytes": 1133926,
+          "tasks": 18
+        }
+      },
+      {
+        "name": "join_salted-3",
+        "result_sha256": "3ec2985902199ad10cad9dffba8f287eceae176a58754fdf6b2026bf251bbca8",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 631
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          },
+          {
+            "metrics": [
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 4
+              }
+            ],
+            "node": "Scan ExistingRDD"
+          }
+        ],
+        "seconds": 1.757339,
+        "task_metrics": {
+          "cpu_seconds": 0.8136863730000001,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 1.3179999999999998,
+          "input_bytes": 31871708,
+          "outcomes": {
+            "Success": 18
+          },
+          "shuffle_read_bytes": 1133926,
+          "shuffle_write_bytes": 1133926,
+          "tasks": 18
+        }
+      }
+    ],
+    "partition_column": [
+      {
+        "name": "partition_column-1",
+        "result_sha256": "f06b97ea08cd98c88cfab27ccdae1fe6f5c8a8ed9677f4a3ec6d2935fdd62772",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 4
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 93
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 1
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 12680357
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 128574
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 1
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 0.332886,
+        "task_metrics": {
+          "cpu_seconds": 0.080082057,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.137,
+          "input_bytes": 5166759,
+          "outcomes": {
+            "Success": 3
+          },
+          "shuffle_read_bytes": 146,
+          "shuffle_write_bytes": 146,
+          "tasks": 3
+        }
+      },
+      {
+        "name": "partition_column-2",
+        "result_sha256": "f06b97ea08cd98c88cfab27ccdae1fe6f5c8a8ed9677f4a3ec6d2935fdd62772",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 4
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 101
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 6
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 12680357
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 128574
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 1
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 0.386892,
+        "task_metrics": {
+          "cpu_seconds": 0.08264443999999999,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.137,
+          "input_bytes": 5166759,
+          "outcomes": {
+            "Success": 3
+          },
+          "shuffle_read_bytes": 146,
+          "shuffle_write_bytes": 146,
+          "tasks": 3
+        }
+      },
+      {
+        "name": "partition_column-3",
+        "result_sha256": "f06b97ea08cd98c88cfab27ccdae1fe6f5c8a8ed9677f4a3ec6d2935fdd62772",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 4
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 99
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 3
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 12680357
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 128574
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 1
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 0.337785,
+        "task_metrics": {
+          "cpu_seconds": 0.076978298,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.135,
+          "input_bytes": 5166759,
+          "outcomes": {
+            "Success": 3
+          },
+          "shuffle_read_bytes": 146,
+          "shuffle_write_bytes": 146,
+          "tasks": 3
+        }
+      }
+    ],
+    "partition_expression": [
+      {
+        "name": "partition_expression-1",
+        "result_sha256": "f06b97ea08cd98c88cfab27ccdae1fe6f5c8a8ed9677f4a3ec6d2935fdd62772",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 797
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 1.569734,
+        "task_metrics": {
+          "cpu_seconds": 0.768805988,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 1.2020000000000002,
+          "input_bytes": 40321191,
+          "outcomes": {
+            "Success": 7
+          },
+          "shuffle_read_bytes": 393,
+          "shuffle_write_bytes": 393,
+          "tasks": 7
+        }
+      },
+      {
+        "name": "partition_expression-2",
+        "result_sha256": "f06b97ea08cd98c88cfab27ccdae1fe6f5c8a8ed9677f4a3ec6d2935fdd62772",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 679
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 1.164928,
+        "task_metrics": {
+          "cpu_seconds": 0.5465314840000001,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.92,
+          "input_bytes": 40321191,
+          "outcomes": {
+            "Success": 7
+          },
+          "shuffle_read_bytes": 393,
+          "shuffle_write_bytes": 393,
+          "tasks": 7
+        }
+      },
+      {
+        "name": "partition_expression-3",
+        "result_sha256": "f06b97ea08cd98c88cfab27ccdae1fe6f5c8a8ed9677f4a3ec6d2935fdd62772",
+        "scans": [
+          {
+            "metrics": [
+              {
+                "key": "numFiles",
+                "name": "Some(number of files read)",
+                "value": 28
+              },
+              {
+                "key": "scanTime",
+                "name": "Some(scan time)",
+                "value": 641
+              },
+              {
+                "key": "pruningTime",
+                "name": "Some(dynamic partition pruning time)",
+                "value": 0
+              },
+              {
+                "key": "metadataTime",
+                "name": "Some(metadata time)",
+                "value": 0
+              },
+              {
+                "key": "filesSize",
+                "name": "Some(size of files read)",
+                "value": 88761892
+              },
+              {
+                "key": "numOutputRows",
+                "name": "Some(number of output rows)",
+                "value": 900000
+              },
+              {
+                "key": "numPartitions",
+                "name": "Some(number of partitions read)",
+                "value": 7
+              }
+            ],
+            "node": "Scan parquet "
+          }
+        ],
+        "seconds": 1.137086,
+        "task_metrics": {
+          "cpu_seconds": 0.532894254,
+          "disk_spill_bytes": 0,
+          "executor_seconds": 0.872,
+          "input_bytes": 40321191,
+          "outcomes": {
+            "Success": 7
+          },
+          "shuffle_read_bytes": 393,
+          "shuffle_write_bytes": 393,
+          "tasks": 7
+        }
+      }
+    ]
+  },
+  "date": "2026-09-12",
+  "exact_multiset_equal": true,
+  "git_source_sha256": {
+    "src/snow_statistics/spark_evidence.py": "055c6f6ab4f714f376068ae5fd21c30ba222d9b87180900d1beabbbc4983a793",
+    "tools/run_optimization.sh": "aa1ee7fe857fd5ebce9d4473892f8bd331f58c05a368bbf33e2ae7fd782c8f33",
+    "tools/spark_yarn_scale.sh": "a038b5ba822d99dea06c5aee43cbbb624fb6729d5f386160589b2c38e1df96a6",
+    "tools/summarize_optimization.py": "7352026618b608185c8cae4a50fd1e6528d84c45d4d3bbad2e323612bb8962dd",
+    "warehouse/spark/optimize.py": "62d39811e9922ba6a6f2c9a98a07e8f888c3bf4b5ee2380bd3716e71088c07df"
+  },
+  "hot_key_distribution": {
+    "key_only": [
+      {
+        "bucket": 0,
+        "rows": 285000
+      },
+      {
+        "bucket": 2,
+        "rows": 15000
+      }
+    ],
+    "salted": [
+      {
+        "bucket": 0,
+        "rows": 125641
+      },
+      {
+        "bucket": 1,
+        "rows": 23324
+      },
+      {
+        "bucket": 2,
+        "rows": 75959
+      },
+      {
+        "bucket": 3,
+        "rows": 75076
+      }
+    ]
+  },
+  "layout_files": {
+    "compact_files": {
+      "bytes": 37924642,
+      "files": 4
+    },
+    "small_files": {
+      "bytes": 38047453,
+      "files": 64
+    }
+  },
+  "limitations": [
+    "One executor/core on one physical host; three measured rounds are not a sustained throughput guarantee",
+    "AQE disabled and broadcast threshold -1 to expose requested mechanisms, not production defaults",
+    "OS/HDFS caches retained; setup and full multiset verification outside per-query timing",
+    "Task input counters include actual column reads and repeated scans; SQL filesSize is full selected file size",
+    "Salting is slower here and adds an event_id read; do not adopt without a workload-specific benefit",
+    "Guest cgroup snapshots do not prove full driver lifetime RSS; no OOM observed at samples"
+  ],
+  "resources": {
+    "early_stop": null,
+    "guest_observations": [
+      {
+        "available_mib": 642,
+        "containers": [
+          {
+            "current_bytes": 657842176,
+            "events": {
+              "high": "0",
+              "low": "0",
+              "max": "0",
+              "oom": "0",
+              "oom_group_kill": "0",
+              "oom_kill": "0"
+            },
+            "name": "snow-spark-yarn",
+            "peak_bytes": 703201280
+          },
+          {
+            "current_bytes": 288636928,
+            "events": {
+              "high": "0",
+              "low": "0",
+              "max": "0",
+              "oom": "0",
+              "oom_group_kill": "0",
+              "oom_kill": "0"
+            },
+            "name": "snow-lab-control-namenode-1",
+            "peak_bytes": 453648384
+          },
+          {
+            "current_bytes": 316071936,
+            "events": {
+              "high": "0",
+              "low": "0",
+              "max": "0",
+              "oom": "0",
+              "oom_group_kill": "0",
+              "oom_kill": "0"
+            },
+            "name": "snow-lab-control-resourcemanager-1",
+            "peak_bytes": 318304256
+          }
+        ],
+        "measured_at": "2026-09-11T16:35:04.274311+00:00",
+        "node": "snow-control"
+      },
+      {
+        "available_mib": 440,
+        "containers": [
+          {
+            "current_bytes": 1040551936,
+            "events": {
+              "high": "0",
+              "low": "0",
+              "max": "0",
+              "oom": "0",
+              "oom_group_kill": "0",
+              "oom_kill": "0"
+            },
+            "name": "snow-lab-compute-nodemanager-1",
+            "peak_bytes": 1107308544
+          },
+          {
+            "current_bytes": 385363968,
+            "events": {
+              "high": "0",
+              "low": "0",
+              "max": "1195",
+              "oom": "0",
+              "oom_group_kill": "0",
+              "oom_kill": "0"
+            },
+            "name": "snow-lab-compute-datanode-1",
+            "peak_bytes": 403410944
+          }
+        ],
+        "measured_at": "2026-09-11T16:35:02.307001+00:00",
+        "node": "snow-compute"
+      },
+      {
+        "available_mib": 449,
+        "containers": [
+          {
+            "current_bytes": 310960128,
+            "events": {
+              "high": "0",
+              "low": "0",
+              "max": "0",
+              "oom": "0",
+              "oom_group_kill": "0",
+              "oom_kill": "0"
+            },
+            "name": "snow-lab-analysis-datanode-1",
+            "peak_bytes": 313266176
+          }
+        ],
+        "measured_at": "2026-09-11T16:35:06.915300+00:00",
+        "node": "snow-analysis"
+      }
+    ],
+    "host_min_available_mib": 12991,
+    "host_min_free_disk_gib": 48.2,
+    "host_samples": 23,
+    "project_max_gib": 60.25,
+    "vm_mib": [
+      2048,
+      2048,
+      1024
+    ]
+  },
+  "source": "synthetic",
+  "source_files": [
+    {
+      "bytes": 3150643,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:80a9f7e1c581f7a2f96366909db6df07",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-01/part-00000-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3152390,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:dfeb15d06293d74b5d0916a9e5550976",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-01/part-00001-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3187911,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:f296255e889db5e9fe9925cc1677e6c5",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-01/part-00002-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3188689,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:757aeb24f2d44abe212a8de2df2853c2",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-01/part-00003-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3161390,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:6d54bce6662988767370f1cb82889f27",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-02/part-00000-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3193901,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:984f3ed78ce49285ebfe352c541658b9",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-02/part-00001-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3168012,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:af6b6cbba442655b4eec98b06ef03c10",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-02/part-00002-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3157054,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:6e0ffe99a18423f77ac9dd50ce99528c",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-02/part-00003-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3185378,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:b50ae935fcd65e4e274f4e2b7c8a2458",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-03/part-00000-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3173400,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:a567d814e6b3221be8c22cf260c424df",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-03/part-00001-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3162579,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:410f556816f85fd4b9bd1d70bbf2439f",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-03/part-00002-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3155211,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:109d89b99707bd15ce863dee0bd39294",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-03/part-00003-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3173556,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:dae5c0f42814fdd35bb34299ccd612a4",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-04/part-00000-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3178935,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:d3052e0e8039b2326dda842ff1c73fc9",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-04/part-00001-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3148661,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:415529c813665c5012eabdd7b1a0072c",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-04/part-00002-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3180673,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:49812edc91bd4c64d5152d44ada8d1c6",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-04/part-00003-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3183690,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:59935a0511571bac0eaefe20f3054894",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-05/part-00000-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3181412,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:6d37cc33081990dd2667b501993f7abf",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-05/part-00001-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3140040,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:4d83e111ae9f7270e2fdd7269cb14638",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-05/part-00002-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3178319,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:db4a7fda78aaa030ca76be289649d4b8",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-05/part-00003-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3185843,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:13c0714ddccc80ba799dfa28e567df5a",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-06/part-00000-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3159719,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:2279b3c86ac02f27db16a98d4e6be934",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-06/part-00001-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3171051,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:a09bcf779f93f07f23a64b6b87a5c91b",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-06/part-00002-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3167091,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:89795a7966e98b2f66d35a41f380e66d",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-06/part-00003-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3168997,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:9aca9f76efcc72f2dae17f10832c7374",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-07/part-00000-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3175801,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:c0f560074f8118ea60feec5648655ff5",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-07/part-00001-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3151913,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:c5693da8ef8d34b8f5ec8f2088772e96",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-07/part-00002-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    },
+    {
+      "bytes": 3179633,
+      "checksum": "MD5-of-0MD5-of-512CRC32C:6f1e2ee0a54df152654a0ae03adfd880",
+      "path": "hdfs://192.168.216.131:9000/snow/warehouse/scale/runs/scale-1m-01/dwd/source=synthetic/business_date=2026-01-07/part-00003-52ceae1e-dbf3-4a50-b979-7430f0a85cce.c000.snappy.parquet"
+    }
+  ],
+  "summaries": {
+    "files_compact": {
+      "input_bytes": [
+        36948849,
+        36948849,
+        36948849
+      ],
+      "median_seconds": 0.60544,
+      "shuffle_write_bytes": [
+        148,
+        148,
+        148
+      ]
+    },
+    "files_small": {
+      "input_bytes": [
+        37042920,
+        37042920,
+        37042920
+      ],
+      "median_seconds": 1.585719,
+      "shuffle_write_bytes": [
+        739,
+        739,
+        739
+      ]
+    },
+    "join_broadcast": {
+      "input_bytes": [
+        242040,
+        242040,
+        242040
+      ],
+      "median_seconds": 1.138383,
+      "shuffle_write_bytes": [
+        937,
+        937,
+        937
+      ]
+    },
+    "join_merge": {
+      "input_bytes": [
+        242040,
+        242040,
+        242040
+      ],
+      "median_seconds": 1.320862,
+      "shuffle_write_bytes": [
+        64376,
+        64376,
+        64376
+      ]
+    },
+    "join_salted": {
+      "input_bytes": [
+        31871708,
+        31871708,
+        31871708
+      ],
+      "median_seconds": 1.872056,
+      "shuffle_write_bytes": [
+        1133926,
+        1133926,
+        1133926
+      ]
+    },
+    "partition_column": {
+      "input_bytes": [
+        5166759,
+        5166759,
+        5166759
+      ],
+      "median_seconds": 0.337785,
+      "shuffle_write_bytes": [
+        146,
+        146,
+        146
+      ]
+    },
+    "partition_expression": {
+      "input_bytes": [
+        40321191,
+        40321191,
+        40321191
+      ],
+      "median_seconds": 1.164928,
+      "shuffle_write_bytes": [
+        393,
+        393,
+        393
+      ]
+    }
+  },
+  "timezone": "Asia/Hong_Kong"
+}

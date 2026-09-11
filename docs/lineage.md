@@ -66,6 +66,10 @@ python3 governance/lineage.py status
 
 ## 保留和退出
 
+2026-09-12 补做了实际进程中断探针：`uv run python tools/smoke_lineage_interrupt.py --output runtime/lineage-interrupt/probe02`（选择新目录）。一个子进程在执行中被 kill，另一个在写出合成结果、进入终态回调后被 kill；两者均只留下 START，结果文件存在也没有补成 COMPLETE。用新尝试正常完成后，只有该新尝试有 COMPLETE；一致性 backup 导出的四条事件与原日志相同。
+
+该探针验证 Capture 的实际进程边界，未运行 Airflow/Spark，也未投递 Marquez。两个被中断尝试保留为 open，不伪造调度器回执关闭它们。真实 Airflow 场景仍按上文导出权威状态再核对；成功任务的终态丢失不自动认定完成。证据见 [lineage-interrupt.json](evidence/lineage-interrupt.json)。原 24 条核心自动血缘范围不变，Kafka/CDC、Flink 等全链路自动提取属于后续拓展。
+
 Marquez 与 PostgreSQL 的卷、日志和确认副本登记在 `deploy/resources.json`；关闭服务不删除数据。原有轻量汇总与模型归档不需要 Marquez 在线。清理必须先导出所需事件、运行状态和图，再按独立资源清单审阅。
 
 版本配置参考 [Marquez 0.50.0 配置](https://github.com/MarquezProject/marquez/blob/0.50.0/marquez.example.yml)及[官方入口](https://github.com/MarquezProject/marquez/blob/0.50.0/docker/entrypoint.sh)。运行状态与图使用[官方 API](https://marquezproject.ai/docs/api/get-lineage/)读回，已验证范围见[实施状态](status.md)。

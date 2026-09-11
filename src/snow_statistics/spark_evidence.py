@@ -51,3 +51,43 @@ def summarize(events):
                   sql_plan_observations=len(plans),
                   note="Application timing includes executor allocation but excludes input landing and pre-Spark JVM startup. Task counters include rescans/cache work and are not source row counts or process RSS peaks.")
     return result, plans
+
+
+def job_groups(events):
+    """Attribute actual task attempts once, refusing shared-stage ambiguity."""
+    stages, jobs, tasks = {}, {}, []
+    for event in events:
+        if event["Event"] == "SparkListenerJobStart":
+            group = event.get("Properties", {}).get("spark.jobGroup.id")
+            if not group:
+                raise ValueError("Missing explicit benchmark job group")
+            jobs[event["Job ID"]] = group
+            for stage in event["Stage IDs"]:
+                if stage in stages and stages[stage] != group:
+                    raise ValueError("Shared stage cannot be charged to two benchmark groups")
+                stages[stage] = group
+        elif event["Event"] == "SparkListenerTaskEnd":
+            tasks.append(event)
+    result = {}
+    for task in tasks:
+        group = stages.get(task["Stage ID"])
+        if not group:
+            raise ValueError("Unattributed task")
+        row = result.setdefault(group, dict(tasks=0, outcomes={}, input_bytes=0, shuffle_write_bytes=0,
+                                            shuffle_read_bytes=0, disk_spill_bytes=0, cpu_seconds=0,
+                                            executor_seconds=0, stages={}))
+        m = task["Task Metrics"]
+        row["tasks"] += 1
+        outcome = task["Task End Reason"]["Reason"]
+        row["outcomes"][outcome] = row["outcomes"].get(outcome, 0) + 1
+        row["input_bytes"] += m["Input Metrics"]["Bytes Read"]
+        row["shuffle_write_bytes"] += m["Shuffle Write Metrics"]["Shuffle Bytes Written"]
+        read = m["Shuffle Read Metrics"]
+        row["shuffle_read_bytes"] += read["Remote Bytes Read"] + read["Local Bytes Read"]
+        row["disk_spill_bytes"] += m["Disk Bytes Spilled"]
+        row["cpu_seconds"] += m["Executor CPU Time"] / 1_000_000_000
+        row["executor_seconds"] += m["Executor Run Time"] / 1000
+        row["stages"].setdefault(str(task["Stage ID"]), []).append(dict(
+            task_id=task["Task Info"]["Task ID"], outcome=outcome,
+            shuffle_read_records=read["Total Records Read"], run_ms=m["Executor Run Time"]))
+    return result

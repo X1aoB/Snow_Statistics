@@ -61,3 +61,12 @@ sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f lab/c
 以两个不同随机令牌配置服务端完成日志和私有读取；`SNOW_STATE_DIR` 必须是已挂载的专用目录。镜像用 `deploy/lite.Dockerfile` 构建，只开放本机 8100。代理仅加入两条公开路由，私有读取经 SSH 隧道。访问统计请求和代理不记录 IP/URL，生产代理需设置有界限流。
 
 共享线上主机仍存在宿主故障共同边界。先运行本地合成验收，生成候选资源/路由/CSP/隐私配置及回退清单，再按产品发布流程推广。
+
+
+## 本轮补齐的按需实验
+
+固定输入优化和 Iceberg DWD 恢复继续使用 scale 2/2/1 GiB，见 [优化](optimization.md)与[湖仓](lake.md)；HA 新增单分析 VM 3 GiB 的 `ha` profile，Kafka 与 ZooKeeper 分开运行，见[故障专题](ha.md)。本机配置不要求同时开启这些服务。最新冷态文件约 55.87 GiB，源于保留历史和退出 worktree；每次仍需动态检查 64 GiB / 35 GiB / 4 GiB 门禁。
+
+停止注入已实际验证：`tools/run_scale_guarded.py --inject-stop-after-seconds 25` 会令当前实验失败并停止 driver、指定容器和三台 VM，保留状态。只在新的合成 attempt 演练，不用于无关任务或生产。
+
+全部运行停止后可按[离线演示](demo.md)检查结果；[退出手册](retirement.md)包含实际移除候选和私有导出方式。HA 辅助工具只停止容器，阶段完成仍须显式停止 VM。

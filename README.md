@@ -85,10 +85,15 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [HTTP 接收至 Doris 新鲜度及数仓停机验收](docs/freshness.md)
 - [2/2/1 GiB 三 VM 的 Spark/YARN 10 万及百万条扩样](docs/scale.md)
 - [10 万条 Flink/Doris、轻量与 YARN 对账及恢复](docs/realtime-scale.md)
+- [固定输入的分区、Join、倾斜及小文件优化](docs/optimization.md)
+- [Iceberg DWD 迁移、演进与 HDFS 恢复](docs/lake.md)
+- [Kafka / ZooKeeper 选主、丢多数和会话实验](docs/ha.md)
 - [低流量部署与按需实验资源](docs/resources.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)
 - [后续实验与性能取证](docs/experiments.md)
+- [交付验收矩阵](docs/completion-checklist.md)
+- [离线演示与面试讲解](docs/demo.md)
 
 性能数字必须附带输入、代码修订、资源及执行证据。Python 小数据正确性基准不代表分布式吞吐；虚拟节点不等于物理容灾。当前实测状态以实施记录为准，不把配置文件的存在当作完整集群验收。

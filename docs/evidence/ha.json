@@ -1,0 +1,436 @@
+{
+  "base_revision": "1fdd007566eae0d4792e09cc278d6c7e814da969",
+  "cold_resources": {
+    "free_disk_gib": 52.07,
+    "min_host_free_disk_gib": 35.0,
+    "project_files_gib": 55.87,
+    "project_limit_gib": 64.0,
+    "vm_files_gib": 54.89
+  },
+  "date": "2026-09-12",
+  "experiments": {
+    "kafka": {
+      "accepted": {
+        "acknowledged": [
+          {
+            "offset": 0,
+            "value": "before"
+          },
+          {
+            "offset": 1,
+            "value": "one-down"
+          },
+          {
+            "offset": 2,
+            "value": "restored"
+          }
+        ],
+        "all_acknowledged_retained": true,
+        "kafka": "3.9.1",
+        "lane": "ha02",
+        "metadata": [
+          {
+            "error_code": 0,
+            "isr": [
+              2,
+              3,
+              1
+            ],
+            "leader": 2,
+            "offline_replicas": [],
+            "partition": 0,
+            "phase": "initial",
+            "replicas": [
+              2,
+              3,
+              1
+            ]
+          },
+          {
+            "error_code": 0,
+            "isr": [
+              3,
+              1
+            ],
+            "leader": 3,
+            "offline_replicas": [
+              2
+            ],
+            "partition": 0,
+            "phase": "one_down",
+            "replicas": [
+              2,
+              3,
+              1
+            ]
+          },
+          {
+            "error_code": 0,
+            "isr": [
+              3,
+              2,
+              1
+            ],
+            "leader": 3,
+            "offline_replicas": [],
+            "partition": 0,
+            "phase": "restored",
+            "replicas": [
+              2,
+              3,
+              1
+            ]
+          }
+        ],
+        "quorum_error": "NotEnoughReplicasError",
+        "records": [
+          {
+            "offset": 0,
+            "value": "before"
+          },
+          {
+            "offset": 1,
+            "value": "one-down"
+          },
+          {
+            "offset": 2,
+            "value": "restored"
+          }
+        ],
+        "scope": "Three combined KRaft broker/controller processes on one VM/physical host; no ZooKeeper dependency or physical disaster recovery",
+        "source": "synthetic",
+        "strict_error": "NotEnoughReplicasError",
+        "strict_records": [
+          {
+            "offset": 0,
+            "value": "strict-before"
+          }
+        ],
+        "unacknowledged_visible": 0
+      },
+      "fault": {
+        "acknowledged": [
+          {
+            "offset": 0,
+            "value": "before"
+          },
+          {
+            "offset": 1,
+            "value": "one-down"
+          }
+        ],
+        "first_stopped": 2,
+        "note": "Timeout/no acknowledgement does not establish that a record was never appended",
+        "second_stopped": 1,
+        "strict_error": "NotEnoughReplicasError",
+        "two_down_error": "NotEnoughReplicasError"
+      },
+      "host_min_available_mib": 16006,
+      "host_min_free_disk_gib": 49.9,
+      "memory_after": {
+        "available_mib": 1575,
+        "containers": [
+          {
+            "current_bytes": 327884800,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 805306368,
+            "name": "snow-lab-ha-broker1-1",
+            "peak_bytes": 342953984
+          },
+          {
+            "current_bytes": 329031680,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 805306368,
+            "name": "snow-lab-ha-broker2-1",
+            "peak_bytes": 332988416
+          },
+          {
+            "current_bytes": 348311552,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 805306368,
+            "name": "snow-lab-ha-broker3-1",
+            "peak_bytes": 349904896
+          }
+        ],
+        "measured_at": "2026-09-11T16:59:09.679016+00:00",
+        "node": "snow-analysis",
+        "note": "Each container peak is since its most recent start; no claim of simultaneous RSS"
+      },
+      "memory_before": {
+        "available_mib": 1541,
+        "containers": [
+          {
+            "current_bytes": 330825728,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 805306368,
+            "name": "snow-lab-ha-broker1-1",
+            "peak_bytes": 337334272
+          },
+          {
+            "current_bytes": 328679424,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 805306368,
+            "name": "snow-lab-ha-broker2-1",
+            "peak_bytes": 336109568
+          },
+          {
+            "current_bytes": 342298624,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 805306368,
+            "name": "snow-lab-ha-broker3-1",
+            "peak_bytes": 345108480
+          }
+        ],
+        "measured_at": "2026-09-11T16:58:38.996621+00:00",
+        "node": "snow-analysis",
+        "note": "Each container peak is since its most recent start; no claim of simultaneous RSS"
+      },
+      "project_max_gib": 58.38,
+      "resource_samples": 4,
+      "shutdown": {
+        "note": "VM remains available for the next isolated phase; volumes retained",
+        "resources": {
+          "free_disk_gib": 49.9,
+          "min_host_free_disk_gib": 35.0,
+          "project_files_gib": 58.38,
+          "project_limit_gib": 64.0,
+          "vm_files_gib": 57.7
+        },
+        "services_stopped": true
+      }
+    },
+    "zookeeper": {
+      "accepted": {
+        "abrupt_client_session_expiry_verified": true,
+        "final_data": "one-down",
+        "final_version": 1,
+        "kazoo": "2.11.0",
+        "lane": "zk01",
+        "majority_error": "KazooTimeoutError",
+        "metadata": [
+          {
+            "phase": "initial",
+            "roles": {
+              "1": "follower",
+              "2": "follower",
+              "3": "leader"
+            }
+          },
+          {
+            "phase": "one_down",
+            "roles": {
+              "1": "follower",
+              "2": "leader",
+              "3": "unavailable"
+            }
+          },
+          {
+            "phase": "restored",
+            "roles": {
+              "1": "follower",
+              "2": "leader",
+              "3": "follower"
+            }
+          }
+        ],
+        "no_write_submitted_without_session": true,
+        "persistent_data_retained": true,
+        "scope": "Three ZooKeeper processes on one VM/physical host; client session loss is separate from server majority loss",
+        "source": "synthetic",
+        "stale_version_rejected": true,
+        "states": [
+          "CONNECTED",
+          "SUSPENDED",
+          "CONNECTED",
+          "LOST"
+        ],
+        "watch": [
+          {
+            "path": "/snow-statistics/zk01/proof",
+            "state": "CONNECTED",
+            "type": "CHANGED"
+          }
+        ],
+        "zookeeper": "3.9.3"
+      },
+      "fault": {
+        "first_stopped": 3,
+        "majority_error": "KazooTimeoutError",
+        "no_write_submitted_without_session": true,
+        "second_stopped": 1
+      },
+      "host_min_available_mib": 16133,
+      "host_min_free_disk_gib": 49.48,
+      "memory_after": {
+        "available_mib": 2226,
+        "containers": [
+          {
+            "current_bytes": 80175104,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 536870912,
+            "name": "snow-lab-ha-zk1-1",
+            "peak_bytes": 82227200
+          },
+          {
+            "current_bytes": 83251200,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 536870912,
+            "name": "snow-lab-ha-zk2-1",
+            "peak_bytes": 85340160
+          },
+          {
+            "current_bytes": 80572416,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 536870912,
+            "name": "snow-lab-ha-zk3-1",
+            "peak_bytes": 82608128
+          }
+        ],
+        "measured_at": "2026-09-11T17:05:14.493829+00:00",
+        "node": "snow-analysis",
+        "note": "Each container peak is since its most recent start; no claim of simultaneous RSS"
+      },
+      "memory_before": {
+        "available_mib": 2232,
+        "containers": [
+          {
+            "current_bytes": 79605760,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 536870912,
+            "name": "snow-lab-ha-zk1-1",
+            "peak_bytes": 81346560
+          },
+          {
+            "current_bytes": 79450112,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 536870912,
+            "name": "snow-lab-ha-zk2-1",
+            "peak_bytes": 81489920
+          },
+          {
+            "current_bytes": 81948672,
+            "events": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "limit_bytes": 536870912,
+            "name": "snow-lab-ha-zk3-1",
+            "peak_bytes": 84004864
+          }
+        ],
+        "measured_at": "2026-09-11T17:04:31.559115+00:00",
+        "node": "snow-analysis",
+        "note": "Each container peak is since its most recent start; no claim of simultaneous RSS"
+      },
+      "project_max_gib": 58.56,
+      "resource_samples": 5,
+      "shutdown": {
+        "note": "VM remains available for the next isolated phase; volumes retained",
+        "resources": {
+          "free_disk_gib": 49.48,
+          "min_host_free_disk_gib": 35.0,
+          "project_files_gib": 58.56,
+          "project_limit_gib": 64.0,
+          "vm_files_gib": 57.89
+        },
+        "services_stopped": true
+      }
+    }
+  },
+  "final_running_vms": 0,
+  "other_vms_off": true,
+  "sequential_profiles": true,
+  "source": "synthetic",
+  "source_sha256": {
+    "lab/compose.ha.json": "58ff8d6139aca6320dabf5725f6bf9f33181abff5be370b15793b96df9d40ab5",
+    "tools/ha_lab.py": "4030117edd1e3e8fc07a8ed85493f32f938f3599c77323da143abe8d22525a66",
+    "tools/observe_ha_memory.sh": "fb2dd93bc0f8b42d1677d2a383d54271986ff1838672065ec5c99436382dc531",
+    "tools/render_ha.py": "fb90c2585a17490dadd86af571bbdde04005154141d898c2f34da5255ab9f03f",
+    "tools/smoke_kafka_ha.py": "8b2bf4fa562c36f033db51266aa0bef2bbcf6c69fa1461d50b45001212862e35",
+    "tools/smoke_zookeeper.py": "7c297fa87f57d768b30c03bd217c99e25ebb62a83e4a6083e3d405cc87e78acd",
+    "tools/start_ha_node.sh": "ed14426c6887a671ed0bdc220cec825f549d0ac3f6fae2f5d27a1af3e34178c3"
+  },
+  "vm": "snow-analysis",
+  "vm_mib": 3072
+}

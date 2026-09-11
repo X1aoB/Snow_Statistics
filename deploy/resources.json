@@ -1,30 +1,217 @@
 {
-  "owner": "Snow_Statistics",
-  "version": 1,
-  "online": {
-    "compose_project": "snow-statistics-lite",
-    "network": "snow-statistics-lite",
-    "state_root": "/var/lib/snow-statistics",
-    "systemd_service": "snow-statistics-lite.service",
-    "state_quota_bytes": 536870912,
-    "default_container_memory_bytes": 268435456,
-    "default_container_cpus": 0.25,
-    "existing_volume_policy": "New defaults only; keep existing volume size and explicit application budget. Never resize or remove historical data on configuration change.",
-    "loopback_port": 8100,
-    "public_routes": ["/analytics/v1/events", "/analytics/public/v1/summary.json"],
-    "private_route": "/analytics/private/v1/events"
-  },
   "local": {
-    "vm_root": "runtime/vmware",
-    "vm_names": ["snow-control", "snow-compute", "snow-analysis"],
-    "compose_projects": ["snow-lab-control", "snow-lab-compute", "snow-lab-analysis", "snow-lab-orchestration", "snow-lab-ha", "snow-lab-realtime"],
-    "scale_acceptance": {
+    "airflow_gateway": {
+      "authorized_key_comment": "snow-statistics-airflow",
+      "forced_command": "tools/airflow_gateway.py",
+      "host": "snow-control",
+      "metadata_volume": "snow-lab-orchestration_airflow",
+      "private_key_directory": "lab/secrets/airflow-ssh",
+      "publisher_lock_and_packages": "runtime/publication"
+    },
+    "budget_revision_note": "User authorized practical resource adjustment: 64 GiB project files, 35 GiB host free disk, 4 GiB host available RAM. Current cold sample is in ha.json; recheck before every phase. Historical 60 GiB receipts keep their original cap.",
+    "compose_projects": [
+      "snow-lab-control",
+      "snow-lab-compute",
+      "snow-lab-analysis",
+      "snow-lab-orchestration",
+      "snow-lab-ha",
+      "snow-lab-realtime"
+    ],
+    "freshness_acceptance": {
+      "artifacts": "runtime/freshness/<lane>",
+      "collector_database": "runtime/freshness/<lane>/collector/statistics.db",
+      "credentials": "Two ephemeral in-process tokens; never recorded or shared with product configuration",
+      "host": "Windows loopback collector and observer; snow-analysis NAT warehouse",
+      "shutdown": "Stop sync, preserve checkpoint, cancel synthetic job, stop realtime services and VM; verify collector continues, then close the loopback test server. Keep archives and SQLite.",
+      "sync_archive_and_target": "runtime/freshness/<lane>/sync"
+    },
+    "ha_acceptance": {
+      "artifacts": "runtime/ha/<type>-<lane>",
+      "compose_project": "snow-lab-ha",
+      "env": "lab/secrets/ha.env",
+      "host": "snow-analysis only",
+      "kafka_services": [
+        "snow-lab-ha-broker1-1",
+        "snow-lab-ha-broker2-1",
+        "snow-lab-ha-broker3-1"
+      ],
+      "kafka_volumes": [
+        "snow-lab-ha_broker1",
+        "snow-lab-ha_broker2",
+        "snow-lab-ha_broker3"
+      ],
+      "nat_only_ports": {
+        "kafka": [
+          19092,
+          19093,
+          19094
+        ],
+        "zookeeper": [
+          12181,
+          12182,
+          12183
+        ]
+      },
+      "network": "snow-lab-ha_default",
+      "shutdown": "Bounded host script stops exactly matching HA containers in finally; separately stop VM. Retain volumes, topics, znodes and private config",
+      "topics": "snow.synthetic.ha.<lane> and <lane>.strict",
+      "vm_profile": "ha 3072 MiB; Kafka and ZooKeeper sequential",
+      "znodes": "/snow-statistics/<lane>",
+      "zookeeper_services": [
+        "snow-lab-ha-zk1-1",
+        "snow-lab-ha-zk2-1",
+        "snow-lab-ha-zk3-1"
+      ],
+      "zookeeper_volumes": [
+        "snow-lab-ha_zk1",
+        "snow-lab-ha_zk1_log",
+        "snow-lab-ha_zk2",
+        "snow-lab-ha_zk2_log",
+        "snow-lab-ha_zk3",
+        "snow-lab-ha_zk3_log"
+      ]
+    },
+    "incremental_ods": {
+      "consumer_group": "snow-ods-<lane>",
+      "hdfs_operations": "/snow/warehouse/operations/<run-id>",
+      "hdfs_root": "/snow/ods/synthetic/kafka/<lane>",
+      "host": "snow-control",
+      "shutdown": "Stop commands without deleting journal, raw archives, HDFS batches or snapshots. Review pending and landed state before resuming.",
+      "single_writer_directory": "runtime/ods/<lane>",
+      "staging_root": "/snow/ods/synthetic/kafka/<lane>/_staging"
+    },
+    "lake_acceptance": {
+      "artifacts": "runtime/lake/<attempt>* on host/control; control runtime/jars pinned Iceberg JAR; scale eventlogs",
+      "catalog": "/snow/lake/<attempt>",
       "hosts": [
         "snow-control",
         "snow-compute",
         "snow-analysis"
       ],
-      "vm_profile": "scale: 2048 / 2048 / 1024 MiB; sequential startup capacity checks",
+      "shutdown": "Stop only scale services; retain all source Parquet, snapshots, metadata/data files and recovery evidence. No snapshot expiration or orphan deletion",
+      "table": "snow.synthetic.dwd",
+      "vm_profile": "scale 2048/2048/1024 MiB"
+    },
+    "lineage": {
+      "backend_host": "snow-analysis",
+      "capture_host": "snow-control",
+      "database_volume": "snow-lab-analysis_governance-db",
+      "delivery_copies_and_acknowledgements": "runtime/lineage",
+      "delivery_locks": "runtime/lineage/lineage-delivery-<target>",
+      "journal": "runtime/publication/lineage.sqlite",
+      "journal_database_limit_bytes": 16777216,
+      "journal_rollback_reserve_bytes": 16777216,
+      "loopback_admin_port": 5001,
+      "loopback_api_port": 5000,
+      "services": [
+        "snow-lab-analysis-marquez-1",
+        "snow-lab-analysis-governance-db-1"
+      ],
+      "shutdown": "Disable optional capture or pause the DAG, export a consistent journal snapshot, stop Marquez and PostgreSQL. Preserve journal, acknowledgements and PostgreSQL volume; new backend databases require a new delivery target identity."
+    },
+    "lite_acceptance": {
+      "artifacts": "runtime/lite-container-* (including retained state.img) and runtime/lite-compose-*",
+      "host": "snow-control with warehouse services stopped",
+      "image": "snow-statistics-lite:small-0.1.0",
+      "scope": "Isolated loopback synthetic fixtures only; no shared host or business data",
+      "shutdown": "Remove only the dedicated test container, unmount its unique state path and retain the image and receipts. Stop the VM when done.",
+      "temporary_containers": "snow-lite-acceptance-<unique-suffix>"
+    },
+    "max_project_bytes": 68719476736,
+    "min_host_available_mib": 4096,
+    "min_host_free_bytes": 37580963840,
+    "model_publication": {
+      "accepted_packages": "runtime/publication/<attempt-id>.<kind>.json",
+      "dag": "snow_models",
+      "hdfs_root": "/snow/warehouse/model-runs/<attempt-id>/<kind>",
+      "hive_database": "snow_synthetic",
+      "hive_tables": [
+        "ops_<attempt-id>_*",
+        "behavior_<attempt-id>_*"
+      ],
+      "host": "snow-control",
+      "latest_pointer": "runtime/publication/models-latest.json",
+      "release_history": "runtime/publication/model-releases",
+      "shutdown": "Pause snow_models and stop project services. Preserve accepted packages, Hive metadata, HDFS tables and release history; export the latest private aggregates for offline demonstration.",
+      "synthetic_boundary_input": "/snow/ods/synthetic/behavior-fixture-v1",
+      "synthetic_boundary_output": "/snow/warehouse/behavior-tests"
+    },
+    "optimization_acceptance": {
+      "artifacts": "runtime/optimization/<attempt>* on host/control; runtime/scale/eventlogs/<application> on control",
+      "hdfs": "/snow/warehouse/optimization/<attempt>/{small,compact}",
+      "hosts": [
+        "snow-control",
+        "snow-compute",
+        "snow-analysis"
+      ],
+      "shutdown": "Reuse the named scale services/driver stop; preserve source and alternate layouts, plans and event logs",
+      "source": "/snow/warehouse/scale/runs/scale-1m-01/dwd",
+      "vm_profile": "scale 2048/2048/1024 MiB"
+    },
+    "realtime_acceptance": {
+      "archives_and_receipts": "runtime/realtime",
+      "checkpoint_policy": "Retain latest 3; retain external checkpoints on cancel; manual session restoration uses the same JAR hash and lane",
+      "consumer_group": "snow-flink-synthetic-<lane>",
+      "database_scope": "snow_realtime_<lane>",
+      "env": "lab/secrets/realtime.env",
+      "host": "snow-analysis",
+      "kafka": "analysis VM NAT 9092; separate broker and volume from original CDC Kafka",
+      "rest": "VM loopback 8081; temporary verified SSH tunnel on host loopback 18081",
+      "reused_doris_services": [
+        "snow-lab-analysis-doris-fe-1",
+        "snow-lab-analysis-doris-be-1"
+      ],
+      "services": [
+        "snow-lab-realtime-kafka-1",
+        "snow-lab-realtime-jobmanager-1",
+        "snow-lab-realtime-taskmanager-1"
+      ],
+      "shutdown": "Export checkpoint identity, cancel only the synthetic jobs, stop the listed containers and VM. Keep topics, checkpoint volume, database tables and archives. No automatic removal on shutdown.",
+      "tables": [
+        "events_realtime",
+        "daily_realtime",
+        "daily_offline",
+        "txn_probe"
+      ],
+      "topic_scope": "snow.synthetic.<lane>.{events,late,duplicates,quarantine}.v1",
+      "volumes": [
+        "snow-lab-realtime_kafka",
+        "snow-lab-realtime_flink"
+      ]
+    },
+    "realtime_scale_acceptance": {
+      "artifacts": "runtime/realtime-scale/<lane> on host; raw gzip, SQLite baseline, receipts, resource snapshots",
+      "baseline_database": "runtime/realtime-scale/<lane>/lite/statistics.db; synthetic, fixed-clock local Store",
+      "host": "snow-analysis only; realtime 4608 MiB VM; control and compute off",
+      "input": "Verified runtime/scale/input-100k-v1 shards; original envelopes sorted only when first event/request winners are unchanged",
+      "private_previous_env": "lab/secrets/realtime-before-<lane>.env on analysis VM; retain privately",
+      "resources": "Reuse realtime_acceptance Kafka/Flink/Doris services and volumes, with new synthetic topics and database per lane",
+      "rest": "Temporary verified SSH tunnel on dynamically allocated host loopback port",
+      "shutdown": "Export checkpoint, cancel job, stop the named realtime services and always attempt soft VM shutdown. Preserve histories and inspect errors; no implicit deletion."
+    },
+    "retirement_acceptance": {
+      "artifacts": "runtime/retirement/lifecycle<attempt> including state, private exports, process logs, review; runtime/lineage-interrupt/probe<attempt>",
+      "host": "Windows loopback; no VMs or business services",
+      "process_scope": "Only spawned collector/follower/probe children, loopback random port; normal collector shutdown uses private supervisor stdin",
+      "product_worktrees": [
+        "runtime/retirement/remove-website",
+        "runtime/retirement/remove-snow"
+      ],
+      "shutdown": "Close processes and retain databases, exports, log journals and removal patches. No automatic historical deletion",
+      "worktree_ownership": "Registered detached worktrees of the two product repositories, with uncommitted removal patches. Original branches and production untouched. Review through git worktree before explicit later cleanup"
+    },
+    "scale_acceptance": {
+      "artifacts_and_inputs": "runtime/scale on host and control VM",
+      "driver_eventlogs": "runtime/scale/eventlogs/<application-id> on control VM",
+      "hdfs_golden_output": "/snow/warehouse/runs/<scale-golden-attempt>",
+      "hdfs_inputs": "/snow/ods/synthetic/scale/{input-100k-v1,input-1m-v1}",
+      "hdfs_outputs": "/snow/warehouse/scale/runs/<attempt>",
+      "hosts": [
+        "snow-control",
+        "snow-compute",
+        "snow-analysis"
+      ],
+      "namenode_copy_cache": "/tmp/snow-scale-events-<00..03>.jsonl.gz inside the project NameNode container",
       "reused_services": [
         "snow-lab-control-namenode-1",
         "snow-lab-control-resourcemanager-1",
@@ -32,116 +219,45 @@
         "snow-lab-compute-nodemanager-1",
         "snow-lab-analysis-datanode-1"
       ],
-      "temporary_driver": "snow-spark-yarn on snow-control",
       "reused_volumes": [
         "snow-lab-control_namenode",
         "snow-lab-compute_datanode",
         "snow-lab-compute_yarn",
         "snow-lab-analysis_datanode"
       ],
-      "artifacts_and_inputs": "runtime/scale on host and control VM",
-      "driver_eventlogs": "runtime/scale/eventlogs/<application-id> on control VM",
-      "namenode_copy_cache": "/tmp/snow-scale-events-<00..03>.jsonl.gz inside the project NameNode container",
-      "hdfs_inputs": "/snow/ods/synthetic/scale/{input-100k-v1,input-1m-v1}",
-      "hdfs_outputs": "/snow/warehouse/scale/runs/<attempt>",
-      "hdfs_golden_output": "/snow/warehouse/runs/<scale-golden-attempt>",
-      "yarn_logs": "/snow/yarn-logs in HDFS; existing NodeManager volume log/local directories",
-      "shutdown": "Stop only the named driver, then services via tools/stop_scale_node.sh and project VMs. Preserve raw inputs, accepted packages, event logs, HDFS data and existing volumes. Do not prune or remove data on phase change."
+      "shutdown": "Stop only the named driver, then services via tools/stop_scale_node.sh and project VMs. Preserve raw inputs, accepted packages, event logs, HDFS data and existing volumes. Do not prune or remove data on phase change.",
+      "temporary_driver": "snow-spark-yarn on snow-control",
+      "vm_profile": "scale: 2048 / 2048 / 1024 MiB; sequential startup capacity checks",
+      "yarn_logs": "/snow/yarn-logs in HDFS; existing NodeManager volume log/local directories"
     },
-    "realtime_scale_acceptance": {
-      "host": "snow-analysis only; realtime 4608 MiB VM; control and compute off",
-      "artifacts": "runtime/realtime-scale/<lane> on host; raw gzip, SQLite baseline, receipts, resource snapshots",
-      "input": "Verified runtime/scale/input-100k-v1 shards; original envelopes sorted only when first event/request winners are unchanged",
-      "baseline_database": "runtime/realtime-scale/<lane>/lite/statistics.db; synthetic, fixed-clock local Store",
-      "resources": "Reuse realtime_acceptance Kafka/Flink/Doris services and volumes, with new synthetic topics and database per lane",
-      "private_previous_env": "lab/secrets/realtime-before-<lane>.env on analysis VM; retain privately",
-      "rest": "Temporary verified SSH tunnel on dynamically allocated host loopback port",
-      "shutdown": "Export checkpoint, cancel job, stop the named realtime services and always attempt soft VM shutdown. Preserve histories and inspect errors; no implicit deletion."
-    },
-    "freshness_acceptance": {
-      "host": "Windows loopback collector and observer; snow-analysis NAT warehouse",
-      "artifacts": "runtime/freshness/<lane>",
-      "collector_database": "runtime/freshness/<lane>/collector/statistics.db",
-      "sync_archive_and_target": "runtime/freshness/<lane>/sync",
-      "credentials": "Two ephemeral in-process tokens; never recorded or shared with product configuration",
-      "shutdown": "Stop sync, preserve checkpoint, cancel synthetic job, stop realtime services and VM; verify collector continues, then close the loopback test server. Keep archives and SQLite."
-    },
-    "realtime_acceptance": {
-      "host": "snow-analysis",
-      "env": "lab/secrets/realtime.env",
-      "volumes": ["snow-lab-realtime_kafka", "snow-lab-realtime_flink"],
-      "services": ["snow-lab-realtime-kafka-1", "snow-lab-realtime-jobmanager-1", "snow-lab-realtime-taskmanager-1"],
-      "reused_doris_services": ["snow-lab-analysis-doris-fe-1", "snow-lab-analysis-doris-be-1"],
-      "topic_scope": "snow.synthetic.<lane>.{events,late,duplicates,quarantine}.v1",
-      "consumer_group": "snow-flink-synthetic-<lane>",
-      "database_scope": "snow_realtime_<lane>",
-      "tables": ["events_realtime", "daily_realtime", "daily_offline", "txn_probe"],
-      "archives_and_receipts": "runtime/realtime",
-      "rest": "VM loopback 8081; temporary verified SSH tunnel on host loopback 18081",
-      "kafka": "analysis VM NAT 9092; separate broker and volume from original CDC Kafka",
-      "checkpoint_policy": "Retain latest 3; retain external checkpoints on cancel; manual session restoration uses the same JAR hash and lane",
-      "shutdown": "Export checkpoint identity, cancel only the synthetic jobs, stop the listed containers and VM. Keep topics, checkpoint volume, database tables and archives. No automatic removal on shutdown."
-    },
-    "airflow_gateway": {
-      "host": "snow-control",
-      "private_key_directory": "lab/secrets/airflow-ssh",
-      "authorized_key_comment": "snow-statistics-airflow",
-      "forced_command": "tools/airflow_gateway.py",
-      "publisher_lock_and_packages": "runtime/publication",
-      "metadata_volume": "snow-lab-orchestration_airflow"
-    },
-    "model_publication": {
-      "host": "snow-control",
-      "dag": "snow_models",
-      "hdfs_root": "/snow/warehouse/model-runs/<attempt-id>/<kind>",
-      "hive_database": "snow_synthetic",
-      "hive_tables": ["ops_<attempt-id>_*", "behavior_<attempt-id>_*"],
-      "accepted_packages": "runtime/publication/<attempt-id>.<kind>.json",
-      "release_history": "runtime/publication/model-releases",
-      "latest_pointer": "runtime/publication/models-latest.json",
-      "synthetic_boundary_input": "/snow/ods/synthetic/behavior-fixture-v1",
-      "synthetic_boundary_output": "/snow/warehouse/behavior-tests",
-      "shutdown": "Pause snow_models and stop project services. Preserve accepted packages, Hive metadata, HDFS tables and release history; export the latest private aggregates for offline demonstration."
-    },
-    "lineage": {
-      "capture_host": "snow-control",
-      "journal": "runtime/publication/lineage.sqlite",
-      "journal_database_limit_bytes": 16777216,
-      "journal_rollback_reserve_bytes": 16777216,
-      "delivery_copies_and_acknowledgements": "runtime/lineage",
-      "delivery_locks": "runtime/lineage/lineage-delivery-<target>",
-      "backend_host": "snow-analysis",
-      "services": ["snow-lab-analysis-marquez-1", "snow-lab-analysis-governance-db-1"],
-      "database_volume": "snow-lab-analysis_governance-db",
-      "loopback_api_port": 5000,
-      "loopback_admin_port": 5001,
-      "shutdown": "Disable optional capture or pause the DAG, export a consistent journal snapshot, stop Marquez and PostgreSQL. Preserve journal, acknowledgements and PostgreSQL volume; new backend databases require a new delivery target identity."
-    },
-    "incremental_ods": {
-      "host": "snow-control",
-      "single_writer_directory": "runtime/ods/<lane>",
-      "consumer_group": "snow-ods-<lane>",
-      "hdfs_root": "/snow/ods/synthetic/kafka/<lane>",
-      "staging_root": "/snow/ods/synthetic/kafka/<lane>/_staging",
-      "hdfs_operations": "/snow/warehouse/operations/<run-id>",
-      "shutdown": "Stop commands without deleting journal, raw archives, HDFS batches or snapshots. Review pending and landed state before resuming."
-    },
-    "lite_acceptance": {
-      "host": "snow-control with warehouse services stopped",
-      "artifacts": "runtime/lite-container-* (including retained state.img) and runtime/lite-compose-*",
-      "image": "snow-statistics-lite:small-0.1.0",
-      "temporary_containers": "snow-lite-acceptance-<unique-suffix>",
-      "scope": "Isolated loopback synthetic fixtures only; no shared host or business data",
-      "shutdown": "Remove only the dedicated test container, unmount its unique state path and retain the image and receipts. Stop the VM when done."
-    },
-    "max_project_bytes": 68719476736,
-    "min_host_free_bytes": 37580963840,
-    "min_host_available_mib": 4096,
-    "budget_revision_note": "User authorized resource adjustments for actual needs on 2026-09-11. 64 GiB accommodates about 55 GiB retained history + 5 GiB VM memory backing + 1 GiB job reserve. Earlier scale receipts were measured under the original 60 GiB cap."
+    "vm_names": [
+      "snow-control",
+      "snow-compute",
+      "snow-analysis"
+    ],
+    "vm_root": "runtime/vmware"
   },
+  "online": {
+    "compose_project": "snow-statistics-lite",
+    "default_container_cpus": 0.25,
+    "default_container_memory_bytes": 268435456,
+    "existing_volume_policy": "New defaults only; keep existing volume size and explicit application budget. Never resize or remove historical data on configuration change.",
+    "loopback_port": 8100,
+    "network": "snow-statistics-lite",
+    "private_route": "/analytics/private/v1/events",
+    "public_routes": [
+      "/analytics/v1/events",
+      "/analytics/public/v1/summary.json"
+    ],
+    "state_quota_bytes": 536870912,
+    "state_root": "/var/lib/snow-statistics",
+    "systemd_service": "snow-statistics-lite.service"
+  },
+  "owner": "Snow_Statistics",
   "retirement": {
+    "delete": "Separate explicit export and reviewed resource-specific removal. No global prune; no automatic deletion on mode switch.",
     "lite": "Stop local consumers and laboratory Compose projects; keep online collector and summary API unchanged.",
-    "off": "Disable product adapters, drain accepted events, export aggregates, archive/remove public page, stop collector.",
-    "delete": "Separate explicit export and reviewed resource-specific removal. No global prune; no automatic deletion on mode switch."
-  }
+    "off": "Disable product adapters, drain accepted events, export aggregates, archive/remove public page, stop collector."
+  },
+  "version": 1
 }

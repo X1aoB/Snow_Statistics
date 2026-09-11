@@ -337,6 +337,15 @@ wheels = [
 ]
 
 [[package]]
+name = "kazoo"
+version = "2.11.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/07/2cdc0daaa2199fecaee28ee9051afedeccb46c818b2c47fc32b7383905d5/kazoo-2.11.0.tar.gz", hash = "sha256:57e7e6f69295c8f922511488eeb79680729e14bb8eb382d5cad83aa11345c36c", size = 186460, upload-time = "2026-03-21T19:08:53.702Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/b9/5328ff14f7d637ac90f7144d4aad27b17bdd063325c9fb4b88c4e1f109fe/kazoo-2.11.0-py2.py3-none-any.whl", hash = "sha256:aa6be17159540dae4087661b8d4e24c7b58d4dc26170a2d5b8468b06712d84a9", size = 150943, upload-time = "2026-03-21T19:08:52.575Z" },
+]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -697,6 +706,7 @@ dev = [
 ]
 lab = [
     { name = "kafka-python" },
+    { name = "kazoo" },
     { name = "pandas" },
     { name = "pymysql", extra = ["rsa"] },
     { name = "streamlit" },
@@ -707,6 +717,7 @@ requires-dist = [
     { name = "fastapi", specifier = "==0.115.12" },
     { name = "httpx", specifier = "==0.28.1" },
     { name = "kafka-python", marker = "extra == 'lab'", specifier = "==2.2.15" },
+    { name = "kazoo", marker = "extra == 'lab'", specifier = "==2.11.0" },
     { name = "pandas", marker = "extra == 'lab'", specifier = "==2.2.3" },
     { name = "pydantic", specifier = "==2.11.5" },
     { name = "pymysql", extras = ["rsa"], marker = "extra == 'lab'", specifier = "==1.1.1" },

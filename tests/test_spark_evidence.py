@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-from snow_statistics.spark_evidence import summarize
+from snow_statistics.spark_evidence import job_groups, summarize
 
 
 def sample():
@@ -32,3 +32,24 @@ def test_partial_or_duplicate_event_logs_cannot_be_accepted():
     for invalid in (events[:-1], events[:3] + events[4:], events + [events[3]]):
         with pytest.raises(ValueError):
             summarize(invalid)
+
+
+def test_job_groups_preserve_failed_attempt_cost_and_refuse_ambiguous_stages():
+    task = deepcopy(sample()[3])
+    task["Stage ID"] = 5
+    task["Task Metrics"]["Shuffle Read Metrics"] = {
+        "Remote Bytes Read": 4, "Local Bytes Read": 6, "Total Records Read": 8}
+    job = dict(Event="SparkListenerJobStart", **{"Job ID": 1, "Stage IDs": [5],
+                                                "Properties": {"spark.jobGroup.id": "join-1"}})
+    failed = deepcopy(task)
+    failed["Task Info"]["Task ID"] = 2
+    failed["Task End Reason"]["Reason"] = "ExceptionFailure"
+    result = job_groups([job, task, failed])["join-1"]
+    assert result["tasks"] == 2 and result["input_bytes"] == 20 and result["shuffle_read_bytes"] == 20
+    assert result["outcomes"] == {"Success": 1, "ExceptionFailure": 1}
+    with pytest.raises(ValueError, match="Unattributed"):
+        job_groups([task])
+    conflict = deepcopy(job)
+    conflict["Properties"]["spark.jobGroup.id"] = "join-2"
+    with pytest.raises(ValueError, match="Shared stage"):
+        job_groups([job, task, conflict])

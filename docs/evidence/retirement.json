@@ -1,0 +1,144 @@
+{
+  "all_vms_off": true,
+  "collector_unavailable_follower_exits": true,
+  "database_integrity": "ok",
+  "date": "2026-09-12",
+  "disabled_follower_exits_without_sending": true,
+  "duplicate_log_and_event_dedup": true,
+  "exact_export_equal": true,
+  "export_hashes": [
+    {
+      "path": "statistics.sqlite",
+      "sha256": "4782867655508b881bad128894e8ac344f44a03c7ab5db4bc388058d5f244a65"
+    },
+    {
+      "path": "summary-archived.json",
+      "sha256": "7addcbd1a31eceb3dc066182f0fb95eaad0289afbd6626b6a5292d3333f3f4e8"
+    },
+    {
+      "path": "summary-before-off.json",
+      "sha256": "e0c6c3b28b280150106171b90ed93de4e4cf7f8f33d690f77ea3458a6a0c794b"
+    }
+  ],
+  "failures_retained": [
+    "lifecycle01: lifecycle assertions passed but transient SQLite WAL/SHM files were included in export hashes; not the final durable export evidence",
+    "lifecycle02: Windows abrupt process shutdown led to disk I/O error during reopen; retained privately; normal retirement now requests graceful lifespan shutdown and uses explicitly closed standalone backups"
+  ],
+  "historical_resources_deleted": false,
+  "modes": [
+    {
+      "daily": [
+        {
+          "app": "mywebsite",
+          "date": "2026-09-12",
+          "pv": 1,
+          "requests": 0,
+          "success_rate": null,
+          "successes": 0,
+          "uv": 1
+        },
+        {
+          "app": "project_snow",
+          "date": "2026-09-12",
+          "pv": 0,
+          "requests": 1,
+          "success_rate": 1.0,
+          "successes": 1,
+          "uv": 0
+        }
+      ],
+      "mode": "full"
+    },
+    {
+      "daily": [
+        {
+          "app": "mywebsite",
+          "date": "2026-09-12",
+          "pv": 2,
+          "requests": 0,
+          "success_rate": null,
+          "successes": 0,
+          "uv": 1
+        },
+        {
+          "app": "project_snow",
+          "date": "2026-09-12",
+          "pv": 0,
+          "requests": 1,
+          "success_rate": 1.0,
+          "successes": 1,
+          "uv": 0
+        }
+      ],
+      "mode": "lite"
+    },
+    {
+      "daily": [
+        {
+          "app": "mywebsite",
+          "date": "2026-09-12",
+          "pv": 2,
+          "requests": 0,
+          "success_rate": null,
+          "successes": 0,
+          "uv": 1
+        },
+        {
+          "app": "project_snow",
+          "date": "2026-09-12",
+          "pv": 0,
+          "requests": 1,
+          "success_rate": 1.0,
+          "successes": 1,
+          "uv": 0
+        }
+      ],
+      "mode": "off",
+      "status": "archived"
+    }
+  ],
+  "oversized_log_drained": true,
+  "private_log_fields_excluded": true,
+  "products": [
+    {
+      "candidate": "710ca3f7e2e77c80a61b9edffae40154c03b5204",
+      "name": "MyWebsite",
+      "removal_patch_sha256": "c4721be538910ed5123ec79f9b0615e0c21227b16264418956af21e25aaa24b8",
+      "removed_to_baseline": "d612e44c68af55785e2b2a81d69477fb8314ece4",
+      "scope": "Dedicated detached worktree; own npm lock/install; no collector credentials, warehouse or Snow Statistics imports; original candidate unchanged",
+      "tests": {
+        "astro_checked_files": 78,
+        "astro_errors": 0,
+        "astro_warnings": 0,
+        "build_pages": 31,
+        "unit_passed": 59
+      },
+      "tracked_tree_exactly_matches_pre_statistics_baseline": true
+    },
+    {
+      "candidate": "dbe0c5f8a715fcb212cca5c51cce9ba508e93542",
+      "name": "Project_Snow",
+      "removal_patch_sha256": "45b17f03c9cbd88d2967148c5991c7db1b9e7dfd84881bcab2b0ca01140d1cfe",
+      "removed_to_baseline": "f3f739773aacd79cb850bf134abee43adf2c0fd0",
+      "scope": "Dedicated detached worktree; own npm lock/install; no collector credentials, warehouse or Snow Statistics imports; original candidate unchanged",
+      "tests": {
+        "browser_deselected": 39,
+        "browser_passed": 4,
+        "build": "passed",
+        "bundle_passed": 7,
+        "bundle_skipped": 2,
+        "frontend_passed": 6,
+        "typecheck": "passed"
+      },
+      "tracked_tree_exactly_matches_pre_statistics_baseline": true
+    }
+  ],
+  "public_export_scope": "Only summary JSON is public; SQLite export stays private even for real data retirement",
+  "retained_events": 3,
+  "scope": "Synthetic real-labelled fixtures, private loopback deployment; all warehouse VMs off",
+  "source_sha256": {
+    "tools/forward_logs.py": "31fddff6b7445616ada00fbfac7c23006262b2f3861713a51a789551bad3226a",
+    "tools/smoke_retirement.py": "b5c75f809dd3a0572d5a9e5690ca304e7886c2627a6b6a18749648922bde50ca"
+  },
+  "stopped_without_deleting": true
+}
