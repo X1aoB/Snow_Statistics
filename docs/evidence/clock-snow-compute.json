@@ -1,0 +1,9 @@
+{
+  "node": "snow-compute",
+  "corrected": true,
+  "offset_before_seconds": 28795.332,
+  "offset_after_seconds": -0.758,
+  "within_two_seconds": true,
+  "reference": "host UTC; HTTPS Date checked before correction",
+  "measured_epoch": 1789105415.4587586
+}

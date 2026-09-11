@@ -1,0 +1,9 @@
+{
+  "node": "snow-analysis",
+  "corrected": true,
+  "offset_before_seconds": 0.141,
+  "offset_after_seconds": -0.267,
+  "within_two_seconds": true,
+  "reference": "host UTC; HTTPS Date checked before correction",
+  "measured_epoch": 1789105140.9168816
+}

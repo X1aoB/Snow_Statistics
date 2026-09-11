@@ -40,6 +40,27 @@ test("consent absent and privacy signal prevent identifiers", () => {
   const env = environment(() => assert.fail("network"));
   createAnalytics({ enabled: true, app: "mywebsite" }, env).track("page_view");
   env.navigator.globalPrivacyControl = true;
-  createAnalytics({ enabled: true, consent: true, app: "mywebsite" }, env).track("page_view");
+  createAnalytics({ enabled: true, consent: true, app: "mywebsite", endpoint: "https://stats.example/analytics/v1/events" }, env).track("page_view");
   assert.equal(env.saved.size, 0);
+});
+
+test("missing or insecure collector configuration does not create identifiers", () => {
+  for (const endpoint of [undefined, "", "  ", "ftp://localhost/events", "http://stats.example/events"]) {
+    const env = environment(() => assert.fail("network"));
+    const adapter = createAnalytics({ enabled: true, consent: true, app: "mywebsite", endpoint }, env);
+    adapter.track("page_view");
+    assert.equal(adapter.active, false);
+    assert.equal(env.saved.size, 0);
+    assert.equal(env.timers.size, 0);
+  }
+});
+
+test("repeat entry clicks renew our attribution fragment while preserving business anchors", () => {
+  const env = environment(() => assert.fail("network before flush"));
+  const adapter = createAnalytics({ enabled: true, consent: true, app: "mywebsite", endpoint: "https://stats.example/analytics/v1/events" }, env);
+  const first = adapter.jump("https://snow.xiaob.dev/");
+  const second = adapter.jump(first);
+  assert.notEqual(new URL(first).hash, new URL(second).hash);
+  assert.equal(adapter.jump("https://snow.xiaob.dev/#business-section"), "https://snow.xiaob.dev/#business-section");
+  adapter.stop();
 });

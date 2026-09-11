@@ -15,8 +15,20 @@ services:
     environment:
       FE_SERVERS: fe1:${ANALYSIS_IP:?}:9010
       FE_ID: 1
-    volumes: [doris-fe:/opt/apache-doris/fe/doris-meta, ./doris/fe.conf:/opt/apache-doris/fe/conf/fe.conf:ro]
+      SNOW_DORIS_IP: ${ANALYSIS_IP:?}
+    # Official entrypoints append discovered network settings to their own conf.
+    # Keep source templates read-only, copy overrides into the writable container.
+    volumes: [doris-fe:/opt/apache-doris/fe/doris-meta, ./doris/fe.conf:/snow/fe.conf:ro]
+    entrypoint: [bash, -ec]
+    command:
+      - |
+        cat /snow/fe.conf >> /opt/apache-doris/fe/conf/fe.conf
+        printf '\npriority_networks = %s/32\n' "$$SNOW_DORIS_IP" >> /opt/apache-doris/fe/conf/fe.conf
+        exec bash init_fe.sh
     mem_limit: 2560m
+    logging: &doris_logging
+      driver: local
+      options: {max-size: 5m, max-file: "3"}
   doris-be:
     image: ${DORIS_BE_IMAGE:?}
     profiles: [olap]
@@ -24,8 +36,16 @@ services:
     environment:
       FE_SERVERS: fe1:${ANALYSIS_IP}:9010
       BE_ADDR: ${ANALYSIS_IP}:9050
-    volumes: [doris-be:/opt/apache-doris/be/storage, ./doris/be.conf:/opt/apache-doris/be/conf/be.conf:ro]
+      SNOW_DORIS_IP: ${ANALYSIS_IP:?}
+    volumes: [doris-be:/opt/apache-doris/be/storage, ./doris/be.conf:/snow/be.conf:ro]
+    entrypoint: [bash, -ec]
+    command:
+      - |
+        cat /snow/be.conf >> /opt/apache-doris/be/conf/be.conf
+        printf '\npriority_networks = %s/32\n' "$$SNOW_DORIS_IP" >> /opt/apache-doris/be/conf/be.conf
+        exec bash entry_point.sh
     mem_limit: 5g
+    logging: *doris_logging
   governance-db:
     image: ${POSTGRES_IMAGE:?}
     profiles: [governance]

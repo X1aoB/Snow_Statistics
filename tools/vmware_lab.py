@@ -20,6 +20,7 @@ BASE_URL = "https://cloud-images.ubuntu.com/releases/noble/release-20260826/"
 IMAGE = "ubuntu-24.04-server-cloudimg-amd64.vmdk"
 IMAGE_SHA256 = "fb3ba097a9013d759fa13ab22d2b4118bd55452c617ca3758a55303eea96de6e"
 NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": (10240, 4)}
+DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 24}
 
 
 def run(*args):
@@ -124,7 +125,7 @@ def prepare():
         vmdk = directory / "system.vmdk"
         if not vmdk.exists():
             run(VMWARE / "vmware-vdiskmanager.exe", "-r", image, "-t", "0", vmdk)
-            run(VMWARE / "vmware-vdiskmanager.exe", "-x", "18GB", vmdk)
+            run(VMWARE / "vmware-vdiskmanager.exe", "-x", f"{DISK_GB[name]}GB", vmdk)
         vmx = directory / f"{name}.vmx"
         if not vmx.exists():
             config = {".encoding": "UTF-8", "config.version": "8", "virtualHW.version": "20", "displayName": name,

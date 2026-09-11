@@ -4,10 +4,11 @@
 export function createAnalytics(config, env = globalThis) {
   const inert = Object.freeze({ active: false, track() {}, stop() {}, jump(url) { return url; } });
   if (!config?.enabled || !config?.consent || !["mywebsite", "project_snow"].includes(config.app)) return inert;
+  if (typeof config.endpoint !== "string" || !config.endpoint.trim()) return inert;
   try {
     if (env.navigator?.globalPrivacyControl || env.navigator?.doNotTrack === "1") return inert;
     const endpoint = new URL(config.endpoint, env.location.href);
-    if (endpoint.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(endpoint.hostname)) return inert;
+    if (endpoint.protocol !== "https:" && !(endpoint.protocol === "http:" && ["localhost", "127.0.0.1"].includes(endpoint.hostname))) return inert;
     const ns = `snow.statistics.v1.${config.app}.`;
     const uuid = () => env.crypto.randomUUID();
     let anonymous = null, session = null, stopped = false, queue = [], inFlight = false;
@@ -86,7 +87,9 @@ export function createAnalytics(config, env = globalThis) {
       try {
         if (stopped || config.app !== "mywebsite") return url;
         const target = new URL(url, env.location.href);
-        if (target.origin !== "https://snow.xiaob.dev" || target.hash) return url;
+        // A link may retain our own fragment after a back/forward-cache return.
+        // Every new click needs a new attribution token; preserve business anchors.
+        if (target.origin !== "https://snow.xiaob.dev" || (target.hash && !/^#snow_jump=[0-9a-f-]{36}$/i.test(target.hash))) return url;
         const jump = uuid();
         track("entry_click", { jump_id: jump, channel: "portfolio" });
         // Fragment avoids logging an attribution ID in the destination request URL.

@@ -1,0 +1,12 @@
+{
+  "engine": "Doris",
+  "mysql_compatibility_version": "5.7.99",
+  "backend_version": "doris-3.0.6.2-rc01-910c4249c5",
+  "source": "synthetic",
+  "scope": "single_key_fixture",
+  "rows": 1,
+  "stable_key_replay": true,
+  "stale_business_version_ignored": true,
+  "integer_metrics_equal": true,
+  "measured_at": "2026-09-11T05:39:25.607227+00:00"
+}
