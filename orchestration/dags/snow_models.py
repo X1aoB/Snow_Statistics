@@ -9,13 +9,16 @@ from airflow.decorators import dag, task
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 
+from snow_statistics.io import digest
+from snow_statistics.lineage import Capture, file_dataset
 from snow_statistics.model_publication import release_models
-from snow_statistics.scheduling import resolve_window
+from snow_statistics.publication import canonical
+from snow_statistics.scheduling import resolve_window, retry_seconds
 
 
 @dag(dag_id="snow_models", start_date=pendulum.datetime(2026, 1, 1, tz="Asia/Hong_Kong"),
      schedule=None, catchup=False, max_active_runs=1,
-     default_args={"retries": 2, "retry_delay": timedelta(minutes=5)},
+     default_args={"retries": 2, "retry_delay": timedelta(seconds=retry_seconds(os.getenv("SNOW_AIRFLOW_RETRY_SECONDS", "300")))},
      params={"date_from": Param(None, type=["null", "string"], format="date"),
              "date_to": Param(None, type=["null", "string"], format="date"),
              "cutoff": Param(None, type=["null", "string"], format="date-time"),
@@ -43,11 +46,14 @@ def snow_models():
             append_env=True, execution_timeout=timedelta(minutes=20)))
 
     @task(execution_timeout=timedelta(minutes=2))
-    def publish(operations_id, behavior_id, context):
+    def publish(operations_id, behavior_id, context, **airflow_context):
         directory = Path("/opt/snow/runtime/publication")
-        operations = json.loads((directory / (operations_id + ".operations.json")).read_bytes())
-        behavior = json.loads((directory / (behavior_id + ".behavior.json")).read_bytes())
-        result = release_models(operations, behavior, directory, context["run_id"])
+        attempt = context["run_id"] + "-t" + str(airflow_context["ti"].try_number)
+        with Capture("snow_models.publish", attempt, lambda: [file_dataset(operations_id + ".operations.json"), file_dataset(behavior_id + ".behavior.json")]) as capture:
+            operations = json.loads((directory / (operations_id + ".operations.json")).read_bytes())
+            behavior = json.loads((directory / (behavior_id + ".behavior.json")).read_bytes())
+            result = release_models(operations, behavior, directory, context["run_id"])
+            capture.outputs(lambda: [file_dataset("models-latest.json"), file_dataset("model-releases/" + digest(canonical(result)) + ".json")])
         return {"content_hash": result["content_hash"], "run_id": result["run_id"]}
 
     released = publish(jobs[0].output, jobs[1].output, resolved)

@@ -11,7 +11,11 @@ from snow_statistics.publication import connect, read_published
 st.set_page_config(page_title="Snow Statistics Lab", layout="wide")
 st.title("Snow Statistics · 数据开发实验室")
 st.caption("合成数据 / 本地实验结果；不是线上用户规模或生产性能证明")
-mode = st.sidebar.radio("数据来源", ["Doris 已发布数仓结果", "Spark 已发布运营与行为模型", "Python 正确性基准"])
+mode = st.sidebar.radio("数据来源", ["Doris 已发布数仓结果", "Spark 已发布运营与行为模型", "Marquez 血缘归档", "Python 正确性基准"])
+if mode == "Marquez 血缘归档":
+    from snow_statistics.lineage_view import render
+    render()
+    st.stop()
 if mode == "Spark 已发布运营与行为模型":
     path = Path(st.sidebar.text_input("私有模型发布文件", "runtime/publication/models-latest.json"))
     if not path.is_file():

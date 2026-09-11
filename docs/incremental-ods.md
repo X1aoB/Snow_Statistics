@@ -2,6 +2,8 @@
 
 本阶段把 Kafka 行为事件与 Debezium 变更纳入同一套可恢复的 HDFS 输入。入口仅允许本项目四个 `snow.synthetic.*` Topic；不接触生产采集配置。轻量服务、公开汇总接口及两个业务产品均没有新增依赖。
 
+资源更新：安装 Marquez / PostgreSQL 镜像后，小样本计算已改用通过实测的 `ods-compact`（3.5/3/1 GiB）；下文原始 `ods` 数字保留为当时的实验记录。启动前仍需检查 60 GiB 门禁及 1 GiB 作业余量，见[血缘手册](lineage.md)。
+
 ## 提交边界
 
 ```text

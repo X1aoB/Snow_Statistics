@@ -36,6 +36,20 @@
       "synthetic_boundary_output": "/snow/warehouse/behavior-tests",
       "shutdown": "Pause snow_models and stop project services. Preserve accepted packages, Hive metadata, HDFS tables and release history; export the latest private aggregates for offline demonstration."
     },
+    "lineage": {
+      "capture_host": "snow-control",
+      "journal": "runtime/publication/lineage.sqlite",
+      "journal_database_limit_bytes": 16777216,
+      "journal_rollback_reserve_bytes": 16777216,
+      "delivery_copies_and_acknowledgements": "runtime/lineage",
+      "delivery_locks": "runtime/lineage/lineage-delivery-<target>",
+      "backend_host": "snow-analysis",
+      "services": ["snow-lab-analysis-marquez-1", "snow-lab-analysis-governance-db-1"],
+      "database_volume": "snow-lab-analysis_governance-db",
+      "loopback_api_port": 5000,
+      "loopback_admin_port": 5001,
+      "shutdown": "Disable optional capture or pause the DAG, export a consistent journal snapshot, stop Marquez and PostgreSQL. Preserve journal, acknowledgements and PostgreSQL volume; new backend databases require a new delivery target identity."
+    },
     "incremental_ods": {
       "host": "snow-control",
       "single_writer_directory": "runtime/ods/<lane>",

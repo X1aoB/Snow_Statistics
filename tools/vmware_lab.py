@@ -23,6 +23,8 @@ NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": 
 DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 24}
 PROFILES = {"batch": {"snow-control": 4096, "snow-compute": 4096, "snow-analysis": 2048},
             "ods": {"snow-control": 3584, "snow-compute": 4096, "snow-analysis": 1024},
+            "ods-compact": {"snow-control": 3584, "snow-compute": 3072, "snow-analysis": 1024},
+            "governance": {"snow-analysis": 2048},
             "olap": {"snow-control": 4096, "snow-analysis": 6144}, "standard": {}}
 
 

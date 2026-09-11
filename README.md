@@ -78,6 +78,7 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [离线闭环、发布与 Airflow](docs/offline-pipeline.md)
 - [Kafka / CDC 增量落地与恢复](docs/incremental-ods.md)
 - [Spark 会话、留存、归因与 Airflow 模型发布](docs/behavior-models.md)
+- [OpenLineage 本地日志、补发与 Marquez](docs/lineage.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)

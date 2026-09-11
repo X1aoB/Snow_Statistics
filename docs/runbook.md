@@ -1,5 +1,7 @@
 # 本地运行与资源门禁
 
+当前已安装完整离线和治理镜像，小样本计算优先选择 `ods-compact`（control/compute/analysis：3.5/3/1 GiB），仍执行 `--reserve-mib 1024` 作业前检查。Marquez 使用独立 `governance` 阶段（分析机 2 GiB，计算服务停止）。这些是小样本验收配置，扩样须再次测量。详见[血缘与资源切换](lineage.md)。
+
 ## 已知工具
 
 VMware：`C:\Program Files (x86)\VMware\VMware Workstation\vmware.exe`；同目录 `vmrun.exe`、`vmware-vdiskmanager.exe`。

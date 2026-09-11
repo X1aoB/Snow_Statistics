@@ -4,6 +4,13 @@ from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 
+def retry_seconds(value):
+    seconds = int(value)
+    if not 10 <= seconds <= 600:
+        raise ValueError("Experimental retry delay must be within 10..600 seconds")
+    return seconds
+
+
 def resolve_window(interval_end, run_id, date_from=None, date_to=None, cutoff=None):
     end_time = datetime.fromisoformat(str(interval_end).replace("Z", "+00:00"))
     if end_time.tzinfo is None:

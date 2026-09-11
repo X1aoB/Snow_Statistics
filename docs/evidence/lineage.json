@@ -1,0 +1,606 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-11",
+  "scope": "Synthetic small-data explicit table/file lineage on one physical host; not column lineage, throughput or realtime SLA",
+  "resources": {
+    "original_compute_vm_mib": {
+      "control": 3584,
+      "compute": 4096,
+      "analysis": 1024
+    },
+    "compact_compute_vm_mib": {
+      "control": 3584,
+      "compute": 3072,
+      "analysis": 1024
+    },
+    "governance_vm_mib": {
+      "control": 3584,
+      "compute": 0,
+      "analysis": 2048
+    },
+    "compact_project_files_gib_running": 58.79,
+    "compact_host_free_gib_running": 50.77,
+    "compute_available_mib_observation": 1555,
+    "analysis_available_mib_governance_observation": 1158,
+    "marquez_container_limit_mib": 1024,
+    "postgres_container_limit_mib": 384,
+    "marquez_container_used_mib_observation": 258.7,
+    "postgres_container_used_mib_observation": 37.66,
+    "memory_observations_are_not_load_peaks": true,
+    "additional_image_files_gib_approx": 0.83,
+    "project_cap_gib": 60,
+    "host_free_reserve_gib": 35,
+    "host_ram_reserve_mib": 4096,
+    "job_preflight_project_reserve_mib": 1024,
+    "project_files_gib_after_shutdown": 51.3,
+    "host_free_gib_after_shutdown": 58.25,
+    "running_vms_at_end": 0,
+    "airflow_dags_paused": true,
+    "stored_data_preserved": true
+  },
+  "airflow": [
+    {
+      "engine": "Airflow 2.10.5",
+      "dag_id": "snow_models",
+      "runs": [
+        {
+          "run_id": "lineage-success-20260911",
+          "state": "success",
+          "execution_date": "2026-09-11 10:09:38.000000",
+          "start_date": "2026-09-11 10:09:39.088072",
+          "end_date": "2026-09-11 10:12:19.597479"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "compute_behavior",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:11:03.243919",
+          "end_date": "2026-09-11 10:12:13.101067"
+        },
+        {
+          "task_id": "compute_operations",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:09:56.660376",
+          "end_date": "2026-09-11 10:10:59.124098"
+        },
+        {
+          "task_id": "publish",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:12:18.693953",
+          "end_date": "2026-09-11 10:12:18.857646"
+        },
+        {
+          "task_id": "window",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:09:47.648236",
+          "end_date": "2026-09-11 10:09:48.400286"
+        }
+      ]
+    },
+    {
+      "engine": "Airflow 2.10.5",
+      "dag_id": "snow_models",
+      "runs": [
+        {
+          "run_id": "lineage-failure-20260911",
+          "state": "failed",
+          "execution_date": "2026-09-11 10:09:47.000000",
+          "start_date": "2026-09-11 10:12:20.636190",
+          "end_date": "2026-09-11 10:14:00.873911"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "compute_behavior",
+          "state": "upstream_failed",
+          "try_number": 0,
+          "start_date": "2026-09-11 10:13:59.994636",
+          "end_date": "2026-09-11 10:13:59.994636"
+        },
+        {
+          "task_id": "compute_operations",
+          "state": "failed",
+          "try_number": 3,
+          "start_date": "2026-09-11 10:13:41.393957",
+          "end_date": "2026-09-11 10:13:59.925494"
+        },
+        {
+          "task_id": "publish",
+          "state": "upstream_failed",
+          "try_number": 0,
+          "start_date": "2026-09-11 10:13:59.996193",
+          "end_date": "2026-09-11 10:13:59.996193"
+        },
+        {
+          "task_id": "window",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:12:23.663576",
+          "end_date": "2026-09-11 10:12:23.806801"
+        }
+      ]
+    },
+    {
+      "engine": "Airflow 2.10.5",
+      "dag_id": "snow_models",
+      "runs": [
+        {
+          "run_id": "lineage-recovery-20260911",
+          "state": "success",
+          "execution_date": "2026-09-11 10:09:55.000000",
+          "start_date": "2026-09-11 10:14:02.021389",
+          "end_date": "2026-09-11 10:16:11.345432"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "compute_behavior",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:14:59.692553",
+          "end_date": "2026-09-11 10:16:05.993232"
+        },
+        {
+          "task_id": "compute_operations",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:14:09.066880",
+          "end_date": "2026-09-11 10:14:55.438786"
+        },
+        {
+          "task_id": "publish",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:16:10.381871",
+          "end_date": "2026-09-11 10:16:10.548364"
+        },
+        {
+          "task_id": "window",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:14:05.072758",
+          "end_date": "2026-09-11 10:14:05.225335"
+        }
+      ]
+    },
+    {
+      "engine": "Airflow 2.10.5",
+      "dag_id": "snow_models",
+      "runs": [
+        {
+          "run_id": "lineage-compact-20260911",
+          "state": "success",
+          "execution_date": "2026-09-11 10:25:09.000000",
+          "start_date": "2026-09-11 10:25:10.767015",
+          "end_date": "2026-09-11 10:27:35.844849"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "compute_behavior",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:26:21.704389",
+          "end_date": "2026-09-11 10:27:30.517412"
+        },
+        {
+          "task_id": "compute_operations",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:25:17.647144",
+          "end_date": "2026-09-11 10:26:17.011374"
+        },
+        {
+          "task_id": "publish",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:27:34.936931",
+          "end_date": "2026-09-11 10:27:35.101295"
+        },
+        {
+          "task_id": "window",
+          "state": "success",
+          "try_number": 1,
+          "start_date": "2026-09-11 10:25:13.854041",
+          "end_date": "2026-09-11 10:25:13.998368"
+        }
+      ]
+    }
+  ],
+  "failure_isolation": {
+    "failed_run_kept_previous_publication": true,
+    "previous_run_id": "af-5a9fcd2dc6f6e603965def34",
+    "content_hash": "f7b2bd19c95366d6c4dc77dc30f77c4f09e1a40100f02646461bfad71ad2f92f",
+    "failed_attempts_have_no_accepted_package": true
+  },
+  "compact_model_result": {
+    "golden_aggregates_equal": true,
+    "source": "synthetic",
+    "users": 2,
+    "content_hash": "f7b2bd19c95366d6c4dc77dc30f77c4f09e1a40100f02646461bfad71ad2f92f",
+    "operations": {
+      "application_id": "application_1789122278719_0001",
+      "as_of": "2026-01-04",
+      "changes": 19,
+      "counts": {
+        "dim_content_scd2": 4,
+        "fact_ticket_daily": 8,
+        "fact_ticket_round": 4
+      },
+      "cutoff": "2026-01-05T00:00:00+00:00",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T10:26:14.411371+00:00",
+      "golden_equal": false,
+      "hive_tables": {
+        "dim_content_scd2": "snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_dim_content_scd2",
+        "fact_ticket_daily": "snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_fact_ticket_daily",
+        "fact_ticket_round": "snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_fact_ticket_round"
+      },
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "input_snapshot": {
+        "batches": 2,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "source": "synthetic"
+      },
+      "kind": "operations",
+      "master": "yarn",
+      "output": "hdfs://snow-control:9000/snow/warehouse/model-runs/af-9c55e55b898ec12991a8419d-t1/operations",
+      "run_id": "af-9c55e55b898ec12991a8419d-t1",
+      "schema_version": 1,
+      "source": "synthetic"
+    },
+    "behavior": {
+      "application_id": "application_1789122278719_0002",
+      "cohort_definition": "first_observed_in_input",
+      "complete_through": "2026-01-04",
+      "counts": {
+        "conversions": 1,
+        "funnel": 3,
+        "retention": 2,
+        "session_daily": 6,
+        "sessions": 11
+      },
+      "cutoff": "2026-01-05T00:00:00+00:00",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-04",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T10:27:28.766461+00:00",
+      "golden_equal": false,
+      "hive_tables": {
+        "conversions": "snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_conversions",
+        "funnel": "snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_funnel",
+        "retention": "snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_retention",
+        "session_daily": "snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_session_daily",
+        "sessions": "snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_sessions"
+      },
+      "input": "hdfs://192.168.216.131:9000/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+      "input_snapshot": {
+        "batches": 2,
+        "offsets": {
+          "snow.synthetic.cdc.snow_ops.campaigns:0": 1,
+          "snow.synthetic.cdc.snow_ops.contents:0": 7,
+          "snow.synthetic.cdc.snow_ops.tickets:0": 12,
+          "snow.synthetic.events.v1:0": 64
+        },
+        "snapshot_id": "c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1",
+        "source": "synthetic"
+      },
+      "kind": "behavior",
+      "master": "yarn",
+      "output": "hdfs://snow-control:9000/snow/warehouse/model-runs/af-9c55e55b898ec12991a8419d-t1/behavior",
+      "quality": {
+        "after_cutoff": 0,
+        "duplicates": 36,
+        "quarantined": 0,
+        "raw": 64,
+        "valid": 28
+      },
+      "run_id": "af-9c55e55b898ec12991a8419d-t1",
+      "schema_version": 1,
+      "source": "synthetic"
+    }
+  },
+  "model_validation_scope": "Published aggregate rows and counts equal the independent oracle; this DAG did not run per-row operations/behavior golden checks (manifest golden_equal=false). Earlier boundary golden evidence remains in behavior-models.json.",
+  "protocol_validation": {
+    "events_validated": 24,
+    "schema_url": "https://openlineage.io/spec/2-0-2/OpenLineage.json",
+    "schema_sha256": "69f68bee00b9beac88a87059c0102410e7bb05f3f43c46d02a0409831eceb0d2"
+  },
+  "outage": {
+    "offline_delivery_failed": true,
+    "reason": "URLError",
+    "journal": {
+      "events": 18,
+      "acknowledged": 0,
+      "pending": 18,
+      "open_runs": []
+    }
+  },
+  "acknowledgement_gap": {
+    "http_accepted_before_local_ack": true,
+    "server_state": "RUNNING",
+    "journal": {
+      "events": 18,
+      "acknowledged": 0,
+      "pending": 18,
+      "open_runs": []
+    }
+  },
+  "replay": {
+    "events": 18,
+    "runs": 9,
+    "graph_nodes": 16,
+    "graph_edges": 16,
+    "entire_run_and_graph_receipt_equal": true,
+    "receipt_sha256": "41670d67ebe3fba741b74f15dfe0ff38bbf06e6a5ca135e10bb8a90dff2f7dbe",
+    "server_internal_event_log_deduplication_claimed": false
+  },
+  "container_recreation": {
+    "services": [
+      "marquez",
+      "governance-db"
+    ],
+    "persistent_volumes_preserved": true,
+    "entire_run_and_graph_receipt_equal": true
+  },
+  "backend_final": {
+    "engine": "Marquez 0.50.0",
+    "events": 24,
+    "graph": {
+      "edges": [
+        {
+          "destination": "job:snow-statistics.synthetic:snow_models.publish",
+          "origin": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/af-9c55e55b898ec12991a8419d-t1.behavior.json"
+        },
+        {
+          "destination": "job:snow-statistics.synthetic:snow_models.publish",
+          "origin": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/af-9c55e55b898ec12991a8419d-t1.operations.json"
+        },
+        {
+          "destination": "job:snow-statistics.synthetic:snow_models.compute_behavior",
+          "origin": "dataset:hdfs://snow-control:9000:/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json"
+        },
+        {
+          "destination": "job:snow-statistics.synthetic:snow_models.compute_operations",
+          "origin": "dataset:hdfs://snow-control:9000:/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json"
+        },
+        {
+          "destination": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/af-9c55e55b898ec12991a8419d-t1.behavior.json",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_behavior"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_conversions",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_behavior"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_funnel",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_behavior"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_retention",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_behavior"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_session_daily",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_behavior"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_sessions",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_behavior"
+        },
+        {
+          "destination": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/af-9c55e55b898ec12991a8419d-t1.operations.json",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_operations"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_dim_content_scd2",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_operations"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_fact_ticket_daily",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_operations"
+        },
+        {
+          "destination": "dataset:hive://snow-control:9083:snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_fact_ticket_round",
+          "origin": "job:snow-statistics.synthetic:snow_models.compute_operations"
+        },
+        {
+          "destination": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/model-releases/cfd4330e555de41f02dafc335fe8b34e95a75348fe928018dcb9a1e8fe7ca21f.json",
+          "origin": "job:snow-statistics.synthetic:snow_models.publish"
+        },
+        {
+          "destination": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/models-latest.json",
+          "origin": "job:snow-statistics.synthetic:snow_models.publish"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/af-9c55e55b898ec12991a8419d-t1.behavior.json",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/af-9c55e55b898ec12991a8419d-t1.operations.json",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/model-releases/cfd4330e555de41f02dafc335fe8b34e95a75348fe928018dcb9a1e8fe7ca21f.json",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:file://snow-control:/home/snow/Snow_Statistics/runtime/publication/models-latest.json",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hdfs://snow-control:9000:/snow/ods/synthetic/kafka/acceptance-v1/snapshots/c797c39252d6da96d8e195dc283d2e4bfa37bf4b2274bcdb4ec4f8598d129cc1/_snapshot.json",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_conversions",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_funnel",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_retention",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_session_daily",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.behavior_af_9c55e55b898ec12991a8419d_t1_sessions",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_dim_content_scd2",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_fact_ticket_daily",
+          "type": "DATASET"
+        },
+        {
+          "id": "dataset:hive://snow-control:9083:snow_synthetic.ops_af_9c55e55b898ec12991a8419d_t1_fact_ticket_round",
+          "type": "DATASET"
+        },
+        {
+          "id": "job:snow-statistics.synthetic:snow_models.compute_behavior",
+          "type": "JOB"
+        },
+        {
+          "id": "job:snow-statistics.synthetic:snow_models.compute_operations",
+          "type": "JOB"
+        },
+        {
+          "id": "job:snow-statistics.synthetic:snow_models.publish",
+          "type": "JOB"
+        }
+      ]
+    },
+    "namespace": "snow-statistics.synthetic",
+    "runs": [
+      {
+        "job": "snow_models.compute_operations",
+        "output_count": 4,
+        "run_id": "96b1ab64-0719-549d-a020-4b7f509223b8",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.compute_behavior",
+        "output_count": 6,
+        "run_id": "b4d91a30-4848-573c-a369-368ee3bfc08d",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.publish",
+        "output_count": 2,
+        "run_id": "2b214a30-9299-5d8d-90b1-81db5b800898",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.compute_operations",
+        "output_count": 0,
+        "run_id": "e758a834-223d-5d90-ba47-7ed72c7a5286",
+        "state": "FAILED"
+      },
+      {
+        "job": "snow_models.compute_operations",
+        "output_count": 0,
+        "run_id": "1bed6969-54e5-587b-b8b3-746f35e36ad6",
+        "state": "FAILED"
+      },
+      {
+        "job": "snow_models.compute_operations",
+        "output_count": 0,
+        "run_id": "8a0501f2-369d-5d65-9ac6-849e1dd24898",
+        "state": "FAILED"
+      },
+      {
+        "job": "snow_models.compute_operations",
+        "output_count": 4,
+        "run_id": "deea882f-e4ca-5400-ac61-9a5f4fd8e176",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.compute_behavior",
+        "output_count": 6,
+        "run_id": "554a95c5-4078-59e2-92c8-b545f731f7fc",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.publish",
+        "output_count": 2,
+        "run_id": "c710ca3d-5f8d-5418-8c00-f92fe88774f8",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.compute_operations",
+        "output_count": 4,
+        "run_id": "5fbf12bf-bd01-5aa0-a3a4-b2236a3dfc0f",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.compute_behavior",
+        "output_count": 6,
+        "run_id": "d1140642-b208-5f54-a654-273ab161af7b",
+        "state": "COMPLETED"
+      },
+      {
+        "job": "snow_models.publish",
+        "output_count": 2,
+        "run_id": "620f54cc-7d1c-5fe4-a7af-116e1bdeff97",
+        "state": "COMPLETED"
+      }
+    ]
+  },
+  "source_acknowledgements": {
+    "events": 24,
+    "acknowledged": 24,
+    "pending": 0,
+    "open_runs": []
+  },
+  "dashboard": {
+    "engine": "Streamlit / Chromium",
+    "archived_api_receipt": true,
+    "graph_svg_rendered": true,
+    "nodes": 16,
+    "edges": 16,
+    "runs": 12,
+    "requires_running_vms": false
+  },
+  "limitations": [
+    "Only three snow_models jobs; input manifest, eight Hive outputs, model packages and publication artifacts",
+    "Hard kill can leave START; only explicit failed-attempt receipt reconciliation is implemented",
+    "At-least-once HTTP delivery; manual staged sync between compute and governance",
+    "Metadata write failure is isolated from compute and can leave a visible coverage gap",
+    "No production collection, Kafka/CDC source lineage, daily/Doris/Flink lineage, parent run or column lineage"
+  ],
+  "delivered_source_sha256_lf": {
+    "src/snow_statistics/lineage.py": "31b43ae46d5596e2f92347644193ee8e338106ea22d5388fce5d9bfbe1a08035",
+    "src/snow_statistics/lineage_view.py": "53465b5da423a2eddb13ff6074e7906c023530eec2947b00f60688febad15253",
+    "governance/lineage.py": "d0518e34b393595924015d6ca5b12dd649d8943284dc06a9441decf07114eaf6",
+    "tools/verify_lineage_backend.py": "f2e091b4322854862ac141c2106753a2aa3f7065adf3f255e68f556eeb852b5e",
+    "tools/airflow_ssh_compute.py": "73e05a97616b45ba6b303aaf4460ed7e552ae72595854a31b5e0e278ae2f99c9",
+    "orchestration/dags/snow_models.py": "70c2eed829fe93fda1b6a08732d1af7d3b53b3cd5129a7ed084ace73fd2430d8",
+    "lab/compose.analysis.yaml": "8a76d8679dbc6f067c8d1f95e97a97b2461f1f4d0b28c9db3b3b4b0264ca4047",
+    "lab/compose.airflow.yaml": "8af9e39d1d3bcf8e78a4f3e01e39923228ec4c05092315d25973fb25e8cbab78",
+    "lab/marquez.yml": "d9862350381e13e18ef9bf44cbc6842fe5e6edfd575a82719867193e7cf824f1"
+  },
+  "source_hash_note": "Hashes identify delivered source; final refinements to publication capture placement and local UI were checked locally after the VM DAG runs."
+}
