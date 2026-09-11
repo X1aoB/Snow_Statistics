@@ -1,0 +1,529 @@
+{
+  "artifact_sha256": {
+    "runtime/scale/events-1m.jsonl": "778b50b1189959aef3872cd27893a1e62bd213a37552c799846adfb2bff2bb37",
+    "runtime/scale/input-1m-v1/expected.json": "0514969c9a2c24fb4941578fd44aac76586ef00da428658eff35dce14e386614",
+    "runtime/scale/input-1m-v1/manifest.json": "34a9e73f481bce85e65d33e5fbe4f14eed8615c86219b38227564682ddc249d6",
+    "runtime/scale/performance-1m.plans.json": "a3c005b9a8dee9dfe4c633e7dabb5e151e251204f80f3e578c267b1df8f22b05",
+    "runtime/scale/scale-1m-01-monitor.json": "66c5dbce93c2ef273c5e627e43ac62dff611079b312351594d6d37e29193d248",
+    "runtime/scale/scale-1m-01.json": "82c3498892bed36b7998979218d9a66362a8a73715f82abfc8b34264042f4543",
+    "runtime/scale/scale-1m-01.log": "0f38d6ac2f06985372b83fd28091a869582952f49c16fedac73ea2bd241cd295"
+  },
+  "code_revision": "20a471208dd522ae979e88fc02a0cf88024fe4e7",
+  "date": "2026-09-11",
+  "fsck": {
+    "input": {
+      "healthy": true,
+      "logical_bytes": 56914743,
+      "minimum_live_replicas": 2,
+      "nonempty_blocks": 4,
+      "sha256": "9851daf2c737ca362f6e6450ee6fb357b2d9d4b160c99bba16243486df1bb4c2"
+    },
+    "output": {
+      "healthy": true,
+      "logical_bytes": 88776063,
+      "minimum_live_replicas": 2,
+      "nonempty_blocks": 38,
+      "sha256": "292d5285e39aa6f63b5bc59f3a26d8744b85696e853142c2f612230c27145743"
+    }
+  },
+  "git_source_sha256": {
+    "src/snow_statistics/scale_fixture.py": "d84e13805b219b6c107a6a745eda6ecb5116a4d95042954d19b6fa717de3900e",
+    "tools/run_scale_batch.sh": "470da4f06b1cb3c5790880b6f55773950d6fc28f943dd2f9b97c411e5c81f749",
+    "tools/run_scale_guarded.py": "1fe1b32fc92f269da9aab7d915905f2f2c45942bed4439fc76cd74435e6b7ed2",
+    "tools/spark_yarn_scale.sh": "a038b5ba822d99dea06c5aee43cbbb624fb6729d5f386160589b2c38e1df96a6",
+    "warehouse/spark/batch.py": "57da326fccc9eb179c3bf8d30eba93fa262f6c58e8f2266e77bcf0dfc87a6092",
+    "warehouse/spark/event_input.py": "cd9c18408abe6e0dd44d5a1ffb30dcab51d013abfc8f7c34c47ee259e3a06ffb"
+  },
+  "input": {
+    "cutoff": "2026-01-09T00:00:00Z",
+    "date_from": "2026-01-01",
+    "date_to": "2026-01-08",
+    "events": 1000000,
+    "generator": "scale_fixture v1",
+    "schema_version": 1,
+    "seed": 42,
+    "shards": [
+      {
+        "bytes": 13579809,
+        "name": "events-00.jsonl.gz",
+        "sha256": "b517b0528589c3abbaf7650f9325acb773a0022b20c37c535748477eefcca941"
+      },
+      {
+        "bytes": 14881224,
+        "name": "events-01.jsonl.gz",
+        "sha256": "fea6831a29338fc0c7bd95893ec97eb00bd8146473fa717b249733409c0f2f66"
+      },
+      {
+        "bytes": 13596376,
+        "name": "events-02.jsonl.gz",
+        "sha256": "8e7168e339b2bb9d81da65bf2c0c7c24e10d14113aaeb0d320c62e02f65453c6"
+      },
+      {
+        "bytes": 14857334,
+        "name": "events-03.jsonl.gz",
+        "sha256": "e65bf35bf83915a44c234f20dd8d50b1da42bbe72d501ff493e876b2d21ea37e"
+      }
+    ],
+    "source": "synthetic"
+  },
+  "limitations": [
+    "One run per scale; no sustained throughput or optimization speedup claim",
+    "Spill counters are cumulative task metrics, not simultaneous temporary-disk allocation",
+    "No live automatic early-stop fault injection; monitor completed normally",
+    "No million-row Flink/Doris/CDC/behavior-model equivalence acceptance"
+  ],
+  "memory_notes": "cgroup v2 memory.peak includes charged file cache and is not process RSS. NodeManager includes AM/executor; final peak was captured before stopping it. Driver was automatically removed at exit; only earlier peak-to-date samples exist. Guest available memory values are samples.",
+  "memory_observations": [
+    {
+      "available_mib": 428,
+      "containers": [
+        {
+          "current_bytes": 377679872,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-analysis-datanode-1",
+          "peak_bytes": 389677056
+        }
+      ],
+      "measured_at": "2026-09-11T15:06:22.869139+00:00",
+      "node": "snow-analysis"
+    },
+    {
+      "available_mib": 1184,
+      "containers": [
+        {
+          "current_bytes": 603021312,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-compute-nodemanager-1",
+          "peak_bytes": 604917760
+        },
+        {
+          "current_bytes": 358465536,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-compute-datanode-1",
+          "peak_bytes": 360615936
+        }
+      ],
+      "measured_at": "2026-09-11T15:02:04.038816+00:00",
+      "node": "snow-compute"
+    },
+    {
+      "available_mib": 347,
+      "containers": [
+        {
+          "current_bytes": 1178824704,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-compute-nodemanager-1",
+          "peak_bytes": 1239334912
+        },
+        {
+          "current_bytes": 251371520,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-compute-datanode-1",
+          "peak_bytes": 360615936
+        }
+      ],
+      "measured_at": "2026-09-11T15:02:45.083955+00:00",
+      "node": "snow-compute"
+    },
+    {
+      "available_mib": 1144,
+      "containers": [
+        {
+          "current_bytes": 241266688,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-compute-nodemanager-1",
+          "peak_bytes": 1391808512
+        },
+        {
+          "current_bytes": 368635904,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-compute-datanode-1",
+          "peak_bytes": 373243904
+        }
+      ],
+      "measured_at": "2026-09-11T15:04:30.974915+00:00",
+      "node": "snow-compute"
+    },
+    {
+      "available_mib": 901,
+      "containers": [
+        {
+          "current_bytes": 600862720,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-spark-yarn",
+          "peak_bytes": 608559104
+        },
+        {
+          "current_bytes": 277360640,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-control-namenode-1",
+          "peak_bytes": 431722496
+        },
+        {
+          "current_bytes": 308404224,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-control-resourcemanager-1",
+          "peak_bytes": 310587392
+        }
+      ],
+      "measured_at": "2026-09-11T15:02:03.099279+00:00",
+      "node": "snow-control"
+    },
+    {
+      "available_mib": 695,
+      "containers": [
+        {
+          "current_bytes": 622972928,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-spark-yarn",
+          "peak_bytes": 656736256
+        },
+        {
+          "current_bytes": 261832704,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-control-namenode-1",
+          "peak_bytes": 431722496
+        },
+        {
+          "current_bytes": 317165568,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-control-resourcemanager-1",
+          "peak_bytes": 319180800
+        }
+      ],
+      "measured_at": "2026-09-11T15:02:44.545256+00:00",
+      "node": "snow-control"
+    },
+    {
+      "available_mib": 1125,
+      "containers": [
+        {
+          "current_bytes": 269156352,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-control-namenode-1",
+          "peak_bytes": 431722496
+        },
+        {
+          "current_bytes": 319287296,
+          "events": {
+            "high": "0",
+            "low": "0",
+            "max": "0",
+            "oom": "0",
+            "oom_group_kill": "0",
+            "oom_kill": "0"
+          },
+          "name": "snow-lab-control-resourcemanager-1",
+          "peak_bytes": 320897024
+        }
+      ],
+      "measured_at": "2026-09-11T15:04:30.312104+00:00",
+      "node": "snow-control"
+    }
+  ],
+  "performance": {
+    "application_id": "application_1789138789213_0001",
+    "application_seconds": 115.023,
+    "disk_bytes_spilled": 443725078,
+    "engine": "Spark 3.5.7",
+    "eventlog_sha256": "778b50b1189959aef3872cd27893a1e62bd213a37552c799846adfb2bff2bb37",
+    "executor_cpu_seconds": 69.337082276,
+    "executor_run_seconds": 78.27,
+    "executors": [
+      {
+        "cores": 1,
+        "host": "snow-compute",
+        "id": "1"
+      }
+    ],
+    "input_bytes_across_tasks": 1007240335,
+    "input_records_across_tasks": 2000784,
+    "job_outcomes": {
+      "JobSucceeded": 25
+    },
+    "max_task_peak_execution_memory": 243269632,
+    "memory_bytes_spilled": 1321205760,
+    "note": "Application timing includes executor allocation but excludes input landing and pre-Spark JVM startup. Task counters include rescans/cache work and are not source row counts or process RSS peaks.",
+    "output_bytes_across_tasks": 88776063,
+    "plans_sha256": "a3c005b9a8dee9dfe4c633e7dabb5e151e251204f80f3e578c267b1df8f22b05",
+    "shuffle_bytes_written": 254317685,
+    "sql_plan_observations": 34,
+    "task_jvm_gc_seconds": 4.573,
+    "task_outcomes": {
+      "Success": 50
+    },
+    "tasks": 50
+  },
+  "resource_monitor": {
+    "early_stop_reason": null,
+    "exit_code": 0,
+    "initial": {
+      "free_disk_gib": 48.97,
+      "project_files_gib": 58.99,
+      "vm_files_gib": 58.4
+    },
+    "max_project_files_gib": 59.67,
+    "min_host_available_mib": 10459,
+    "min_host_free_disk_gib": 48.27,
+    "monitor_seconds": 139.844,
+    "samples": 26
+  },
+  "result": {
+    "daily": [
+      {
+        "app": "mywebsite",
+        "date": "2026-01-01",
+        "pv": 28572,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-01",
+        "pv": 14286,
+        "requests": 14286,
+        "source": "synthetic",
+        "successes": 10714,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-02",
+        "pv": 28572,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-02",
+        "pv": 14286,
+        "requests": 14286,
+        "source": "synthetic",
+        "successes": 10714,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-03",
+        "pv": 28572,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-03",
+        "pv": 14286,
+        "requests": 14286,
+        "source": "synthetic",
+        "successes": 10715,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-04",
+        "pv": 28572,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-04",
+        "pv": 14286,
+        "requests": 14286,
+        "source": "synthetic",
+        "successes": 10715,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-05",
+        "pv": 28572,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-05",
+        "pv": 14286,
+        "requests": 14286,
+        "source": "synthetic",
+        "successes": 10714,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-06",
+        "pv": 28570,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-06",
+        "pv": 14285,
+        "requests": 14285,
+        "source": "synthetic",
+        "successes": 10714,
+        "uv": 800
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-07",
+        "pv": 28570,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1000
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-07",
+        "pv": 14285,
+        "requests": 14285,
+        "source": "synthetic",
+        "successes": 10714,
+        "uv": 800
+      }
+    ],
+    "manifest": {
+      "application_id": "application_1789138789213_0001",
+      "cutoff": "2026-01-09T00:00:00Z",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-08",
+      "engine": "Spark 3.5.7",
+      "generated_at": "2026-09-11T15:03:51.245108+00:00",
+      "hive_table": null,
+      "input": "/snow/ods/synthetic/scale/input-1m-v1/*.jsonl.gz",
+      "master": "yarn",
+      "output": "/snow/warehouse/scale/runs/scale-1m-01",
+      "quality": {
+        "after_cutoff": 0,
+        "duplicates": 100000,
+        "quarantined": 0,
+        "raw": 1000000,
+        "valid": 900000
+      },
+      "run_id": "scale-1m-01",
+      "schema_version": 1,
+      "source": "synthetic"
+    },
+    "schema_version": 1
+  },
+  "schema_version": 1,
+  "scope": "Synthetic one-million-row Spark/YARN batch on three VMs on one physical host; one remote executor; no Hive registration, Flink run or Doris publication",
+  "vm_mib": {
+    "analysis": 1024,
+    "compute": 2048,
+    "control": 2048
+  }
+}

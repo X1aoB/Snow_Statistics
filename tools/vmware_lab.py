@@ -14,6 +14,10 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+LIMITS = json.loads((ROOT / "deploy/resources.json").read_bytes())["local"]
+MAX_PROJECT_BYTES = LIMITS["max_project_bytes"]
+MIN_HOST_FREE_BYTES = LIMITS["min_host_free_bytes"]
+MIN_HOST_AVAILABLE_MIB = LIMITS["min_host_available_mib"]
 RUNTIME = ROOT / "runtime/vmware"
 VMWARE = Path(r"C:\Program Files (x86)\VMware\VMware Workstation")
 BASE_URL = "https://cloud-images.ubuntu.com/releases/noble/release-20260826/"
@@ -56,8 +60,8 @@ def run(*args):
 
 def capacity(memory_mb=0):
     free = shutil.disk_usage(ROOT).free
-    if free < 35 * 1024**3:
-        raise RuntimeError("35 GiB host disk reserve gate failed")
+    if free < MIN_HOST_FREE_BYTES:
+        raise RuntimeError(f"{MIN_HOST_FREE_BYTES / 1024**3:g} GiB host disk reserve gate failed")
     used = vm_used = 0
     for path in ROOT.rglob("*"):
         try:
@@ -68,14 +72,15 @@ def capacity(memory_mb=0):
                     vm_used += size
         except FileNotFoundError:
             continue  # VMware can rotate transient runtime files during inspection.
-    if used + memory_mb * 1024**2 > 60 * 1024**3:
-        raise RuntimeError(f"60 GiB project gate failed: files {used / 1024**3:.2f} GiB + reservation {memory_mb / 1024:.2f} GiB")
+    if used + memory_mb * 1024**2 > MAX_PROJECT_BYTES:
+        raise RuntimeError(f"{MAX_PROJECT_BYTES / 1024**3:g} GiB project gate failed: files {used / 1024**3:.2f} GiB + reservation {memory_mb / 1024:.2f} GiB")
     if memory_mb:
         available = int(run("powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory")) // 1024
-        if available < memory_mb + 4096:
-            raise RuntimeError(f"Free RAM {available} MiB below VM {memory_mb} MiB + 4096 MiB host reserve")
+        if available < memory_mb + MIN_HOST_AVAILABLE_MIB:
+            raise RuntimeError(f"Free RAM {available} MiB below reservation {memory_mb} MiB + {MIN_HOST_AVAILABLE_MIB} MiB host reserve")
     return {"free_disk_gib": round(free / 1024**3, 2), "project_files_gib": round(used / 1024**3, 2),
-            "vm_files_gib": round(vm_used / 1024**3, 2)}
+            "vm_files_gib": round(vm_used / 1024**3, 2), "project_limit_gib": MAX_PROJECT_BYTES / 1024**3,
+            "min_host_free_disk_gib": MIN_HOST_FREE_BYTES / 1024**3}
 
 
 def guest_ip(vmrun, vmx):

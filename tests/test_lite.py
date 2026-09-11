@@ -65,6 +65,25 @@ def test_capacity_reject_does_not_delete_confirmed(store, page, monkeypatch):
     assert len(store.read()["events"]) == 1
 
 
+def test_lowering_budget_on_existing_database_preserves_accepted_history(settings, page, now):
+    original = Store(replace(settings, db=settings.db.parent / "resize.db", budget_bytes=8 * 1024**2), clock=lambda: now)
+    for _ in range(60):
+        original.ingest([page.model_copy(update={"event_id": uuid4()}) for _ in range(50)])
+    original.aggregate()
+    previous = original.summary().daily
+    path = original.settings.db
+    original.close()
+    assert path.stat().st_size > 1024**2
+    smaller = Store(replace(settings, db=path, budget_bytes=1024**2), clock=lambda: now)
+    try:
+        with pytest.raises(StorageFull):
+            smaller.ingest([page.model_copy(update={"event_id": uuid4()})])
+        assert smaller.db.execute("SELECT count(*) FROM events").fetchone()[0] == 3000
+        assert smaller.summary().daily == previous
+    finally:
+        smaller.close()
+
+
 def test_retention_cursor_and_auxiliary_expiry(store, page, now):
     store.ingest([page])
     store.aggregate()

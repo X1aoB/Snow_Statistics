@@ -6,7 +6,7 @@ import subprocess
 import sys
 import time
 
-from vmware_lab import ROOT, capacity, run
+from vmware_lab import MAX_PROJECT_BYTES, MIN_HOST_AVAILABLE_MIB, ROOT, capacity, run
 
 from snow_statistics.io import write_json
 
@@ -77,10 +77,11 @@ def main():
                     snapshot = capacity()
                     snapshot["host_available_mib"] = int(run("powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory")) // 1024
                     samples.append(dict(elapsed_seconds=round(time.monotonic()-start, 3), **snapshot))
-                    if snapshot["project_files_gib"] >= 59.75:
-                        risk = "Project reached early-stop threshold 59.75 GiB"
-                    if snapshot["host_available_mib"] < 4096:
-                        risk = "Host RAM reserve fell below 4096 MiB"
+                    threshold = MAX_PROJECT_BYTES / 1024**3 - .25
+                    if snapshot["project_files_gib"] >= threshold:
+                        risk = f"Project reached early-stop threshold {threshold:g} GiB"
+                    if snapshot["host_available_mib"] < MIN_HOST_AVAILABLE_MIB:
+                        risk = f"Host RAM reserve fell below {MIN_HOST_AVAILABLE_MIB} MiB"
                     if time.monotonic() - start > 1000:
                         risk = "Job monitoring deadline"
                 except (RuntimeError, OSError, subprocess.SubprocessError, ValueError) as error:

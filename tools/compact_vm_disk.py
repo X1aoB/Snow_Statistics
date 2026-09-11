@@ -4,7 +4,17 @@ import json
 import shutil
 import subprocess
 
-from vmware_lab import DISK_GB, NODES, ROOT, RUNTIME, VMWARE, capacity, run
+from vmware_lab import (
+    DISK_GB,
+    MAX_PROJECT_BYTES,
+    MIN_HOST_FREE_BYTES,
+    NODES,
+    ROOT,
+    RUNTIME,
+    VMWARE,
+    capacity,
+    run,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--node", choices=NODES, required=True)
@@ -21,7 +31,7 @@ powered_off = str(directory / (args.node + ".vmx")).lower() not in running and n
 copy_bytes = max(disk.stat().st_size, DISK_GB[args.node] * 1024**3) + 1024**3
 project_bytes = sum(p.stat().st_size for p in ROOT.rglob("*") if p.is_file())
 free = shutil.disk_usage(ROOT).free
-eligible = powered_off and project_bytes + copy_bytes <= 60 * 1024**3 and free - copy_bytes >= 35 * 1024**3
+eligible = powered_off and project_bytes + copy_bytes <= MAX_PROJECT_BYTES and free - copy_bytes >= MIN_HOST_FREE_BYTES
 print(json.dumps(dict(node=args.node, current=snapshot, temporary_copy_gib=round(copy_bytes / 1024**3, 2),
                      powered_off=powered_off, eligible=eligible,
                      scope="Only this project's system.vmdk; no files or history are deleted")), flush=True)

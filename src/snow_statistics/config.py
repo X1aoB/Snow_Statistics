@@ -12,7 +12,7 @@ class Settings:
     origins: tuple[str, ...] = ("https://xiaob.dev", "https://snow.xiaob.dev")
     allowed_paths: frozenset[str] = field(default_factory=lambda: frozenset({"/", "/statistics/"}))
     allowed_characters: frozenset[str] = field(default_factory=frozenset)
-    budget_bytes: int = 2 * 1024**3
+    budget_bytes: int = 512 * 1024**2
     aggregate_interval: float = 60
     max_body_bytes: int = 64 * 1024
     # Optional source-specific instances for local fixtures; never set on the public service.
@@ -38,5 +38,5 @@ class Settings:
             origins=items("SNOW_ORIGINS", "https://xiaob.dev,https://snow.xiaob.dev"),
             allowed_paths=frozenset(items("SNOW_ALLOWED_PATHS", "/,/statistics/")),
             allowed_characters=frozenset(items("SNOW_ALLOWED_CHARACTERS")),
-            budget_bytes=int(os.getenv("SNOW_BUDGET_BYTES", str(2 * 1024**3))),
+            budget_bytes=int(os.getenv("SNOW_BUDGET_BYTES", str(512 * 1024**2))),
         )

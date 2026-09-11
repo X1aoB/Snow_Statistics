@@ -22,5 +22,7 @@
 | `realtime.json` | 单 4.5 GiB VM 实际 Flink TaskManager / session 恢复，17 条边界与累计 20 条输入；Doris DUPLICATE KEY 2PC 探针；单控制 VM Spark local[2] 校正为 12 条事实、四行汇总，Doris 重复发布一致；记录容量失败及未验收范围 |
 | `freshness.json` | 宿主真实 HTTP 合成采集 → 增量归档 → 单分析 VM Kafka/Flink/Doris；300/300 可见，发送至查询 P95 12.016 秒，三方日指标一致；关闭全部 VM 后新增 5 条仍由原有 60 秒聚合线程处理 |
 | `scale-100k.json` | 2/2/1 GiB 三 VM，实际 Spark/YARN 单远端 executor；56 行回归后，10 万行 → 9 万有效 + 1 万重复，14 行指标逐行一致、HDFS 输入输出双副本；事件日志应用时长 41.851 秒。百万条输入已保存，RAM 门禁拒绝落地，未计算 |
+| `scale-1m.json` | 宿主 RAM 恢复后，同一 2/2/1 GiB 配置实际完成百万行 → 90 万有效 + 10 万重复，14 行指标一致；双副本、应用时长 115.023 秒、50 task 成功，保留 spill、执行计划、cgroup 与宿主监测；原 60 GiB 上限内通过 |
+| `lite-small.json` | 独立 512 MiB ext4、256 MiB / 0.25 CPU 容器；真实满盘、kill/重启、full/lite/off 及追加 1 万条 HTTP；容器记账峰值 68.39 MiB、状态文件 6.75 MiB；记录未节流首轮失败和节流后通过，保留测试数据 |
 
 这些收据不代表尚未启动的集群、生产流量、并发负载或端到端实时延迟通过验收。持久化状态、原始合成归档、Spark 输出和运行日志位于被 Git 忽略的 runtime；仓库工具及固定输入可用于重建。

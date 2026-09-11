@@ -46,6 +46,8 @@ uv run snow-stats serve
 
 默认监听 `127.0.0.1:8100`，默认模式 **off**，不读取生产数据。
 
+低流量部署默认 256 MiB 内存、0.25 CPU、512 MiB 独立存储，已通过 1 万条 HTTP 合成事件及满盘/重启验收；已有卷不自动缩容。实际配置和容量边界见[资源手册](docs/resources.md)。
+
 ## 三种模式
 
 | 模式 | 运行范围 | 页面数据源 |
@@ -81,7 +83,8 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [OpenLineage 本地日志、补发与 Marquez](docs/lineage.md)
 - [Flink 恢复、Doris 2PC 与 Spark 迟到校正](docs/realtime.md)
 - [HTTP 接收至 Doris 新鲜度及数仓停机验收](docs/freshness.md)
-- [2/2/1 GiB 三 VM 的 Spark/YARN 10 万条扩样](docs/scale.md)
+- [2/2/1 GiB 三 VM 的 Spark/YARN 10 万及百万条扩样](docs/scale.md)
+- [低流量部署与按需实验资源](docs/resources.md)
 - [接入和发布](docs/integrations.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)

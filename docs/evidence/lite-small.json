@@ -1,0 +1,96 @@
+{
+  "aggregate_interval_seconds": 0.2,
+  "artifacts_sha256": {
+    "runtime/lite-small-acceptance.log": "44d3a6126790b281142e2da3002c4e0e0ef9ab2b7372b35264f8edbceb1b0006",
+    "runtime/lite-small-compose.json": "f0abd6f9103f618efde62255a98dc8bf30be0a05d371ac4eb1c8e302ed9751cf",
+    "runtime/lite-small-receipt.json": "44d3a6126790b281142e2da3002c4e0e0ef9ab2b7372b35264f8edbceb1b0006"
+  },
+  "bulk": {
+    "batch_pause_seconds": 0.55,
+    "cgroup_memory_peak_bytes": 71716864,
+    "daily": [
+      {
+        "app": "mywebsite",
+        "date": "2026-09-11",
+        "pv": 5001,
+        "requests": 0,
+        "success_rate": null,
+        "successes": 0,
+        "uv": 501
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-09-11",
+        "pv": 0,
+        "requests": 5001,
+        "success_rate": 0.8000399920015997,
+        "successes": 4001,
+        "uv": 0
+      }
+    ],
+    "elapsed_seconds": 113.801,
+    "events": 10000,
+    "memory_events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "note": "Sequential HTTP batches on loopback with 0.2-second test aggregation; not a sustained production throughput claim",
+    "restart_and_off_preserve_metrics": true,
+    "state_file_bytes_after_restart": 7077888,
+    "total_accepted": 10002
+  },
+  "compose": {
+    "budget_bytes": 536870912,
+    "cpus": 0.25,
+    "default_mode": "off",
+    "memory_bytes": 268435456,
+    "source": "public .env.example only",
+    "started_containers": false
+  },
+  "cpus": 0.25,
+  "crash_restart_deduplication": true,
+  "date": "2026-09-11",
+  "full_filesystem_rejects_without_losing_acknowledged_events": true,
+  "full_to_lite_preserves_metrics": true,
+  "git_source_sha256": {
+    "deploy/lite.Dockerfile": "059cd0d65c1451c9e6a964af0ad4f658bfe985728b158a61891ffbdc14f35318",
+    "src/snow_statistics/api.py": "65005b419cbb116aee56f437fc99ab7e5e4f4b1240056a6294fb3a7557e43b0d",
+    "src/snow_statistics/config.py": "be9c3c5ef2f9edc40558011c8062525a7ac2c6817a3a55aa8d9117b117340e46",
+    "src/snow_statistics/contracts.py": "d5a13b9d9efd7b6fe527f9e164839f739b92c2cf8cf8e8e77ed47c870ca982da",
+    "src/snow_statistics/store.py": "2068f3981618358e7e438ac84f623791d7b005568e412d1fb68c032033bfa35a",
+    "tools/smoke_lite_container.py": "acb97628c9d72f0dcf5082160d55a97de7118de627fce534bb2f588b926dd1d4"
+  },
+  "image_id": "sha256:8298eef6b8366294824050b03062ad379885775658fe33f097de50d755e3ca3c",
+  "initial_attempt": {
+    "action": "Retained failed volume; paced the test below the unchanged admission limit and recorded response diagnostics. Second attempt passed.",
+    "http_status_not_recorded": true,
+    "passed": false,
+    "retained_accepted_events": 5952
+  },
+  "limits": "One-day synthetic capacity fixture only; no claim that this storage holds arbitrary 7-day/30-day traffic, and no sustained throughput claim. Historical 2 GiB volumes remain unchanged.",
+  "lite_without_warehouse": true,
+  "memory_limit_mib": 256,
+  "off_archives_without_deleting": true,
+  "public_field_allowlist": true,
+  "quota_bytes": 536870912,
+  "retirement": {
+    "all_project_vms_off": true,
+    "test_containers_removed": true,
+    "test_filesystems_unmounted": true,
+    "test_images_retained": true
+  },
+  "scope": "isolated_loopback_fixture",
+  "source_bytes_sha256": {
+    "deploy/lite.Dockerfile": "059cd0d65c1451c9e6a964af0ad4f658bfe985728b158a61891ffbdc14f35318",
+    "src/snow_statistics/api.py": "65005b419cbb116aee56f437fc99ab7e5e4f4b1240056a6294fb3a7557e43b0d",
+    "src/snow_statistics/config.py": "be9c3c5ef2f9edc40558011c8062525a7ac2c6817a3a55aa8d9117b117340e46",
+    "src/snow_statistics/contracts.py": "d5a13b9d9efd7b6fe527f9e164839f739b92c2cf8cf8e8e77ed47c870ca982da",
+    "src/snow_statistics/store.py": "2068f3981618358e7e438ac84f623791d7b005568e412d1fb68c032033bfa35a",
+    "tools/smoke_lite_container.py": "acb97628c9d72f0dcf5082160d55a97de7118de627fce534bb2f588b926dd1d4"
+  },
+  "source_note": "Local source bytes at image build/test and LF-normalized published bytes are separately identified. Base revision 20a471208dd522ae979e88fc02a0cf88024fe4e7 plus the small-profile changes in this delivery; image ID is the actual tested image."
+}

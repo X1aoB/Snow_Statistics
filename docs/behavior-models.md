@@ -29,9 +29,9 @@
 
 沿用[增量 ODS 手册](incremental-ods.md)的三台 `ods` VM：3.5 / 4 / 1 GiB。开启 batch 服务时，分析节点必须使用 `tools/start_batch_node.sh --ods-small`。先运行主机 `tools/vmware_lab.py status`，并通过 `tools/lab_remote.py --reserve-mib 1024` 进行作业前容量检查。所有输入均为合成数据；不扩样、不绕过 60 GiB 门禁。
 
-治理阶段曾通过相同 DAG 的 `ods-compact`（3.5 / 3 / 1 GiB）。后续实时镜像与数据增长后，该组合已不能直接满足当前 60 GiB 预算；这里的配置保留为历史验收条件，重启前须按[最新资源门禁](runbook.md)重新检查。分析节点仍使用 `--ods-small`。
+治理阶段曾通过相同 DAG 的 `ods-compact`（3.5 / 3 / 1 GiB）。后续增长曾使该组合无法满足初始 60 GiB 预算；当前上限按用户授权调整为 64 GiB，具体余量仍须按[最新资源门禁](runbook.md)检查，不能将历史结果当作当前并发保障。分析节点仍使用 `--ods-small`。
 
-后续 `scale`（2/2/1 GiB）已通过日指标 10 万条 YARN 验证，见[扩样手册](scale.md)。该阶段关闭 Hive 和 Airflow，未验证本页完整模型 DAG，不能直接将本页命令套入小配置。
+后续 `scale`（2/2/1 GiB）已通过日指标 10 万及百万条 YARN 验证，见[扩样手册](scale.md)。该阶段关闭 Hive 和 Airflow，未验证本页完整模型 DAG，不能直接将本页命令套入小配置。
 
 新源码需在控制和计算节点同步，然后重建 NodeManager 容器，使两端使用相同 JAR 锁。`tools/spark_yarn.sh` 使用 `spark.yarn.jars=local:/opt/spark/jars/*`；两个入口逐一校验 `lab/locks/spark-jars.sha256` 的 252 个 JAR。`local:` 文件由节点预装，不通过 YARN 逐次分发，参见 [Spark 3.5.7 YARN 文档](https://spark.apache.org/docs/3.5.7/running-on-yarn.html)及[对应提交客户端源码](https://github.com/apache/spark/blob/v3.5.7/resource-managers/yarn/src/main/scala/org/apache/spark/deploy/yarn/Client.scala)。Hive 334 个客户端 JAR 的独立锁保持有效。
 

@@ -34,7 +34,7 @@ uv run --extra lab snow-stats sync --url http://127.0.0.1:8100 --bootstrap 192.1
 
 ## 复现与资源
 
-使用[实时手册](realtime.md)的单分析 VM 4.5 GiB 配置，关闭另两台 VM。复用已有 Doris 容器，避免复制其大型可写层。首次或新增镜像不能沿用本轮的空间估计；作业前仍保留 60 GiB 总预算、35 GiB 宿主余量和 1 GiB 作业空间。
+使用[实时手册](realtime.md)的单分析 VM 4.5 GiB 配置，关闭另两台 VM。复用已有 Doris 容器，避免复制其大型可写层。首次或新增镜像不能沿用本轮的空间估计。本页收据使用原 60 GiB 预算；当前按用户授权调整为 64 GiB，仍保留 35 GiB 宿主磁盘余量和 1 GiB 作业空间，见[资源手册](resources.md)。
 
 1. 选择全新 lane，在分析 VM 忽略的 `lab/secrets/realtime.env` 设置对应 `SNOW_REPLAY_LANE` 和 `DORIS_TABLE=snow_realtime_<lane>.events_realtime`；只调整本项目实验配置。
 2. 同步当前源码与已校验的 JAR，启动本项目服务，检查 VM 时钟。

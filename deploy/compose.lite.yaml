@@ -17,8 +17,8 @@ services:
     volumes: ["${SNOW_STATE_DIR:?dedicated quota directory required}:/state"]
     read_only: true
     tmpfs: [/tmp:size=32m]
-    mem_limit: 512m
-    cpus: 0.5
+    mem_limit: ${SNOW_COLLECTOR_MEMORY:-256m}
+    cpus: ${SNOW_COLLECTOR_CPUS:-0.25}
     pids_limit: 128
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]

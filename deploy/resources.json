@@ -6,7 +6,10 @@
     "network": "snow-statistics-lite",
     "state_root": "/var/lib/snow-statistics",
     "systemd_service": "snow-statistics-lite.service",
-    "state_quota_bytes": 2147483648,
+    "state_quota_bytes": 536870912,
+    "default_container_memory_bytes": 268435456,
+    "default_container_cpus": 0.25,
+    "existing_volume_policy": "New defaults only; keep existing volume size and explicit application budget. Never resize or remove historical data on configuration change.",
     "loopback_port": 8100,
     "public_routes": ["/analytics/v1/events", "/analytics/public/v1/summary.json"],
     "private_route": "/analytics/private/v1/events"
@@ -113,8 +116,18 @@
       "hdfs_operations": "/snow/warehouse/operations/<run-id>",
       "shutdown": "Stop commands without deleting journal, raw archives, HDFS batches or snapshots. Review pending and landed state before resuming."
     },
-    "max_project_bytes": 64424509440,
-    "min_host_free_bytes": 37580963840
+    "lite_acceptance": {
+      "host": "snow-control with warehouse services stopped",
+      "artifacts": "runtime/lite-container-* (including retained state.img) and runtime/lite-compose-*",
+      "image": "snow-statistics-lite:small-0.1.0",
+      "temporary_containers": "snow-lite-acceptance-<unique-suffix>",
+      "scope": "Isolated loopback synthetic fixtures only; no shared host or business data",
+      "shutdown": "Remove only the dedicated test container, unmount its unique state path and retain the image and receipts. Stop the VM when done."
+    },
+    "max_project_bytes": 68719476736,
+    "min_host_free_bytes": 37580963840,
+    "min_host_available_mib": 4096,
+    "budget_revision_note": "User authorized resource adjustments for actual needs on 2026-09-11. 64 GiB accommodates about 55 GiB retained history + 5 GiB VM memory backing + 1 GiB job reserve. Earlier scale receipts were measured under the original 60 GiB cap."
   },
   "retirement": {
     "lite": "Stop local consumers and laboratory Compose projects; keep online collector and summary API unchanged.",

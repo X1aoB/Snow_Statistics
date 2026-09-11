@@ -2,9 +2,9 @@
 
 本阶段把 Kafka 行为事件与 Debezium 变更纳入同一套可恢复的 HDFS 输入。入口仅允许本项目四个 `snow.synthetic.*` Topic；不接触生产采集配置。轻量服务、公开汇总接口及两个业务产品均没有新增依赖。
 
-资源更新：治理阶段曾通过 `ods-compact`（3.5/3/1 GiB）；下文原始 `ods` 数字保留为当时的实验记录。实时镜像与数据增长后，这个三 VM 组合已不能直接满足当前预算。重启前须检查 60 GiB 门禁及 1 GiB 作业余量，见[最新运行手册](runbook.md)。
+资源更新：治理阶段曾通过 `ods-compact`（3.5/3/1 GiB）；下文原始 `ods` 数字保留为当时的实验记录。实时镜像与数据增长后曾超过初始 60 GiB 预算；当前按用户授权调整为 64 GiB，重启前仍须检查动态资源及 1 GiB 作业余量，见[最新运行手册](runbook.md)。
 
-后续 `scale`（2/2/1 GiB）已完成合成文件输入的 10 万条日指标 YARN 验证，见[扩样手册](scale.md)。那次关闭 Kafka、Hive、Airflow，仅运行 HDFS/YARN/Spark，未把增量 CDC 及全部模型链路扩到相同规模。
+后续 `scale`（2/2/1 GiB）已完成合成文件输入的 10 万及百万条日指标 YARN 验证，见[扩样手册](scale.md)。那次关闭 Kafka、Hive、Airflow，仅运行 HDFS/YARN/Spark，未把增量 CDC 及全部模型链路扩到相同规模。
 
 ## 提交边界
 

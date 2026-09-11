@@ -7,4 +7,4 @@ if ! mountpoint -q "$SNOW_STATE_DIR"; then
   exit 1
 fi
 test -f .env
-exec docker compose --env-file lab/locks/images.env -f deploy/compose.lite.yaml up -d --build
+exec docker compose --env-file lab/locks/images.env --env-file .env -f deploy/compose.lite.yaml up -d --build

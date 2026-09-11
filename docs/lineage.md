@@ -60,9 +60,9 @@ python3 governance/lineage.py status
 
 `tools/verify_lineage_backend.py --database <日志副本> --output <归档.json>` 会逐个检查 Marquez 运行状态及输入/输出数据集版本，并读回最近依赖图。将归档同步为本机 `runtime/lineage/backend-final.json` 后，Streamlit 选择“Marquez 血缘归档”，无需启动虚拟机即可查看图和失败尝试。
 
-治理阶段曾以 `ods-compact`（3.5 / 3 / 1 GiB）完成同一小样本 DAG，保留 1 GiB 作业前余量；治理使用分析 VM 2 GiB。此后实时镜像与数据继续增长，这个三 VM 组合已不能直接满足当前 60 GiB 预算。这里保留历史验收条件，重现前必须按[最新运行手册](runbook.md)检查容量，不能沿用当时的可用空间估计。
+治理阶段曾以 `ods-compact`（3.5 / 3 / 1 GiB）完成同一小样本 DAG，保留 1 GiB 作业前余量；治理使用分析 VM 2 GiB。此后增长曾使组合超过初始 60 GiB 预算，当前按用户授权调整为 64 GiB。这里保留历史验收条件，重现前必须按[最新运行手册](runbook.md)检查容量，不能沿用当时的可用空间估计。
 
-后续 `scale`（2/2/1 GiB）完成了 10 万条日指标 YARN 计算，但治理、Hive、Airflow 均关闭；未验证本页 DAG 或血缘在此配置下运行，见[扩样记录](scale.md)。
+后续 `scale`（2/2/1 GiB）完成了 10 万及百万条日指标 YARN 计算，但治理、Hive、Airflow 均关闭；未验证本页 DAG 或血缘在此配置下运行，见[扩样记录](scale.md)。
 
 ## 保留和退出
 

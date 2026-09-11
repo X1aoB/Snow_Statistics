@@ -11,7 +11,7 @@
 
 最初 4/6/2 GiB 通过独立 Spark 对账；加入 Airflow 后再验证 4/4/2 GiB，单 executor 768 MiB + 256 MiB overhead，AM 512 MiB + 256 MiB overhead。NodeManager 可分配 2048 MiB，容器 2816 MiB；Doris 小配置 FE 2 GiB/BE 3 GiB，内部堆/内存上限分别 1 GiB/2 GiB。这些是小样本功能预算，不是负载测试结论。
 
-`standard` 保留原始 6/6/10 GiB 上限。VM 只能完全关机后修改配置；工具检查实际 VMX 内存，不再按默认值误算。启动保留 4 GiB 宿主可用内存、35 GiB 空闲磁盘，项目文件长度加新 `.vmem` 不超过 60 GiB。镜像和 YARN 缓存占用较大，扩样前必须再次检查；不要同时启动所有 profile。
+`standard` 保留原始 6/6/10 GiB 上限。VM 只能完全关机后修改配置；工具检查实际 VMX 内存，不再按默认值误算。启动保留 4 GiB 宿主可用内存、35 GiB 空闲磁盘；本页历史实验使用原 60 GiB 项目预算，当前按用户授权调整为 64 GiB，见[资源手册](resources.md)。镜像和 YARN 缓存占用较大，扩样前必须再次检查；不要同时启动所有 profile。
 
 ## 首次配置与独立 Spark 验收
 
