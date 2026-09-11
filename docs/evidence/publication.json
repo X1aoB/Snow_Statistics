@@ -1,0 +1,17 @@
+{
+  "run_id": "yarn-acceptance-02",
+  "snapshot_id": "745829fa07943e5ddd36776c52ceda1ed1f91dbb67f400e0407dfef4c1fe03ee",
+  "source": "synthetic",
+  "daily_rows": 6,
+  "published_dates": 4,
+  "business_version": 1767571200000000,
+  "readback_equal": true,
+  "engine": "Doris 3.0.6.2",
+  "input_engine": "Spark 3.5.7",
+  "yarn_application": "application_1789110861917_0003",
+  "replay_equal": true,
+  "failed_publish_preserves_report": true,
+  "empty_correction_removes_old_rows": true,
+  "stale_cutoff_rejected": true,
+  "same_cutoff_conflict_rejected": true
+}

@@ -21,6 +21,28 @@ IMAGE = "ubuntu-24.04-server-cloudimg-amd64.vmdk"
 IMAGE_SHA256 = "fb3ba097a9013d759fa13ab22d2b4118bd55452c617ca3758a55303eea96de6e"
 NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": (10240, 4)}
 DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 24}
+PROFILES = {"batch": {"snow-control": 4096, "snow-compute": 4096, "snow-analysis": 2048},
+            "olap": {"snow-control": 4096, "snow-analysis": 6144}, "standard": {}}
+
+
+def configured_memory(vmx):
+    match = re.search(r'^memsize\s*=\s*"(\d+)"', vmx.read_text(), re.M)
+    if not match:
+        raise RuntimeError("VMX has no explicit memory size")
+    return int(match[1])
+
+
+def configure_memory(vmrun, vmx, node, profile):
+    # Only our powered-off VMX may change; suspended/running state is not editable.
+    running = run(vmrun, "-T", "ws", "list").lower()
+    if str(vmx).lower() in running or list(vmx.parent.glob("*.lck")) or list(vmx.parent.glob("*.vmss")):
+        raise RuntimeError("Stop the project VM completely before changing its resource profile")
+    memory = PROFILES[profile].get(node, NODES[node][0])
+    content = vmx.read_text(encoding="utf-8")
+    configured_memory(vmx)
+    content = re.sub(r'^memsize\s*=\s*"\d+"', f'memsize = "{memory}"', content, count=1, flags=re.M)
+    vmx.write_text(content, encoding="utf-8")
+    print(json.dumps({"node": node, "profile": profile, "memory_mib": memory}))
 
 
 def run(*args):
@@ -142,8 +164,9 @@ def prepare():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["prepare", "start", "stop", "ip", "status"])
+    parser.add_argument("action", choices=["prepare", "configure", "start", "stop", "ip", "status"])
     parser.add_argument("--node", choices=list(NODES), default="snow-control")
+    parser.add_argument("--profile", choices=list(PROFILES), default="batch")
     args = parser.parse_args()
     vmrun = VMWARE / "vmrun.exe"
     vmx = RUNTIME / args.node / f"{args.node}.vmx"
@@ -153,8 +176,13 @@ def main():
         print(json.dumps(capacity()))
         print(run(vmrun, "-T", "ws", "list"))
     elif args.action == "start":
-        capacity(NODES[args.node][0])
+        memory = configured_memory(vmx)
+        if not 1024 <= memory <= NODES[args.node][0]:
+            raise RuntimeError("VMX memory exceeds the reviewed node budget")
+        print(json.dumps(capacity(memory)), flush=True)
         print(run(vmrun, "-T", "ws", "start", vmx, "nogui"))
+    elif args.action == "configure":
+        configure_memory(vmrun, vmx, args.node, args.profile)
     elif args.action == "stop":
         print(run(vmrun, "-T", "ws", "stop", vmx, "soft"))
     else:

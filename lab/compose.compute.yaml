@@ -1,21 +1,36 @@
 name: snow-lab-compute
+x-lab-hosts: &lab_hosts
+  - snow-control:${CONTROL_IP:?}
+  - snow-compute:${COMPUTE_IP:?}
+  - snow-analysis:${ANALYSIS_IP:?}
 services:
   datanode:
+    extra_hosts: *lab_hosts
     image: ${HADOOP_IMAGE:?}
     profiles: [batch]
     network_mode: host
-    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "384"}
+    user: "0:0"
+    environment:
+      HADOOP_CONF_DIR: /etc/hadoop
+      HADOOP_HEAPSIZE_MAX: "256"
+      HDFS_DATANODE_OPTS: -Ddfs.datanode.hostname=${COMPUTE_IP:?}
     volumes: [./generated/hadoop:/etc/hadoop:ro, datanode:/data/dn]
     entrypoint: [hdfs, datanode]
-    mem_limit: 768m
+    mem_limit: 512m
   nodemanager:
-    image: ${HADOOP_IMAGE:?}
+    extra_hosts: *lab_hosts
+    build:
+      context: ..
+      dockerfile: lab/yarn.Dockerfile
+      args: {HADOOP_IMAGE: "${HADOOP_IMAGE:?}", SPARK_IMAGE: "${SPARK_IMAGE:?}"}
+    image: snow-yarn-spark:0.1.0
     profiles: [batch]
     network_mode: host
-    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "384"}
+    user: "0:0"
+    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "256"}
     volumes: [./generated/hadoop:/etc/hadoop:ro, yarn:/data/yarn]
     entrypoint: [yarn, nodemanager]
-    mem_limit: 4g
+    mem_limit: 2816m
   flink-jobmanager:
     image: ${FLINK_IMAGE:?}
     profiles: [realtime]

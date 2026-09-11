@@ -7,7 +7,7 @@
 ## 已验证
 
 - 独立公开仓库 `X1aoB/Snow_Statistics` 已创建。
-- Python 20 项测试通过：持久化、重复/冲突、事务回滚、UV 与跨天、保留期/过期位点、满盘拒收、公开字段白名单、模式切换、合成数据隔离、归因及轻量/离线整数对账。
+- Python 38 项测试通过：原有轻量/同步/建模 20 项，以及发布包校验、单写者锁、香港日期窗口和受限 Airflow 网关的 18 项。
 - 浏览器 7 项测试通过：默认关闭无标识/网络副作用、隐私信号、缺失/不安全的采集地址、重复入口点击更新归因标识、有限队列和重试、统计故障不伪造零值、归档/文本渲染。
 - MyWebsite 独立工作树构建与 Astro 检查通过，60 项测试通过；Project_Snow 前端类型检查和 7 项 Node 测试通过，两个产品采集仍默认关闭。
 - Project_Snow 两项实际 Chromium 测试通过：默认关闭无统计标识/请求；生产 CSP 下采集 503、断连、超时均不阻断假后端聊天，撤销后统计标识及回调清除。7 项静态发布包验证通过；没有付费模型调用。
@@ -24,19 +24,31 @@
 - Python 正确性基准：10 万条约 6.618 秒；100 万条约 89.844 秒；均完整对账且隔离 0。固定 seed 42，不能作为分布式吞吐或真实用户规模。
 - 14 个第三方镜像已从实际 registry 解析并固定 digest；Ubuntu、Python lock 与 Java 直接版本可检查。
 
+## 后续离线闭环验收（2026-09-11）
+
+- HDFS 3.4.1 两个 DataNode、YARN RM/NM、Hive 3.1.3 元数据库实际联通；元数据库持久卷重建容器后校验通过。Hive 客户端 334 个 JAR 由固定镜像提取并逐一 SHA256 锁定。
+- Spark 3.5.7 在真实 YARN 上运行，执行器位于 compute，输入/输出位于 HDFS，Hive 元数据注册及查询成功。56 条输入 → 28 有效 + 28 重复，0 隔离，6 行日指标与基准一致。
+- 重跑指标相同；故意制造基准不一致时不生成 accepted 标记，旧结果仍存在，新的 run ID 重算恢复。输出 17 个非空块均有两个有效副本；停止一个 DataNode 后读回输入 SHA256 相同。
+- Doris 正式发布改为不可变日快照及原子日期指针。实际通过读回对账、重复发布、提交前失败保留旧报表、空日期修正、较旧 cutoff 拒绝覆盖和相同 cutoff 冲突拒绝。
+- Streamlit 已查询 Doris 已发布视图；AppTest 验证实际 6 行指标、基准切换及不可用提示，真实 Chromium 验证两张表和趋势图渲染。高级分析基准仍可独立查看。
+- Airflow 2.10.5 实际 DAG `synthetic-e2e-20260911` 成功：window 成功，YARN 计算首次成功，Doris 停止时发布进入重试，资源切换后第二次发布成功；计算没有重跑。默认手动模式，仅常驻 scheduler，受限 SSH 网关复用固定 Spark 运行时。
+- 初始独立 YARN 样例使用 VM 4/6/2 GiB、executor 1 GiB；Airflow 链路已使用 4/4/2 GiB、executor 768 MiB。发布阶段 control 4 GiB、compute 关闭、analysis 6 GiB，Doris FE/BE 容器上限 2/3 GiB。资源切换由操作者完成，Airflow 不管理 VMware。
+
+收据见 `evidence/yarn.json`、`evidence/publication.json`、`evidence/airflow.json`；操作见 [离线闭环手册](offline-pipeline.md)。这是固定小样本离线闭环，尚不是全部技术栈或连续线上链路的验收。
+
 原始验收工具输出的汇总收据见 [evidence](evidence/README.md)。业务适配为独立草稿 PR：[MyWebsite #2](https://github.com/X1aoB/MyWebsite/pull/2)、[Project_Snow #59](https://github.com/X1aoB/Project_Snow/pull/59)。未合并或部署。
 
 ## 尚未完成的验收
 
-- 分布式 Spark 留存/会话/渠道漏斗、Spark ADS 向 Doris 离线表的正式发布任务、Airflow 跨组件编排和自动血缘生命周期接入仍需继续实现。目前高级分析由 Python 正确性基准提供，Doris 离线写入已验证独立样例，尚未接成完整发布链路。
+- 分布式 Spark 留存/会话/渠道漏斗及自动血缘生命周期接入仍需实现；CDC 运营模型仍需接入 YARN/Airflow 正式主线。Kafka/CDC 归档与当前合成 ODS 手动装载之间还需统一增量落地任务。
 - 三 VM 同时运行时的内存预算；两台 6 GiB 节点同时运行已验证，追加 10 GiB 节点时可用 13819 MiB，低于 10240+4096 MiB 门禁要求，拒绝启动。需分阶段验证或释放宿主内存后重试；没有绕过余量限制。
-- HDFS 双副本/YARN/Hive 3.1.3 组合、Doris 扩样/负载测试、Flink checkpoint 恢复与端到端 P95≤60 秒。
-- Airflow、Marquez 配置/作业已加入，运行与故障验收仍需记录；Iceberg 集群并发与长期文件维护待验证；列级血缘未声明完成。
+- Doris 扩样/负载测试、Flink checkpoint 恢复与端到端 P95≤60 秒；离线/实时的分布式 10 万及 100 万规模测试尚未完成。
+- Airflow 当前为单调度器/SQLite/SequentialExecutor 的实验部署；持续定时运行和多执行器不是本轮验收范围。Marquez 运行与故障验收、Iceberg 集群并发与长期文件维护待验证；列级血缘未声明完成。
 - 三 Kafka/ZooKeeper 专题配置已加入；HDFS 自动 HA 因 fencing 尚未配置而保持关闭。
 - 真实日志跟随、线上 quota mount、代理/CSP 和业务生产发布；当前没有启用生产采集，也未修改生产服务或业务数据库。
 - 7 天离线积压与 2 GiB 在线容量的真实容量测试、实时/离线/Doris 一致性、物理资源测量和退出部署演练。
 
-本轮结束时实验 VM 均已正常关机，未删除数据。项目文件长度合计约 31.19 GiB、宿主 C 盘空闲约 83.14 GiB；文件长度计数是保守近似，不等于精确磁盘分配量。
+首轮结束时项目文件长度约 31.19 GiB。离线闭环增加 Hadoop/Hive/Airflow 镜像和 HDFS/YARN 数据，运行期间已接近 60 GiB 门禁；文件长度是保守近似，不等于精确磁盘分配量。后续扩样须先处理受管理的临时缓存和磁盘回收，不能直接增加数据量或绕过门禁。
 
 ## 本轮修复的实际兼容问题
 

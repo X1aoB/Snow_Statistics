@@ -1,0 +1,45 @@
+{
+  "engines": {
+    "hdfs": "3.4.1",
+    "yarn": "3.4.1",
+    "hive_metastore": "3.1.3",
+    "spark": "3.5.7"
+  },
+  "source": "synthetic",
+  "manifest": {
+    "schema_version": 1,
+    "run_id": "yarn-acceptance-02",
+    "cutoff": "2026-01-05T00:00:00Z",
+    "date_from": "2026-01-01",
+    "date_to": "2026-01-04",
+    "source": "synthetic",
+    "output": "/snow/warehouse/runs/yarn-acceptance-02",
+    "quality": {
+      "raw": 56,
+      "valid": 28,
+      "quarantined": 0,
+      "after_cutoff": 0,
+      "duplicates": 28
+    },
+    "engine": "Spark 3.5.7",
+    "master": "yarn",
+    "application_id": "application_1789110861917_0003",
+    "hive_table": "snow_synthetic.ads_yarn_acceptance_02",
+    "generated_at": "2026-09-11T07:20:02.675898+00:00"
+  },
+  "daily_rows": 6,
+  "golden_daily_equal": true,
+  "replay_equal": true,
+  "quality_failure_preserves_accepted_run": true,
+  "replicated_output_blocks": 17,
+  "minimum_live_replicas": 2,
+  "fsck_healthy": true,
+  "single_remaining_datanode_read_sha256": "d3fc1d44af5d4d767aa6e8194520fa228c9d9e00cd8c0eda3d6844e790baaa65",
+  "vm_memory_gib": [
+    4,
+    6,
+    2
+  ],
+  "executor_memory_mib": 1024,
+  "scope": "56-row golden correctness fixture, not a distributed throughput benchmark"
+}

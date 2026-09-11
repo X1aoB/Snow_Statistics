@@ -1,10 +1,18 @@
 name: snow-lab-analysis
 services:
   datanode:
+    extra_hosts:
+      - snow-control:${CONTROL_IP:?}
+      - snow-compute:${COMPUTE_IP:?}
+      - snow-analysis:${ANALYSIS_IP:?}
     image: ${HADOOP_IMAGE:?}
     profiles: [batch]
     network_mode: host
-    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "384"}
+    user: "0:0"
+    environment:
+      HADOOP_CONF_DIR: /etc/hadoop
+      HADOOP_HEAPSIZE_MAX: "384"
+      HDFS_DATANODE_OPTS: -Ddfs.datanode.hostname=${ANALYSIS_IP:?}
     volumes: [./generated/hadoop:/etc/hadoop:ro, datanode:/data/dn]
     entrypoint: [hdfs, datanode]
     mem_limit: 768m

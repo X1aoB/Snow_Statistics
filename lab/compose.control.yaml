@@ -1,4 +1,8 @@
 name: snow-lab-control
+x-lab-hosts: &lab_hosts
+  - snow-control:${CONTROL_IP:?}
+  - snow-compute:${COMPUTE_IP:?}
+  - snow-analysis:${ANALYSIS_IP:?}
 services:
   kafka:
     image: ${KAFKA_IMAGE:?locked image required}
@@ -51,30 +55,37 @@ services:
       HEAP_OPTS: -Xms256m -Xmx512m
     mem_limit: 1g
   namenode:
+    extra_hosts: *lab_hosts
     image: ${HADOOP_IMAGE:?}
     profiles: [batch]
     network_mode: host
-    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "512"}
-    volumes: [./generated/hadoop:/etc/hadoop:ro, namenode:/data/name]
-    entrypoint: [/bin/bash, -ec]
-    command: ["test -d /data/name/current || hdfs namenode -format -nonInteractive; exec hdfs namenode"]
+    user: "0:0"
+    environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "512", HDFS_NAMENODE_USER: root}
+    volumes: [./generated/hadoop:/etc/hadoop:ro, namenode:/data/name, ./namenode-entrypoint.sh:/snow/namenode-entrypoint.sh:ro]
+    entrypoint: [bash, /snow/namenode-entrypoint.sh]
     mem_limit: 1g
   resourcemanager:
+    extra_hosts: *lab_hosts
     image: ${HADOOP_IMAGE:?}
     profiles: [batch]
     network_mode: host
+    user: "0:0"
     environment: {HADOOP_CONF_DIR: /etc/hadoop, HADOOP_HEAPSIZE_MAX: "512"}
     volumes: [./generated/hadoop:/etc/hadoop:ro]
     entrypoint: [yarn, resourcemanager]
     mem_limit: 768m
   hive:
+    extra_hosts: *lab_hosts
     image: ${HIVE_IMAGE:?}
     profiles: [batch]
     network_mode: host
+    user: "0:0"
+    entrypoint: [bash, /snow/hive-entrypoint.sh]
     environment:
       SERVICE_NAME: metastore
       HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
-    volumes: [./generated/hadoop:/hive_custom_conf:ro, hive:/opt/hive/data]
+      HADOOP_HEAPSIZE: "512"
+    volumes: [./generated/hadoop:/hive_custom_conf:ro, hive:/opt/hive/data, ./hive-entrypoint.sh:/snow/hive-entrypoint.sh:ro]
     mem_limit: 1g
 volumes:
   kafka:

@@ -1,0 +1,8 @@
+# Overlay for a 6 GiB analysis VM; validate with the synthetic publication smoke.
+services:
+  doris-fe:
+    mem_limit: 2g
+    volumes: [./doris/fe-small.conf:/snow/fe.conf:ro]
+  doris-be:
+    mem_limit: 3g
+    volumes: [./doris/be-small.conf:/snow/be.conf:ro]

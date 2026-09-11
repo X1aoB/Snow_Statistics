@@ -5,7 +5,9 @@ then publish a manifest only after the quality gate. Old runs remain recoverable
 """
 import argparse
 import json
+import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as F
@@ -18,6 +20,10 @@ parser.add_argument("--run-id", required=True)
 parser.add_argument("--date-from", required=True)
 parser.add_argument("--date-to", required=True)
 parser.add_argument("--cutoff", required=True, help="UTC accepted_at cutoff shared by reconciliation")
+parser.add_argument("--source", choices=["synthetic", "real"], default="synthetic")
+parser.add_argument("--register-hive", action="store_true")
+parser.add_argument("--expected", help="Optional local golden daily metrics for acceptance")
+parser.add_argument("--package-file", help="Optional atomic local export for a later publish phase")
 args = parser.parse_args()
 if not args.run_id.replace("-", "").replace("_", "").isalnum():
     raise ValueError("unsafe run ID")
@@ -30,7 +36,8 @@ schema = StructType([StructField("seq", LongType()), StructField("source", Strin
                      StructField("accepted_at", StringType()), StructField("event", event_schema), StructField("_corrupt_record", StringType())])
 raw = spark.read.schema(schema).json(args.input).cache()
 base = raw.select("source", "seq", "accepted_at", "_corrupt_record", "event.*").withColumn("event_time", F.to_timestamp("occurred_at"))
-valid_condition = (F.col("_corrupt_record").isNull() & F.col("source").isin("real", "synthetic") &
+valid_condition = (F.col("_corrupt_record").isNull() & (F.col("source") == args.source) &
+                   F.to_timestamp("accepted_at").isNotNull() & (F.col("seq") > 0) &
                    F.col("app").isin("mywebsite", "project_snow") & (F.col("schema_version") == "1") &
                    F.col("event_id").isNotNull() & F.col("event_time").isNotNull() &
                    F.col("event_type").isin("page_view", "character_select", "entry_click", "entry_arrival", "request_observed", "request_complete"))
@@ -57,8 +64,48 @@ if counts["quarantined"] or invalid_metrics:
     raise RuntimeError("quality gate failed; previous published manifest remains valid")
 dwd.write.mode("errorifexists").partitionBy("source", "business_date").parquet(run + "/dwd")
 daily.write.mode("errorifexists").partitionBy("source", "business_date").parquet(run + "/ads_daily")
+# Read the materialized files back before exposing an accepted package.
+rows = []
+for item in spark.read.parquet(run + "/ads_daily").collect():
+    row = item.asDict()
+    row["date"] = row.pop("business_date").isoformat()
+    rows.append(row)
+rows.sort(key=lambda row: (row["date"], row["app"]))
+if args.expected:
+    with open(args.expected, encoding="utf-8") as stream:
+        expected = [r for r in json.load(stream)["daily"] if r["source"] == args.source and args.date_from <= r["date"] <= args.date_to]
+    if rows != sorted(expected, key=lambda row: (row["date"], row["app"])):
+        raise RuntimeError("Parquet/golden integer reconciliation failed")
+hive_table = None
+if args.register_hive:
+    database = "snow_" + args.source
+    hive_table = database + ".ads_" + args.run_id.replace("-", "_")
+    spark.sql("CREATE DATABASE IF NOT EXISTS " + database)
+    spark.sql("CREATE TABLE " + hive_table + " USING PARQUET LOCATION '" + (run + "/ads_daily").replace("'", "''") + "'")
+    spark.sql("MSCK REPAIR TABLE " + hive_table)
+    if spark.table(hive_table).count() != len(rows):
+        raise RuntimeError("Hive catalog readback mismatch")
 manifest = dict(schema_version=1, run_id=args.run_id, cutoff=args.cutoff, date_from=args.date_from,
-                date_to=args.date_to, output=run, quality=counts, generated_at=datetime.now(timezone.utc).isoformat())
-spark.createDataFrame([(json.dumps(manifest),)], ["value"]).coalesce(1).write.mode("errorifexists").text(run + "/accepted")
+                date_to=args.date_to, source=args.source, input=args.input, output=run, quality=counts,
+                engine="Spark " + spark.version, master=spark.sparkContext.master,
+                application_id=spark.sparkContext.applicationId, hive_table=hive_table,
+                generated_at=datetime.now(timezone.utc).isoformat())
+package = dict(schema_version=1, manifest=manifest, daily=rows)
+spark.range(1).coalesce(1).select(F.lit(json.dumps(package)).alias("value")).write.mode("errorifexists").text(run + "/publication")
+spark.range(1).coalesce(1).select(F.lit(json.dumps(manifest)).alias("value")).write.mode("errorifexists").text(run + "/accepted")
+if args.package_file:
+    target = Path(args.package_file)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(".tmp")
+    with temporary.open("w", encoding="utf-8") as stream:
+        json.dump(package, stream)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, target)
+    directory = os.open(target.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 print(json.dumps(manifest))
 spark.stop()

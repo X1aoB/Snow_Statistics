@@ -28,11 +28,13 @@ uv run python tools/vmware_lab.py status
 每台复制本仓库到 `/home/snow/Snow_Statistics`，镜像摘要在 `lab/locks/images.env`。`lab/.env`（忽略）设置三节点 IP 与 LAB_MYSQL_PASSWORD、LAB_MYSQL_ROOT_PASSWORD、LAB_CDC_PASSWORD、LAB_GOVERNANCE_PASSWORD，不复用生产密码。渲染并分发 Hadoop 配置：
 
 ```sh
-uv run python tools/render_hadoop.py --control CONTROL_IP
+uv run python tools/render_hadoop.py --control CONTROL_IP --compute COMPUTE_IP
 sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f lab/compose.control.yaml --profile ingest up -d
 ```
 
 控制节点：ingest（Kafka/MySQL/Connect）、batch（NameNode/RM/Hive）；计算节点：batch（DN/NM）、realtime（Flink）；分析节点：batch（第二 DN）、olap（Doris）、governance（Marquez）。按阶段启动，避免在同一预算内同时运行重算、实时、治理和 HA。实验端口只用于 NAT 网络和 SSH 转发，不能发布到公网。
+
+离线验收现使用 `batch` 4/4/2 GiB 和 `olap` 4/关闭/6 GiB；通过 `vmware_lab.py configure --profile ...` 在关机时切换。小配置、依赖锁、真实 YARN 作业、Doris 发布与 Airflow 操作以[离线闭环手册](offline-pipeline.md)为准。原始 standard 是容量上限，不能把它当作同时启动承诺。
 
 ## 模拟、CDC、离线及实时
 

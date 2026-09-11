@@ -1,0 +1,70 @@
+{
+  "engine": "Airflow 2.10.5",
+  "dag_id": "snow_daily",
+  "runs": [
+    {
+      "run_id": "synthetic-e2e-20260911",
+      "state": "success",
+      "execution_date": "2026-09-11 07:33:08.000000",
+      "start_date": "2026-09-11 07:33:09.989563",
+      "end_date": "2026-09-11 07:39:50.754003"
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "compute_and_validate",
+      "state": "success",
+      "try_number": 1,
+      "start_date": "2026-09-11 07:33:19.006709",
+      "end_date": "2026-09-11 07:34:36.888232"
+    },
+    {
+      "task_id": "publish_doris",
+      "state": "success",
+      "try_number": 2,
+      "start_date": "2026-09-11 07:39:48.298858",
+      "end_date": "2026-09-11 07:39:49.628535"
+    },
+    {
+      "task_id": "window",
+      "state": "success",
+      "try_number": 1,
+      "start_date": "2026-09-11 07:33:13.937880",
+      "end_date": "2026-09-11 07:33:14.112514"
+    }
+  ],
+  "manifest": {
+    "schema_version": 1,
+    "run_id": "af-808f8ac918dcf7c342a0ad18-t1",
+    "cutoff": "2026-01-05T00:00:00+00:00",
+    "date_from": "2026-01-01",
+    "date_to": "2026-01-04",
+    "source": "synthetic",
+    "output": "hdfs://snow-control:9000/snow/warehouse/runs/af-808f8ac918dcf7c342a0ad18-t1",
+    "quality": {
+      "raw": 56,
+      "valid": 28,
+      "quarantined": 0,
+      "after_cutoff": 0,
+      "duplicates": 28
+    },
+    "engine": "Spark 3.5.7",
+    "master": "yarn",
+    "application_id": "application_1789110861917_0004",
+    "hive_table": "snow_synthetic.ads_af_808f8ac918dcf7c342a0ad18_t1",
+    "generated_at": "2026-09-11T07:34:33.736561+00:00"
+  },
+  "daily_rows": 6,
+  "vm_memory_gib_compute_phase": [
+    4,
+    4,
+    2
+  ],
+  "vm_memory_gib_publish_phase": [
+    4,
+    0,
+    6
+  ],
+  "executor_memory_mib": 768,
+  "phased_vm_switch_by_operator": true
+}

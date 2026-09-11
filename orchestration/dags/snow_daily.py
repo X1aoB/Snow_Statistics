@@ -1,4 +1,5 @@
 """Airflow 2.10: bounded seven-day correction; explicitly triggered older backfills."""
+import os
 from datetime import timedelta
 
 import pendulum
@@ -6,29 +7,33 @@ from airflow.decorators import dag, task
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 
+from snow_statistics.scheduling import resolve_window
+
 
 @dag(dag_id="snow_daily", start_date=pendulum.datetime(2026, 1, 1, tz="Asia/Hong_Kong"),
-     schedule="0 3 * * *", catchup=False, max_active_runs=1,
+     schedule=None if os.getenv("SNOW_AIRFLOW_SCHEDULE") == "manual" else "0 3 * * *", catchup=False, max_active_runs=1,
      default_args={"retries": 2, "retry_delay": timedelta(minutes=5)},
      params={"date_from": Param(None, type=["null", "string"], format="date"),
-             "date_to": Param(None, type=["null", "string"], format="date")})
+             "date_to": Param(None, type=["null", "string"], format="date"),
+             "cutoff": Param(None, type=["null", "string"], format="date-time")})
 def snow_daily():
     @task
     def window(**context):
-        end = context["data_interval_end"].in_timezone("Asia/Hong_Kong").subtract(days=1).date()
         params = context["params"]
-        start = pendulum.parse(params["date_from"]).date() if params["date_from"] else end - timedelta(days=6)
-        end = pendulum.parse(params["date_to"]).date() if params["date_to"] else end
-        if start > end:
-            raise ValueError("Invalid backfill window")
-        return dict(start=str(start), end=str(end), cutoff=context["data_interval_end"].in_timezone("UTC").isoformat())
+        return resolve_window(context["data_interval_end"].isoformat(), context["dag_run"].run_id,
+                              params["date_from"], params["date_to"], params["cutoff"])
     resolved = window()
-    compute = BashOperator(task_id="compute_and_validate", bash_command="bash /opt/snow/tools/run_batch.sh",
+    compute = BashOperator(task_id="compute_and_validate", bash_command="python /opt/snow/tools/airflow_ssh_compute.py",
         env={"SNOW_DATE_FROM": "{{ ti.xcom_pull(task_ids='window')['start'] }}",
              "SNOW_DATE_TO": "{{ ti.xcom_pull(task_ids='window')['end'] }}",
              "SNOW_CUTOFF": "{{ ti.xcom_pull(task_ids='window')['cutoff'] }}",
-             "SNOW_RUN_ID": "{{ dag_run.run_id | replace(':','-') | replace('+','-') | replace('.','-') }}"}, append_env=True)
-    resolved >> compute
+             "SNOW_RUN_ID": "{{ ti.xcom_pull(task_ids='window')['run_id'] }}-t{{ ti.try_number }}"},
+        append_env=True, execution_timeout=timedelta(minutes=20))
+    publish = BashOperator(task_id="publish_doris",
+        bash_command='python /opt/snow/tools/publish_daily.py "/opt/snow/runtime/publication/$SNOW_RUN_ID.json" --lock-directory /opt/snow/runtime/publication',
+        env={"SNOW_RUN_ID": "{{ ti.xcom_pull(task_ids='compute_and_validate') }}"},
+        append_env=True, execution_timeout=timedelta(minutes=5))
+    resolved >> compute >> publish
 
 
 snow_daily()

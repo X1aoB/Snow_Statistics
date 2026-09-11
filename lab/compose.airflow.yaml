@@ -1,26 +1,39 @@
 name: snow-lab-orchestration
 services:
   airflow:
-    build:
-      context: ..
-      dockerfile: lab/airflow.Dockerfile
-      args:
-        SPARK_IMAGE: ${SPARK_IMAGE:?}
-        AIRFLOW_IMAGE: ${AIRFLOW_IMAGE:?}
-    image: snow-airflow-spark:0.1.0
-    command: standalone
-    ports: ["127.0.0.1:8080:8080"]
+    image: ${AIRFLOW_IMAGE:?}
+    # Keep only the scheduler resident during compute; inspect runs through the CLI.
+    command: [bash, -ec, "airflow db migrate && exec airflow scheduler"]
+    network_mode: host
+    extra_hosts:
+      - snow-control:${CONTROL_IP:?}
+      - snow-compute:${COMPUTE_IP:?}
+      - snow-analysis:${ANALYSIS_IP:?}
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
       AIRFLOW__CORE__PARALLELISM: 1
       AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
-      SNOW_ODS_PATH: ${SNOW_ODS_PATH:-hdfs://snow-control:9000/snow/ods/events}
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__SCHEDULER__PARSING_PROCESSES: 1
+      SNOW_AIRFLOW_SCHEDULE: ${SNOW_AIRFLOW_SCHEDULE:-manual}
+      AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 127.0.0.1
+      AIRFLOW__WEBSERVER__WEB_SERVER_PORT: 8081
+      AIRFLOW__WEBSERVER__WORKERS: 1
+      CONTROL_IP: ${CONTROL_IP:?}
+      SNOW_COMPUTE_SSH_HOST: ${CONTROL_IP:?}
+      PYTHONPATH: /opt/snow/src
+      SNOW_DORIS_HOST: ${ANALYSIS_IP:?}
+      DORIS_USER: ${DORIS_USER:-root}
+      DORIS_PASSWORD: ${DORIS_PASSWORD:-}
+      SNOW_SOURCE: synthetic
+      SNOW_ODS_PATH: ${SNOW_ODS_PATH:-hdfs://snow-control:9000/snow/ods/synthetic/events}
       SNOW_WAREHOUSE_PATH: ${SNOW_WAREHOUSE_PATH:-hdfs://snow-control:9000/snow/warehouse}
     volumes:
       - ../orchestration/dags:/opt/airflow/dags:ro
       - ..:/opt/snow:ro
-      - ./generated/hadoop:/etc/hadoop:ro
+      - ../runtime/publication:/opt/snow/runtime/publication
+      - ./secrets/airflow-ssh:/opt/airflow-ssh:ro
       - airflow:/opt/airflow
     mem_limit: 2g
     cpus: 1

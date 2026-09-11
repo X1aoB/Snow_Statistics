@@ -15,6 +15,14 @@
     "vm_root": "runtime/vmware",
     "vm_names": ["snow-control", "snow-compute", "snow-analysis"],
     "compose_projects": ["snow-lab-control", "snow-lab-compute", "snow-lab-analysis", "snow-lab-orchestration", "snow-lab-ha"],
+    "airflow_gateway": {
+      "host": "snow-control",
+      "private_key_directory": "lab/secrets/airflow-ssh",
+      "authorized_key_comment": "snow-statistics-airflow",
+      "forced_command": "tools/airflow_gateway.py",
+      "publisher_lock_and_packages": "runtime/publication",
+      "metadata_volume": "snow-lab-orchestration_airflow"
+    },
     "max_project_bytes": 64424509440,
     "min_host_free_bytes": 37580963840
   },
