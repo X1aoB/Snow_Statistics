@@ -20,11 +20,12 @@ BASE_URL = "https://cloud-images.ubuntu.com/releases/noble/release-20260826/"
 IMAGE = "ubuntu-24.04-server-cloudimg-amd64.vmdk"
 IMAGE_SHA256 = "fb3ba097a9013d759fa13ab22d2b4118bd55452c617ca3758a55303eea96de6e"
 NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": (10240, 4)}
-DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 24}
+DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 28}
 PROFILES = {"batch": {"snow-control": 4096, "snow-compute": 4096, "snow-analysis": 2048},
             "ods": {"snow-control": 3584, "snow-compute": 4096, "snow-analysis": 1024},
             "ods-compact": {"snow-control": 3584, "snow-compute": 3072, "snow-analysis": 1024},
             "governance": {"snow-analysis": 2048},
+            "realtime": {"snow-analysis": 4608},
             "olap": {"snow-control": 4096, "snow-analysis": 6144}, "standard": {}}
 
 

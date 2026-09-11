@@ -24,3 +24,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: "11", cache: maven}
       - run: mvn -B -q -f warehouse/flink/pom.xml package
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: mvn -B -q -f warehouse/flink/pom.xml org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath -Dmdep.outputFile=../../runtime/flink-classpath.txt -DincludeScope=runtime
+      - run: python tools/verify_flink_dependencies.py --classpath runtime/flink-classpath.txt

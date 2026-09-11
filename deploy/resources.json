@@ -14,7 +14,23 @@
   "local": {
     "vm_root": "runtime/vmware",
     "vm_names": ["snow-control", "snow-compute", "snow-analysis"],
-    "compose_projects": ["snow-lab-control", "snow-lab-compute", "snow-lab-analysis", "snow-lab-orchestration", "snow-lab-ha"],
+    "compose_projects": ["snow-lab-control", "snow-lab-compute", "snow-lab-analysis", "snow-lab-orchestration", "snow-lab-ha", "snow-lab-realtime"],
+    "realtime_acceptance": {
+      "host": "snow-analysis",
+      "env": "lab/secrets/realtime.env",
+      "volumes": ["snow-lab-realtime_kafka", "snow-lab-realtime_flink"],
+      "services": ["snow-lab-realtime-kafka-1", "snow-lab-realtime-jobmanager-1", "snow-lab-realtime-taskmanager-1"],
+      "reused_doris_services": ["snow-lab-analysis-doris-fe-1", "snow-lab-analysis-doris-be-1"],
+      "topic_scope": "snow.synthetic.<lane>.{events,late,duplicates,quarantine}.v1",
+      "consumer_group": "snow-flink-synthetic-<lane>",
+      "database_scope": "snow_realtime_<lane>",
+      "tables": ["events_realtime", "daily_realtime", "daily_offline", "txn_probe"],
+      "archives_and_receipts": "runtime/realtime",
+      "rest": "VM loopback 8081; temporary verified SSH tunnel on host loopback 18081",
+      "kafka": "analysis VM NAT 9092; separate broker and volume from original CDC Kafka",
+      "checkpoint_policy": "Retain latest 3; retain external checkpoints on cancel; manual session restoration uses the same JAR hash and lane",
+      "shutdown": "Export checkpoint identity, cancel only the synthetic jobs, stop the listed containers and VM. Keep topics, checkpoint volume, database tables and archives. No automatic removal on shutdown."
+    },
     "airflow_gateway": {
       "host": "snow-control",
       "private_key_directory": "lab/secrets/airflow-ssh",

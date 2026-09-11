@@ -18,6 +18,7 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.StateTtlConfig;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
@@ -25,6 +26,8 @@ import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
@@ -34,15 +37,14 @@ public class RealtimeJob {
     static final ObjectMapper JSON = new ObjectMapper();
     static final OutputTag<String> LATE = new OutputTag<String>("late-for-offline") {};
     static final OutputTag<String> INVALID = new OutputTag<String>("invalid-contract") {};
+    static final OutputTag<String> DUPLICATE = new OutputTag<String>("duplicate") {};
     static final Set<String> KINDS = Set.of("page_view", "character_select", "entry_click", "entry_arrival", "request_observed", "request_complete");
 
     public static ObjectNode normalize(String value, String expectedSource) throws Exception {
-        JsonNode envelope = JSON.readTree(value), event = envelope.path("event");
-        if (!Set.of("real", "synthetic").contains(expectedSource) || !expectedSource.equals(envelope.path("source").asText()) ||
-            event.path("schema_version").asInt() != 1 || !KINDS.contains(event.path("event_type").asText()) ||
-            !Set.of("mywebsite", "project_snow").contains(event.path("app").asText())) throw new IllegalArgumentException("invalid contract/provenance");
+        if (value.length() > 65536) throw new IllegalArgumentException("oversized record");
+        JsonNode envelope = JSON.readTree(value), event = EventContract.validate(envelope, expectedSource);
         Instant time = Instant.parse(event.path("occurred_at").asText());
-        Instant accepted = Instant.parse(envelope.path("accepted_at").asText());
+        Instant accepted = EventContract.instant(envelope.path("accepted_at").asText());
         String kind = event.path("event_type").asText();
         String identity = event.path(kind.equals("request_complete") ? "request_id" : "event_id").asText();
         if (identity.isBlank()) throw new IllegalArgumentException("missing business identity");
@@ -59,11 +61,55 @@ public class RealtimeJob {
         out.put("accepted_at", accepted.toString().replace("T", " ").replace("Z", ""));
         // Immutable event fact: first acceptance wins. Dedup prevents later source
         // sequence values from making the same request count under another day.
-        out.put("business_version", envelope.path("seq").asLong());
+        // Immutable facts use the earliest source sequence even after state TTL expires.
+        // A lane belongs to one collector sequence generation; never reset it in place.
+        out.put("business_version", Long.MAX_VALUE - envelope.path("seq").asLong());
+        out.put("_event_id", event.path("event_id").asText());
+        out.put("_event_json", event.toString());
+        ObjectNode replay = JSON.createObjectNode();
+        replay.put("source", expectedSource); replay.put("seq", envelope.path("seq").asLong());
+        replay.put("accepted_at", accepted.toString()); replay.set("event", event);
+        out.set("_envelope", replay);
         return out;
     }
 
-    static class Deduplicate extends KeyedProcessFunction<String, String, String> {
+    static boolean tooLate(long timestamp, long watermark) {
+        return watermark != Long.MIN_VALUE && timestamp < watermark - 600_000L;
+    }
+
+    static String dorisRow(String value) throws Exception {
+        ObjectNode row = (ObjectNode) JSON.readTree(value);
+        row.remove(java.util.List.of("_event_id", "_event_json", "_envelope"));
+        return row.toString();
+    }
+
+    static String diagnostic(String value, String reason) throws Exception {
+        JsonNode row = JSON.readTree(value);
+        ObjectNode result = JSON.createObjectNode();
+        result.put("reason", reason); result.put("seq", row.path("_envelope").path("seq").asLong());
+        result.put("event_id", row.path("_event_id").asText());
+        return result.toString();
+    }
+
+    static class EventDeduplicate extends KeyedProcessFunction<String, String, String> {
+        private transient ValueState<String> seen;
+        @Override public void open(Configuration parameters) {
+            ValueStateDescriptor<String> descriptor = new ValueStateDescriptor<>("event-fingerprint-v2", String.class);
+            descriptor.enableTimeToLive(StateTtlConfig.newBuilder(Duration.ofDays(8)).build());
+            seen = getRuntimeContext().getState(descriptor);
+        }
+        @Override public void processElement(String value, Context context, Collector<String> out) throws Exception {
+            String fingerprint = JSON.readTree(value).path("_event_json").asText();
+            if (seen.value() != null) {
+                boolean same = seen.value().equals(fingerprint);
+                context.output(same ? DUPLICATE : INVALID, diagnostic(value, same ? "event_duplicate" : "event_id_conflict"));
+            } else if (tooLate(context.timestamp(), context.timerService().currentWatermark())) {
+                context.output(LATE, JSON.readTree(value).path("_envelope").toString());
+            } else { seen.update(fingerprint); out.collect(value); }
+        }
+    }
+
+    static class RequestDeduplicate extends KeyedProcessFunction<String, String, String> {
         private transient ValueState<Boolean> seen;
         @Override public void open(Configuration parameters) {
             ValueStateDescriptor<Boolean> descriptor = new ValueStateDescriptor<>("seen-v1", Boolean.class);
@@ -71,10 +117,8 @@ public class RealtimeJob {
             seen = getRuntimeContext().getState(descriptor);
         }
         @Override public void processElement(String value, Context context, Collector<String> out) throws Exception {
-            if (context.timestamp() < context.timerService().currentWatermark() - 600_000L) {
-                context.output(LATE, value); return;
-            }
             if (seen.value() == null) { seen.update(true); out.collect(value); }
+            else context.output(DUPLICATE, diagnostic(value, "request_duplicate"));
         }
     }
 
@@ -83,7 +127,10 @@ public class RealtimeJob {
         Parse(String source) { this.source = source; }
         @Override public void processElement(String value, Context context, Collector<String> out) {
             try { out.collect(normalize(value, source).toString()); }
-            catch (Exception error) { context.output(INVALID, "{\"reason\":\"invalid_contract\"}"); }
+            catch (Exception error) {
+                System.err.println("snow_realtime_rejected class=" + error.getClass().getSimpleName());
+                context.output(INVALID, "{\"reason\":\"invalid_contract\"}");
+            }
         }
     }
 
@@ -93,38 +140,63 @@ public class RealtimeJob {
         String lane = System.getenv().getOrDefault("SNOW_REPLAY_LANE", "live");
         if (!lane.matches("[a-z0-9_-]{1,32}")) throw new IllegalArgumentException("lane");
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1); env.enableCheckpointing(10_000);
+        env.setParallelism(1); env.enableCheckpointing(10_000, CheckpointingMode.EXACTLY_ONCE);
+        env.getCheckpointConfig().setMinPauseBetweenCheckpoints(1000);
+        env.getCheckpointConfig().setCheckpointTimeout(60_000);
+        env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+        env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+        env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, org.apache.flink.api.common.time.Time.seconds(5)));
+        String topic = System.getenv().getOrDefault("SNOW_INPUT_TOPIC", "snow." + sourceName + ".events.v1");
+        if (!topic.matches("snow\\." + sourceName + "\\.[a-z0-9_.-]{1,100}\\.v1")) throw new IllegalArgumentException("topic/source");
+        // First acceptance ordering is validated for one collector/partition in this release.
+        Properties adminProperties = new Properties();
+        adminProperties.put("bootstrap.servers", bootstrap);
+        adminProperties.put("default.api.timeout.ms", "10000");
+        adminProperties.put("request.timeout.ms", "5000");
+        try (org.apache.kafka.clients.admin.AdminClient admin = org.apache.kafka.clients.admin.AdminClient.create(adminProperties)) {
+            if (admin.describeTopics(java.util.List.of(topic)).allTopicNames().get().get(topic).partitions().size() != 1)
+                throw new IllegalArgumentException("Realtime v2 requires one ordered input partition");
+        }
+        String sidePrefix = "snow." + sourceName + "." + lane;
         KafkaSource<String> source = KafkaSource.<String>builder().setBootstrapServers(bootstrap)
-            .setTopics("snow." + sourceName + ".events.v1").setGroupId("snow-flink-" + sourceName + "-" + lane)
+            .setTopics(topic).setGroupId("snow-flink-" + sourceName + "-" + lane)
             .setStartingOffsets(OffsetsInitializer.committedOffsets(org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST))
             .setValueOnlyDeserializer(new SimpleStringSchema()).build();
         var parsed = env.fromSource(source, WatermarkStrategy.noWatermarks(), "accepted-events-v1")
+            .uid("source-v2")
             .process(new Parse(sourceName)).uid("parse-v1");
-        parsed.getSideOutput(INVALID).sinkTo(KafkaSink.<String>builder().setBootstrapServers(bootstrap)
-            .setRecordSerializer(KafkaRecordSerializationSchema.builder().setTopic("snow."+sourceName+".quarantine.v1")
-                .setValueSerializationSchema(new SimpleStringSchema()).build())
-            .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE).build()).uid("quarantine-v1");
-        var stream = parsed
+        var events = parsed
             .assignTimestampsAndWatermarks(WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofSeconds(30))
                 .withTimestampAssigner((value, previous) -> {
                     try { return Instant.parse(JSON.readTree(value).path("event_time").asText().replace(" ", "T") + "Z").toEpochMilli(); }
                     catch (Exception error) { throw new IllegalArgumentException("timestamp"); }
                 }).withIdleness(Duration.ofMinutes(1)))
-            .keyBy(value -> { JsonNode row = JSON.readTree(value); return row.path("source").asText()+":"+row.path("app").asText()+":"+row.path("business_key").asText(); })
-            .process(new Deduplicate()).uid("dedup-v1");
+            .keyBy(value -> { JsonNode row = JSON.readTree(value); return row.path("source").asText()+":"+row.path("app").asText()+":"+row.path("_event_id").asText(); })
+            .process(new EventDeduplicate()).uid("event-dedup-v2");
+        var stream = events.keyBy(value -> { JsonNode row = JSON.readTree(value); return row.path("source").asText()+":"+row.path("app").asText()+":"+row.path("business_key").asText(); })
+            .process(new RequestDeduplicate()).uid("request-dedup-v2");
+        parsed.getSideOutput(INVALID).union(events.getSideOutput(INVALID))
+            .sinkTo(kafkaSink(bootstrap, sidePrefix + ".quarantine.v1")).uid("quarantine-v2");
+        events.getSideOutput(DUPLICATE).union(stream.getSideOutput(DUPLICATE))
+            .sinkTo(kafkaSink(bootstrap, sidePrefix + ".duplicates.v1")).uid("duplicates-v2");
+        String table = System.getenv().getOrDefault("DORIS_TABLE", "snow_realtime_v2.events_realtime");
+        if (!table.matches("snow(?:_[a-z0-9_]{1,40})?\\.events_realtime")) throw new IllegalArgumentException("table");
         Properties props = new Properties(); props.setProperty("format", "json"); props.setProperty("read_json_by_line", "true");
         DorisSink<String> sink = DorisSink.<String>builder()
             .setDorisOptions(DorisOptions.builder().setFenodes(required("DORIS_FE"))
-                .setTableIdentifier("snow.events_realtime").setUsername(required("DORIS_USER")).setPassword(required("DORIS_PASSWORD")).build())
+                .setTableIdentifier(table).setUsername(required("DORIS_USER")).setPassword(System.getenv().getOrDefault("DORIS_PASSWORD", "")).build())
             .setDorisReadOptions(DorisReadOptions.builder().build())
             .setDorisExecutionOptions(DorisExecutionOptions.builder().setLabelPrefix("snow-"+sourceName+"-"+lane).setStreamLoadProp(props).setDeletable(false).build())
             .setSerializer(new SimpleStringSerializer()).build();
-        stream.sinkTo(sink).uid("doris-v1");
-        stream.getSideOutput(LATE).sinkTo(KafkaSink.<String>builder().setBootstrapServers(bootstrap)
-            .setRecordSerializer(KafkaRecordSerializationSchema.builder().setTopic("snow."+sourceName+".late.v1")
-                .setValueSerializationSchema(new SimpleStringSchema()).build())
-            .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE).build()).uid("late-v1");
+        stream.map(RealtimeJob::dorisRow).uid("doris-row-v2").sinkTo(sink).uid("doris-v2");
+        events.getSideOutput(LATE).sinkTo(kafkaSink(bootstrap, sidePrefix + ".late.v1")).uid("late-v2");
         env.execute("Snow Statistics " + sourceName + " " + lane);
+    }
+    static KafkaSink<String> kafkaSink(String bootstrap, String topic) {
+        return KafkaSink.<String>builder().setBootstrapServers(bootstrap)
+            .setRecordSerializer(KafkaRecordSerializationSchema.builder().setTopic(topic)
+                .setValueSerializationSchema(new SimpleStringSchema()).build())
+            .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE).build();
     }
     static String required(String key) {
         String value = System.getenv(key);

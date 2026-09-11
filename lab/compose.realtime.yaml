@@ -1,0 +1,78 @@
+# Dedicated small synthetic acceptance on snow-analysis; other VMs stay off.
+name: snow-lab-realtime
+x-flink-env: &flink_env
+  KAFKA_BOOTSTRAP: ${ANALYSIS_IP:?}:9092
+  SNOW_SOURCE: synthetic
+  SNOW_REPLAY_LANE: ${SNOW_REPLAY_LANE:?}
+  SNOW_INPUT_TOPIC: snow.synthetic.${SNOW_REPLAY_LANE}.events.v1
+  DORIS_FE: ${ANALYSIS_IP}:8030
+  DORIS_TABLE: ${DORIS_TABLE:?}
+  DORIS_USER: ${DORIS_USER:?}
+  DORIS_PASSWORD: ${DORIS_PASSWORD-}
+  FLINK_PROPERTIES: |
+    jobmanager.rpc.address: 127.0.0.1
+    jobmanager.bind-host: 127.0.0.1
+    rest.address: 127.0.0.1
+    rest.bind-address: 127.0.0.1
+    jobmanager.memory.process.size: 768m
+    taskmanager.host: 127.0.0.1
+    taskmanager.bind-host: 127.0.0.1
+    taskmanager.numberOfTaskSlots: 1
+    taskmanager.memory.process.size: 1280m
+    taskmanager.memory.managed.size: 0m
+    state.checkpoints.dir: file:///checkpoints
+    state.savepoints.dir: file:///checkpoints/savepoints
+    state.checkpoints.num-retained: 3
+    heartbeat.interval: 2000
+    heartbeat.timeout: 10000
+    parallelism.default: 1
+services:
+  kafka:
+    image: ${KAFKA_IMAGE:?}
+    network_mode: host
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://127.0.0.1:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${ANALYSIS_IP}:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@127.0.0.1:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
+      KAFKA_TRANSACTION_STATE_LOG_NUM_PARTITIONS: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG_RETENTION_HOURS: -1
+      KAFKA_LOG_SEGMENT_BYTES: 16777216
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx384m
+      CLUSTER_ID: c25vdy1yZWFsdGltZS1sYWI
+    volumes: [kafka:/var/lib/kafka/data]
+    mem_limit: 640m
+    cpus: 1.0
+    logging: &logs
+      driver: local
+      options: {max-size: 5m, max-file: "3"}
+  jobmanager:
+    image: ${FLINK_IMAGE:?}
+    network_mode: host
+    command: jobmanager
+    environment: *flink_env
+    volumes: [flink:/checkpoints, ../warehouse/flink/target:/opt/flink/usrlib:ro]
+    mem_limit: 896m
+    cpus: 1.0
+    logging: *logs
+  taskmanager:
+    image: ${FLINK_IMAGE:?}
+    network_mode: host
+    command: taskmanager
+    environment: *flink_env
+    volumes: [flink:/checkpoints, ../warehouse/flink/target:/opt/flink/usrlib:ro]
+    mem_limit: 1536m
+    cpus: 2.0
+    logging: *logs
+volumes:
+  kafka:
+  flink:

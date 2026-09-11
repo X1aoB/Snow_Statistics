@@ -1,0 +1,25 @@
+{
+  "scope": "Maven runtime dependencies; provided Flink/JDK are covered by the pinned Flink image",
+  "artifacts": {
+    "com/fasterxml/jackson/core/jackson-annotations/2.17.3/jackson-annotations-2.17.3.jar": "2747f60343783a6ec8a68405c7c839fa0bbe30ee4e2459d21a1ac3b7365e1ed5",
+    "com/fasterxml/jackson/core/jackson-core/2.17.3/jackson-core-2.17.3.jar": "19e03ee71f00a86255fa3c980560b231e1305486f6482c905601209014f5870c",
+    "com/fasterxml/jackson/core/jackson-databind/2.17.3/jackson-databind-2.17.3.jar": "93b13e709a0b620de42019180a75bc1fc4885c81fe5b6087a4aa248f91fb9a95",
+    "com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.17.3/jackson-datatype-jdk8-2.17.3.jar": "b7207c1df9d89e95efd23793d3a13b1295bec0d9be58b3582ea0dff6cb096fa2",
+    "com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.17.3/jackson-datatype-jsr310-2.17.3.jar": "b1e3e4be52f69ecf6442d8a07e96ddd200bacb1867cb47460ade87710552a9ee",
+    "com/github/luben/zstd-jni/1.5.2-1/zstd-jni-1.5.2-1.jar": "93f7e4cbc907c2650f89f9f0bec94873735a58f1e4b66a54973294e4ec1878e8",
+    "com/google/code/findbugs/jsr305/1.3.9/jsr305-1.3.9.jar": "905721a0eea90a81534abb7ee6ef4ea2e5e645fa1def0a5cd88402df1b46c9ed",
+    "com/google/errorprone/error_prone_annotations/2.18.0/error_prone_annotations-2.18.0.jar": "9e6814cb71816988a4fd1b07a993a8f21bb7058d522c162b1de849e19bea54ae",
+    "com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26",
+    "com/google/guava/guava/32.1.2-jre/guava-32.1.2-jre.jar": "bc65dea7cfd9e4dacf8419d8af0e741655857d27885bb35d943d7187fc3a8fce",
+    "com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99",
+    "com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar": "f02a95fa1a5e95edb3ed859fd0fb7df709d121a35290eff8b74dce2ab7f4d6ed",
+    "org/apache/doris/flink-doris-connector-1.20/25.1.0/flink-doris-connector-1.20-25.1.0.jar": "70295bc15432e0594a5a875e87a588b8197cb2be7a5d4b9cbfeb24c5dc10e911",
+    "org/apache/flink/flink-connector-base/1.20.3/flink-connector-base-1.20.3.jar": "e95179da8f560204ae21b1f709497a0928348f8655a23b1e80d458670dc4d4ce",
+    "org/apache/flink/flink-connector-kafka/3.3.0-1.20/flink-connector-kafka-3.3.0-1.20.jar": "13df93f4b97591d5b6c0aa71455e2cf079d95c9dbfe3b0123a32d6377625153b",
+    "org/apache/kafka/kafka-clients/3.4.0/kafka-clients-3.4.0.jar": "48f38dede69bf2ed3709e270afb6b72fac869651fc258997727dba350333ac64",
+    "org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar": "e316255bbfcd9fe50d165314b85abb2b33cb2a66a93c491db648e498a82c2de1",
+    "org/lz4/lz4-java/1.8.0/lz4-java-1.8.0.jar": "d74a3334fb35195009b338a951f918203d6bbca3d1d359033dc33edd1cadc9ef",
+    "org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar": "d3ef575e3e4979678dc01bf1dcce51021493b4d11fb7f1be8ad982877c16a1c0",
+    "org/xerial/snappy/snappy-java/1.1.10.4/snappy-java-1.1.10.4.jar": "55b30c94e5c4cc2d4b6976916098d0678a8a6cc7427fa8c875621bd94e731ac8"
+  }
+}

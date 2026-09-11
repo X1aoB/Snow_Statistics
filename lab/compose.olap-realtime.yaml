@@ -1,0 +1,10 @@
+# Small-data limit only. Uses the existing analysis volumes; never recreates data.
+services:
+  doris-fe:
+    mem_limit: 1280m
+    cpus: 1.0
+    volumes: [./doris/fe-realtime.conf:/snow/fe.conf:ro]
+  doris-be:
+    mem_limit: 1792m
+    cpus: 2.0
+    volumes: [./doris/be-realtime.conf:/snow/be.conf:ro]

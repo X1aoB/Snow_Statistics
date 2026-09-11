@@ -1,6 +1,6 @@
 # 本地运行与资源门禁
 
-当前已安装完整离线和治理镜像，小样本计算优先选择 `ods-compact`（control/compute/analysis：3.5/3/1 GiB），仍执行 `--reserve-mib 1024` 作业前检查。Marquez 使用独立 `governance` 阶段（分析机 2 GiB，计算服务停止）。这些是小样本验收配置，扩样须再次测量。详见[血缘与资源切换](lineage.md)。
+当前镜像与实验数据增长后，旧三 VM `ods-compact`（3.5/3/1 GiB）已不能直接满足 60 GiB 总预算；历史通过记录不代表当前可以同时启动。最新小样本采用单分析 VM `realtime`（4.5 GiB）和单控制 VM Spark（3.5 GiB）分阶段运行，作业前保留 `--reserve-mib 1024` 检查。三节点重算前须先完成范围明确的资源回收或重新验证配置。详见[实时验收与资源边界](realtime.md)。
 
 ## 已知工具
 
@@ -17,7 +17,7 @@ uv run python tools/vmware_lab.py ip --node snow-control
 uv run python tools/vmware_lab.py status
 ```
 
-生成三个仅属于本项目的 NAT Linux 节点：control 6 GiB/2 vCPU、compute 6 GiB/4 vCPU、analysis 最高 10 GiB/4 vCPU；薄置备系统盘分别 18/18/24 GiB。Doris 镜像实际解压使分析节点 18 GiB 初始盘只剩约 2.9 GiB，因此为该节点增加逻辑磁盘容量；整体物理文件预算仍为 60 GiB。Ubuntu 镜像固定 release-20260826 并验证 SHA256。seed、SSH 凭据、VMX、磁盘都在忽略的 `runtime/vmware`。从 VMware 界面打开各节点的 VMX 即可手动管理。
+生成三个仅属于本项目的 NAT Linux 节点：control 6 GiB/2 vCPU、compute 6 GiB/4 vCPU、analysis 最高 10 GiB/4 vCPU；薄置备系统盘分别 18/18/28 GiB。Doris 与实时镜像使分析节点逻辑盘从初始 18 GiB 分阶段扩到 24、28 GiB；整体物理文件预算仍为 60 GiB。Ubuntu 镜像固定 release-20260826 并验证 SHA256。seed、SSH 凭据、VMX、磁盘都在忽略的 `runtime/vmware`。从 VMware 界面打开各节点的 VMX 即可手动管理。
 
 启动会检查宿主空闲磁盘至少 35 GiB、整个项目文件预算 60 GiB（含本次启动可能新增的 .vmem），并保留 4 GiB 当前可用内存。文件长度是保守预算近似，不等于底层精确分配量；外部共享 uv/Maven 缓存不纳入本目录计数，扩样前还需核查依赖缓存和宿主空闲空间。薄置备逻辑容量与物理实占不同，不能只看输入文件大小。
 
@@ -36,7 +36,7 @@ sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f lab/c
 
 控制节点：ingest（Kafka/MySQL/Connect）、batch（NameNode/RM/Hive）；计算节点：batch（DN/NM）、realtime（Flink）；分析节点：batch（第二 DN）、olap（Doris）、governance（Marquez）。按阶段启动，避免在同一预算内同时运行重算、实时、治理和 HA。实验端口只用于 NAT 网络和 SSH 转发，不能发布到公网。
 
-离线验收现使用 `batch` 4/4/2 GiB 和 `olap` 4/关闭/6 GiB；通过 `vmware_lab.py configure --profile ...` 在关机时切换。小配置、依赖锁、真实 YARN 作业、Doris 发布与 Airflow 操作以[离线闭环手册](offline-pipeline.md)为准。原始 standard 是容量上限，不能把它当作同时启动承诺。
+历史离线验收使用 `batch` 4/4/2 GiB 和 `olap` 4/关闭/6 GiB；通过 `vmware_lab.py configure --profile ...` 在关机时切换。依赖锁、真实 YARN 作业、Doris 发布与 Airflow 操作见[离线闭环手册](offline-pipeline.md)。这些历史配置与 standard 容量上限都不能当作当前同时启动承诺，先执行最新容量检查。
 
 ## 模拟、CDC、离线及实时
 
@@ -46,7 +46,7 @@ sudo docker compose --env-file lab/locks/images.env --env-file lab/.env -f lab/c
 4. `snow-stats sync` 读取 collector 私有 API，先归档后发 Kafka；`tools/archive_to_jsonl.py` 校验原始归档并转换为 Spark JSONL。
 5. 将 JSONL 放入独立 HDFS ODS 路径。Spark `batch.py` 必须显式指定日期、共享截止时间和新 run-id；相同路径不会覆盖既有结果。`ops.py` 用归档 CDC 建立内容及工单模型。
 6. 在 Doris 执行 `warehouse/doris/schema.sql`。`tools/maven_build.ps1` 用下载并校验的 Maven 构建 Java 11 字节码；在 Flink 1.20.3 Java 11 运行。配置 KAFKA_BOOTSTRAP、SNOW_SOURCE、DORIS_FE、DORIS_USER、DORIS_PASSWORD 和可选 SNOW_REPLAY_LANE。
-7. 启用 Airflow DAG 前配置 `/opt/snow` 挂载及 Spark/Hadoop 路径。按实际任务 START/COMPLETE/FAIL 调用 `governance/lineage.py`；一条任务生命周期使用同一 run UUID。
+7. 启用 Airflow DAG 前配置 `/opt/snow` 挂载及 Spark/Hadoop 路径。核心模型任务已自动记录 START/COMPLETE/FAIL；按[血缘手册](lineage.md)启用独立本地日志、导出及补发，一次尝试使用同一 run UUID。
 
 组件镜像 digest 已固定不代表组合已通过集成测试。进入下一阶段前必须保存实测结果，检查 `docs/status.md`。
 

@@ -1,0 +1,396 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-11",
+  "scope": "Synthetic single-partition small-data recovery on one physical host; not a realtime SLA or load benchmark",
+  "engines": {
+    "flink": "1.20.3",
+    "java": "11",
+    "kafka": "3.9.1",
+    "doris": "3.0.6.2",
+    "doris_connector": "25.1.0",
+    "spark": "3.5.7"
+  },
+  "integration_jar_sha256": "59c6cd3cae61c555a7e1a1836798745db1a5f03cb494d5bd9533a49450eaf6fc",
+  "final_jar_sha256": "11c8e63a304da2d6c708c8270cb5b340422acc18b9ac09715bd415d32f495fef",
+  "final_jar_delta": "After integration, added rejection of schema_version values that overflow int; dedicated unit regression, no state/schema changes",
+  "resources": {
+    "realtime_vm_mib": 4608,
+    "realtime_other_vms_on": 0,
+    "spark_vm_mib": 3584,
+    "spark_other_vms_on": 0,
+    "container_limits_mib": {
+      "kafka": 640,
+      "jobmanager": 896,
+      "taskmanager": 1536,
+      "doris_fe": 1280,
+      "doris_be": 1792,
+      "spark": 3072
+    },
+    "final_be_internal_mem_limit": "1500M",
+    "final_be_limit_validation": "Doris correction publication and final service startup; initial recovery used 1200M",
+    "limits_sum_exceeds_vm_memory": true,
+    "load_peak_validated": false,
+    "project_cap_gib": 60,
+    "host_free_reserve_gib": 35,
+    "host_ram_reserve_mib": 4096,
+    "initial_doris_recreate_project_gib": 60.81,
+    "events_sent_before_capacity_refusal": 0,
+    "compaction_temporary_copy_host_reserve_failed": true,
+    "maintenance_fully_within_budget": false,
+    "realtime_project_gib_observation": 58.17,
+    "correction_publish_project_gib_observation": 58.35,
+    "old_three_vm_ods_compact_currently_fits_budget": false,
+    "project_files_gib_after_shutdown": 53.86,
+    "host_free_gib_after_shutdown": 55.61,
+    "running_vms_at_end": 0,
+    "stored_data_preserved": true,
+    "compaction_dry_run": {
+      "temporary_copy_gib": 29.0,
+      "powered_off": true,
+      "eligible": false
+    },
+    "final_services_start_and_stop_verified": true,
+    "final_flink_taskmanagers": 1,
+    "final_flink_available_slots": 1
+  },
+  "taskmanager_recovery": {
+    "job_id": "b11c82ae05efc2d7183c7fcbb4f21347",
+    "source": "synthetic",
+    "lane": "recovery02",
+    "input_rows": 17,
+    "live_rows": 9,
+    "late_rows": 2,
+    "duplicate_rows": 3,
+    "quarantine_rows": 3,
+    "live_metrics": [
+      {
+        "app": "mywebsite",
+        "date": "2026-01-01",
+        "pv": 2,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-01",
+        "pv": 0,
+        "requests": 1,
+        "source": "synthetic",
+        "successes": 1,
+        "uv": 1
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-02",
+        "pv": 4,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 2
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-02",
+        "pv": 0,
+        "requests": 1,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 0
+      }
+    ],
+    "checkpoint_restore_verified": true,
+    "first_request_day_and_success_preserved": true,
+    "side_output_delivery": "at_least_once; raw diagnostic counts apply to this observed run",
+    "before": {
+      "counts": {
+        "completed": 2,
+        "failed": 0,
+        "in_progress": 0,
+        "restored": 0,
+        "total": 2
+      },
+      "latest_completed_id": 2,
+      "restored": null
+    },
+    "after": {
+      "counts": {
+        "completed": 3,
+        "failed": 0,
+        "in_progress": 0,
+        "restored": 1,
+        "total": 3
+      },
+      "latest_completed_id": 3,
+      "restored": {
+        "external_path": "file:/checkpoints/b11c82ae05efc2d7183c7fcbb4f21347/chk-2",
+        "id": 2,
+        "is_savepoint": false,
+        "restore_timestamp": 1789125324773
+      }
+    }
+  },
+  "session_recovery": {
+    "checkpoint_source_id": 29,
+    "restored_job_id": "c86fab658db273a5145a01e2d9f460c1",
+    "extra_events": 3,
+    "live_rows": 10,
+    "live_metrics": [
+      {
+        "app": "mywebsite",
+        "date": "2026-01-01",
+        "pv": 2,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-01",
+        "pv": 0,
+        "requests": 1,
+        "source": "synthetic",
+        "successes": 1,
+        "uv": 1
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-02",
+        "pv": 5,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 2
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-02",
+        "pv": 0,
+        "requests": 1,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 0
+      }
+    ],
+    "event_and_request_state_retained": true,
+    "checkpoints": {
+      "counts": {
+        "completed": 1,
+        "failed": 0,
+        "in_progress": 0,
+        "restored": 1,
+        "total": 1
+      },
+      "latest_completed_id": 30,
+      "restored": {
+        "external_path": "file:/checkpoints/b11c82ae05efc2d7183c7fcbb4f21347/chk-29",
+        "id": 29,
+        "is_savepoint": true,
+        "restore_timestamp": 1789125768105
+      }
+    }
+  },
+  "transactions": {
+    "engine": "Doris 3.0.6.2",
+    "key_model": "DUPLICATE",
+    "table": "snow_realtime_recovery02.txn_probe",
+    "attempts": [
+      {
+        "loaded_rows": 1,
+        "operation": "abort",
+        "response": {
+          "msg": "transaction [5016] abort successfully.",
+          "status": "Success"
+        },
+        "txn_id": 5016,
+        "visible_after_terminal": 0,
+        "visible_before_terminal": 0,
+        "prepared_status": "PRECOMMITTED",
+        "terminal_status": "ABORTED"
+      },
+      {
+        "loaded_rows": 1,
+        "operation": "commit",
+        "repeated_commit_did_not_duplicate": true,
+        "replay_response": {
+          "msg": "TStatus: errCode = 2, detailMessage = transaction [5014] is already visible, not pre-committed.",
+          "status": "ANALYSIS_ERROR"
+        },
+        "response": {
+          "msg": "transaction [5014] commit successfully.",
+          "status": "Success"
+        },
+        "txn_id": 5014,
+        "visible_after_terminal": 1,
+        "visible_before_terminal": 0,
+        "prepared_status": "PRECOMMITTED",
+        "terminal_status": "VISIBLE"
+      }
+    ]
+  },
+  "spark_correction": {
+    "selection": {
+      "cutoff": "2026-09-11T11:14:51.765105+00:00",
+      "expected_quality": {
+        "duplicates": 5,
+        "quarantined": 2,
+        "raw": 19,
+        "valid": 12
+      },
+      "input_sha256": "70bfe17fe8e56cde3c2ea0a905d65cc2c760e50a5c83610317e8ed57234ae875",
+      "late_sequences": [
+        12,
+        14
+      ],
+      "quarantine": [
+        {
+          "reason": "event_id_conflict",
+          "seq": 8
+        },
+        {
+          "reason": "invalid_contract",
+          "seq": 9
+        }
+      ],
+      "raw": 20,
+      "source_archive_sha256": "08abcbde726624068dec6da695fcd6756a9a47636d1b049ea3b6a9bc1ac84edd",
+      "spark_input": 17,
+      "wrong_source": 1
+    },
+    "manifest": {
+      "schema_version": 1,
+      "run_id": "realtime-recovery02-corrected01",
+      "cutoff": "2026-09-11T11:14:51.765105+00:00",
+      "date_from": "2026-01-01",
+      "date_to": "2026-01-02",
+      "source": "synthetic",
+      "input": "/opt/snow/runtime/realtime/recovery02/correction-events.jsonl",
+      "output": "/opt/snow/runtime/realtime/recovery02/spark-output/runs/realtime-recovery02-corrected01",
+      "quality": {
+        "raw": 17,
+        "valid": 12,
+        "quarantined": 0,
+        "after_cutoff": 0,
+        "duplicates": 5
+      },
+      "engine": "Spark 3.5.7",
+      "master": "local[2]",
+      "application_id": "local-1789126037077",
+      "hive_table": null,
+      "generated_at": "2026-09-11T11:27:43.433301+00:00"
+    },
+    "daily": [
+      {
+        "app": "mywebsite",
+        "pv": 2,
+        "uv": 1,
+        "requests": 0,
+        "successes": 0,
+        "source": "synthetic",
+        "date": "2026-01-01"
+      },
+      {
+        "app": "project_snow",
+        "pv": 0,
+        "uv": 1,
+        "requests": 1,
+        "successes": 1,
+        "source": "synthetic",
+        "date": "2026-01-01"
+      },
+      {
+        "app": "mywebsite",
+        "pv": 7,
+        "uv": 2,
+        "requests": 0,
+        "successes": 0,
+        "source": "synthetic",
+        "date": "2026-01-02"
+      },
+      {
+        "app": "project_snow",
+        "pv": 0,
+        "uv": 0,
+        "requests": 1,
+        "successes": 0,
+        "source": "synthetic",
+        "date": "2026-01-02"
+      }
+    ]
+  },
+  "correction_publication": {
+    "corrected_pv": 9,
+    "engine": "Spark 3.5.7 / Doris 3.0.6.2",
+    "live_pv": 7,
+    "metrics": [
+      {
+        "app": "mywebsite",
+        "date": "2026-01-01",
+        "pv": 2,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 1
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-01",
+        "pv": 0,
+        "requests": 1,
+        "source": "synthetic",
+        "successes": 1,
+        "uv": 1
+      },
+      {
+        "app": "mywebsite",
+        "date": "2026-01-02",
+        "pv": 7,
+        "requests": 0,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 2
+      },
+      {
+        "app": "project_snow",
+        "date": "2026-01-02",
+        "pv": 0,
+        "requests": 1,
+        "source": "synthetic",
+        "successes": 0,
+        "uv": 0
+      }
+    ],
+    "note": "Explicit private correction batch; public lite metrics are not served from this table",
+    "repeated_publish_equal": true,
+    "source": "synthetic",
+    "table": "snow_realtime_recovery02.daily_offline",
+    "version": 1789125291765
+  },
+  "limitations": [
+    "No production collection or public summary changes",
+    "Input requires one partition and one collector sequence generation",
+    "Diagnostics and late side outputs are at least once",
+    "8-day processing-time TTL expiry not tested over elapsed time",
+    "Session restore is manual, not JobManager HA",
+    "Spark correction used local[2], not YARN in this round",
+    "No continuous Airflow 7-day correction publication",
+    "No 100k/1m distributed load or collector-to-Doris P95 acceptance"
+  ],
+  "receipt_sha256": {
+    "correction-published.json": "3f1bb53234931d2978676ded3c029129b4d736e6e090ed271b57330bf3484e2b",
+    "receipt.json": "efdc61976fd0ca29fc8e59ddb8c7c87ee5c8dc9035a10d941cd54cd86088b037",
+    "session-restore.json": "90a3b0895a40d7fe5aee7c449a6ab0e29f58b53b437415482780923fd83e8173",
+    "spark-correction.json": "06ab37c1833c8a9b7dba543f2cecc486566f224fe4326a92c3c18d3f69cc6c2b",
+    "transactions.json": "13f6ca761127896be485e3b9e5f77f9ad3a8bc9478cae54dcc715b6cac511b83"
+  },
+  "validation": {
+    "python_tests": 75,
+    "browser_tests": 7,
+    "java_tests": 8,
+    "runtime_dependency_jars_verified": 20,
+    "contracts": "v1 unchanged",
+    "ruff": "passed"
+  }
+}

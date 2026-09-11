@@ -60,7 +60,7 @@ python3 governance/lineage.py status
 
 `tools/verify_lineage_backend.py --database <日志副本> --output <归档.json>` 会逐个检查 Marquez 运行状态及输入/输出数据集版本，并读回最近依赖图。将归档同步为本机 `runtime/lineage/backend-final.json` 后，Streamlit 选择“Marquez 血缘归档”，无需启动虚拟机即可查看图和失败尝试。
 
-安装治理镜像后，默认推荐 `ods-compact`（3.5 / 3 / 1 GiB）完成同一小样本 DAG，保留 1 GiB 作业前余量；治理阶段仍使用分析 VM 2 GiB。原 `ods` 配置保留用于历史重现，但必须重新通过容量检查。新增镜像约占 0.83 GiB，不能沿用安装前的可用空间估计。
+治理阶段曾以 `ods-compact`（3.5 / 3 / 1 GiB）完成同一小样本 DAG，保留 1 GiB 作业前余量；治理使用分析 VM 2 GiB。此后实时镜像与数据继续增长，这个三 VM 组合已不能直接满足当前 60 GiB 预算。这里保留历史验收条件，重现前必须按[最新运行手册](runbook.md)检查容量，不能沿用当时的可用空间估计。
 
 ## 保留和退出
 
