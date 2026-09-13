@@ -91,8 +91,8 @@ def connect():
                            autocommit=True, connect_timeout=5, read_timeout=60, write_timeout=60)
 
 
-def publication_database(source):
-    database = os.environ.get("SNOW_DORIS_DATABASE", "snow_real_warehouse" if source == "real" else "snow")
+def publication_database(source, override=None):
+    database = override if override is not None else os.environ.get("SNOW_DORIS_DATABASE", "snow_real_warehouse" if source == "real" else "snow")
     if not re.fullmatch(r"snow(?:_[a-z0-9_]{1,40})?", database):
         raise ValueError("Invalid publication database")
     if source == "real" and not re.fullmatch(r"snow_real_[a-z0-9_]{1,30}", database):
@@ -102,10 +102,10 @@ def publication_database(source):
     return database
 
 
-def publish(db, package, lock_directory, fail_after_load=False):
+def publish(db, package, lock_directory, fail_after_load=False, *, database=None):
     manifest, rows, hashes, version, cutoff = validate(package)
     run_id, source = manifest["run_id"], manifest["source"]
-    database = publication_database(source)
+    database = publication_database(source, database)
     # Content-addressed ID makes retries identical and prevents run ID reuse mutating old snapshots.
     snapshot = hashlib.sha256(canonical({"daily": rows, "hashes": hashes, "cutoff": manifest["cutoff"]})).hexdigest()
     with publication_lock(lock_directory), db.cursor() as cursor:
@@ -136,10 +136,10 @@ def publish(db, package, lock_directory, fail_after_load=False):
             "published_dates": len(hashes), "business_version": version, "readback_equal": True}
 
 
-def read_published(db, source="synthetic"):
+def read_published(db, source="synthetic", *, database=None):
     if source not in ("synthetic", "real"):
         raise ValueError("Invalid source")
-    database = publication_database(source)
+    database = publication_database(source, database)
     with db.cursor() as cursor:
         # Read rows and provenance in one statement so a concurrent release cannot
         # label an old result with a new cutoff between two separate queries.

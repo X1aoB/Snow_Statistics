@@ -30,6 +30,16 @@ class RealtimeJobTest {
         assertThrows(IllegalArgumentException.class,
             () -> RealtimeJob.normalize(fixture.replace("\"schema_version\":1", "\"schema_version\":4294967297"), "synthetic"));
     }
+    @Test void realJobCannotReplaceStorageEpochWindowOrLane() {
+        var origin = java.time.Instant.parse("2026-09-13T12:00:00Z");
+        var until = origin.plus(java.time.Duration.ofDays(7));
+        String generation = "00000000-0000-4000-8000-000000000001";
+        assertDoesNotThrow(() -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin, until, "real_start_01"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin.minusSeconds(1), until, "real_start_01"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin, until.plusSeconds(1), "real_start_01"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin, until, "another_lane"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", "0-0-0-0-0", origin, until, origin, until, "real_start_01"));
+    }
     @Test void realDiagnosticAndKafkaReplayPreserveOriginalExpiryBasis() throws Exception {
         var normalized = RealtimeJob.normalize(fixture.replace("synthetic", "real"), "real");
         var value = RealtimeJob.diagnostic(normalized.toString(), "event_duplicate");

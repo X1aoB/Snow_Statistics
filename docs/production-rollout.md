@@ -22,6 +22,10 @@
 
 产品分支：[MyWebsite #2](https://github.com/X1aoB/MyWebsite/pull/2)、[Project_Snow #59](https://github.com/X1aoB/Project_Snow/pull/59)。个人站 main 合并会生产发布；小吉需要精确候选回执和人工晋级，候选 CI 不能代签。
 
+当前个人站候选为 `6b17f426222f295850d4b608295f214d85689be5`，Pages deployment `03b67947-8e13-4b6d-a408-7b8bbab4f298` 实际构建成功。在用户完成现有 Access 登录后，实际预览通过中文/英文标题、指标分母说明、接口不可用且无零值行、393px 页面不横向溢出、表格独立横向滚动以及 Escape 关闭设置并恢复焦点检查。当前预览没有启用采集，也没有把 Tunnel 不可用状态视为公网接入验收。私有回执：`runtime/production-candidate/website-preview-6b17f42.json`。
+
+小吉最终 main `0388b78b079011e28b772462b6c3634668856b59` 的完整 CI 和 release-proof 已通过。既有共享 embedding 的系统包修复用独立容器实测：九个模型文件 hash 一致，四条合成输入各 512 维，最大绝对误差 0；实际停止、重启和再次比对通过。新鲜 pinned 备份、旧镜像保留和原 API 健康已核验。用户明确批准维护窗口后，13:55:35.880–13:55:50.262 UTC 实际替换/核验通过，新镜像 `465a1dbfa32e9c28f1e12cac9b96318ac804923428ff3d25a23eb463c0546471` 生效，原 API 容器和其他容器未变；该区间不是精确业务中断观测。应用候选 stage 正在进行，人工晋级尚未完成。私有回执 `runtime/consent-candidate/embedding-0388b78-applied.json`；SHA256 `ba8e788d60ed5ac55fdc4b26b636ecbb8c83f892a4b54d32a33ed4b1a789b759`。这个小样本不代表任意输入的数学等价或性能保障。
+
 ## 实際引擎验收：隔离合成输入、真实代码分支
 
 VM 使用 scale 2048/2048/1024 MiB，control / compute / analysis；Kafka 捕获阶段与 Spark 阶段切换运行。保留 64 GiB 项目、35 GiB 宿主空闲、4 GiB 可用 RAM 门禁。
@@ -40,6 +44,12 @@ VM 使用 scale 2048/2048/1024 MiB，control / compute / analysis；Kafka 捕获
 这轮 Spark 没有开启 Hive 注册；Iceberg 没有声明 Hive 或列级血缘。新真实 Kafka/Doris/Flink epoch 的独立配置与生命周期需单独实测，不能用上述离线成绩替代实时恢复和性能验收。真实生产 P95 尚无证据。
 
 本轮私有回执：`runtime/production-acceptance/{daily,behavior,lake-receipt,ack,lake-cleanup,ods-expiry-acceptance}.json`。用于测试的合成标识留在忽略目录，不进入学习手册或公开 API。
+
+2026-09-13 后续补齐采集源 instance/generation 的全程绑定后，使用新 `fixture_prod02` 重新运行，不改写上述旧证据：YARN `application_1789302517038_0004` / `0005` / `0006` 分别完成日指标、行为、Iceberg，140 条输入和全部黄金结果相同。新清单、覆盖声明、输出包都绑定同一 collector 身份；新私有看板按当前严格契约再次通过四表及“历史覆盖不足”提示。旧版缺少代际的包现在被明确拒绝，不能沿用旧读取成绩。
+
+新 fixture 同样完成实际 HDFS 到期删除与 offset 140 保留；其回执位于 `runtime/production-acceptance/fixture02/`。随后只启动 2 GiB 分析 VM 的治理服务，将两次实际 Iceberg 执行自动产生的 4 条 OpenLineage 元数据投递到 Marquez，逐个读回 2 次运行的状态与输入输出，最新图为 6 节点/5 边。投递副本已确认 4 条；源日志确认导入待下一次控制机启动，不把副本确认冒充原日志已更新。没有新增 Kafka、Hive 或列级血缘声明。
+
+独立 epoch 的物理清理还在 1 GiB 分析 VM 用合成标记完成了实际删除回读：模拟到期和约 45 秒真实截止各移除 1 容器、5 卷，真实截止 PID1 退出 78，原有其他容器与卷清单不变。它证明精确回收边界，不证明 Kafka/Flink/Doris 运行性能，也不是 VMDK/SSD 取证级擦除。汇总证据见 [production-integration.json](evidence/production-integration.json)。
 
 ## 生命周期与运行方式
 

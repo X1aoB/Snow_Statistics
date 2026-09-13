@@ -15,6 +15,16 @@
 
 新配置的 collector 上限 256 MiB/0.25 CPU；gateway 64 MiB/0.10 CPU；Tunnel 128 MiB/0.10 CPU；两个日志进程各 64 MiB/0.10 CPU。总上限约 576 MiB/0.65 CPU。collector quota 512 MiB，日志 spool 最多 4096 条且数据库 16 MiB（DELETE journal 短暂额外占用，最多约数据库大小）；各 Docker 日志另有轮转限制。不得把这些配置值当成真实峰值测量。
 
+## 私有读取通路
+
+`tools/private_access.py plan --public-key-file <独立公钥文件>` 输出精确计划；核对后在正式服务器 root 控制的 `/opt/snow-statistics` 下执行 `install --public-key-file <同一公钥文件> --expected-plan-sha256 <计划哈希>`。只接受全新的 `snow_stats_reader` 系统账户及本项目专属路径，已有配置不覆盖。不要把业务 root 私钥复制进虚拟机。
+
+账户只能使用专属公钥进行本地 TCP 转发，目的地仅 `127.0.0.1:8100`；Shell、SFTP、远程转发、其他端口、代理转发和终端均关闭。`Match User` 仅作用于此账户；安装前后比较 root/deploy 的有效配置，语法验证成功才 reload SSH，保留现有连接。读取接口仍要求独立 reader token，公钥本身不能替代接口鉴权。
+
+2026-09-13 实际验证：私有 status 携 token 为 200、无 token 为 401；Shell、SFTP、8110 端口和远程转发均被拒绝。collector 位点仍为 0，没有注入正式事件。Windows 私钥/已验证 host key 位于忽略的 `runtime/real/ssh/`，reader token 位于 `runtime/real/secrets/reader.token`。Linux 副本使用 0600，只在按需运行节点保存；日常停机保留，移除账号/配置属于明确的退出操作。
+
+生产 SSH 账户的部署不改变业务容器；私有转发也不经过 Cloudflare 公网入口。实际验收回执位于 `runtime/production-candidate/private-access-acceptance.json`，不要把其中的主机或代际信息当作公开业务统计。
+
 ## 日志跟随及恢复
 
 root reader 每轮仅执行固定 Docker `ps/inspect/logs`，只接受 `project-snow-public` 的 `public-api-blue` / `public-api-green` 标签，不读取容器环境或业务表。两色停止/排空中的容器也纳入最近 10 分钟重叠回读；单轮最多 4 个 API 容器、每容器 2000 行/2 MiB，命令及全轮均有截止时间。达到边界会增加 `incomplete_polls`，停止过久增加 `unobserved_seconds`，不能称为完整采集。

@@ -91,6 +91,15 @@ public class RealtimeJob {
             throw new IllegalStateException("Real event is outside registered retention window");
     }
 
+    static void realEpoch(String epoch, String generation, Instant epochFrom, Instant epochUntil,
+                          Instant readableFrom, Instant notAfter, String lane) {
+        if (!epoch.matches("[a-z][a-z0-9-]{2,23}") || !lane.equals(epoch.replace('-', '_')) ||
+            !java.util.UUID.fromString(generation).toString().equals(generation) ||
+            !epochUntil.equals(epochFrom.plus(Duration.ofDays(7))) ||
+            !readableFrom.equals(epochFrom) || !notAfter.equals(epochUntil))
+            throw new IllegalArgumentException("Real job differs from frozen storage epoch");
+    }
+
     static boolean tooLate(long timestamp, long watermark) {
         return watermark != Long.MIN_VALUE && timestamp < watermark - 600_000L;
     }
@@ -178,6 +187,9 @@ public class RealtimeJob {
         if (real) realWindow(readableFrom, readableFrom, notAfter, Instant.now());
         String lane = System.getenv().getOrDefault("SNOW_REPLAY_LANE", "live");
         if (!lane.matches("[a-z0-9_-]{1,32}")) throw new IllegalArgumentException("lane");
+        if (real) realEpoch(required("SNOW_REAL_EPOCH_ID"), required("SNOW_REAL_EPOCH_GENERATION"),
+                            Instant.parse(required("SNOW_REAL_EPOCH_FROM")), Instant.parse(required("SNOW_REAL_EPOCH_UNTIL")),
+                            readableFrom, notAfter, lane);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1); env.enableCheckpointing(10_000, CheckpointingMode.EXACTLY_ONCE);
         env.getCheckpointConfig().setMinPauseBetweenCheckpoints(1000);
@@ -187,6 +199,8 @@ public class RealtimeJob {
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, org.apache.flink.api.common.time.Time.seconds(5)));
         String topic = System.getenv().getOrDefault("SNOW_INPUT_TOPIC", "snow." + sourceName + ".events.v1");
         if (!topic.matches("snow\\." + sourceName + "\\.[a-z0-9_.-]{1,100}\\.v1")) throw new IllegalArgumentException("topic/source");
+        if (real && !topic.equals("snow.real." + lane + ".events.v1"))
+            throw new IllegalArgumentException("Real topic is outside its frozen epoch lane");
         // First acceptance ordering is validated for one collector/partition in this release.
         Properties adminProperties = new Properties();
         adminProperties.put("bootstrap.servers", bootstrap);
@@ -229,6 +243,8 @@ public class RealtimeJob {
         if (!table.matches("snow(?:_[a-z0-9_]{1,40})?\\.events_realtime")) throw new IllegalArgumentException("table");
         if (real && !table.matches("snow_real_[a-z0-9_]{1,30}\\.events_realtime"))
             throw new IllegalArgumentException("Real output requires an independently permissioned snow_real_* database");
+        if (real && !table.equals("snow_real_" + lane + ".events_realtime"))
+            throw new IllegalArgumentException("Real output is outside its frozen epoch lane");
         Properties props = new Properties(); props.setProperty("format", "json"); props.setProperty("read_json_by_line", "true");
         DorisSink<String> sink = DorisSink.<String>builder()
             .setDorisOptions(DorisOptions.builder().setFenodes(required("DORIS_FE"))

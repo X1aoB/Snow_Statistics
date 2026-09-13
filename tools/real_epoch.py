@@ -26,6 +26,7 @@ init.add_argument("--images-env", default="lab/locks/images.env")
 init.add_argument("--analysis-ip")
 init.add_argument("--jar")
 init.add_argument("--fixture", action="store_true")
+init.add_argument("--synthetic-engine-test", action="store_true")
 for name in ("start", "stop", "retire", "expire-fixture"):
     sub = commands.add_parser(name)
     sub.add_argument("--epoch", required=True)
@@ -39,7 +40,8 @@ root = private_epoch_root(args.root)
 if args.command == "prepare":
     selected = {"PYTHON_IMAGE"} if args.fixture else {"KAFKA_IMAGE", "FLINK_IMAGE", "DORIS_FE_IMAGE", "DORIS_BE_IMAGE"}
     images = dict(line.split("=", 1) for line in Path(args.images_env).read_text().splitlines() if "=" in line and not line.startswith("#"))
-    manifest = make_manifest(args.epoch, args.original_at, {key: images[key] for key in selected}, fixture=args.fixture)
+    manifest = make_manifest(args.epoch, args.original_at, {key: images[key] for key in selected},
+                             fixture=args.fixture, synthetic_engine_test=args.synthetic_engine_test)
     result = prepare(root / args.epoch, manifest, args.analysis_ip, args.jar)
 else:
     docker = DockerEpoch()

@@ -173,7 +173,8 @@ class RealRemoteLifecycle:
         if backend not in BACKENDS or kind not in RETENTION_DAYS:
             raise ValueError("Unknown backend or retention category")
         patterns = dict(kafka=r"snow\.real\.[a-zA-Z0-9_.-]{1,150}", doris=r"snow_real_[a-z0-9_]+\.[a-z0-9_]+",
-                        hive=r"snow_real\.[a-z0-9_]+", checkpoint=r"(?:hdfs://[a-zA-Z0-9.-]+:9000/snow/checkpoints/real/|/opt/snow/runtime/real/checkpoints/)[A-Za-z0-9_/-]{1,150}")
+                        hive=r"snow_real\.[a-z0-9_]+",
+                        checkpoint=r"(?:(?:hdfs://[a-zA-Z0-9.-]+:9000/snow/checkpoints/real/|/opt/snow/runtime/real/checkpoints/)[A-Za-z0-9_/-]{1,150}|docker-volume://snow-real-[a-z][a-z0-9-]{2,23}-(?:checkpoints|flink-state))")
         if not re.fullmatch(patterns[backend], resource) or ".." in resource:
             raise ValueError("Backend resource outside real namespace")
         origin, current = timestamp(original_at), now or datetime.now(UTC)
@@ -253,6 +254,18 @@ class RealRemoteLifecycle:
             bound = checked_receipt(initial)["identity"]["collector"]
             if any(bound[key] != owner[key] for key in ("instance_id", "generation")):
                 raise ValueError("ODS collector generation differs from the registered owner")
+            if any(hasattr(adapter, "verify_stopped") for adapter in backend_checks.values()):
+                from .real_quiescent import StoppedBackend, backend_resources
+                selected = [backend_checks.get(name) for name in ("kafka", "doris", "checkpoint")]
+                if any(not isinstance(adapter, StoppedBackend) for adapter in selected):
+                    raise ValueError("Stopped admission must cover all initialized epoch backends together")
+                stopped = selected[0].stopped
+                expected = backend_resources(stopped.registry.ready(bound, now=current))
+                if any(adapter.stopped is not stopped for adapter in selected):
+                    raise ValueError("Stopped backends must bind one actual physical epoch")
+                if any(data["backends"][name] != {"state": "initialized", "resources": values}
+                       for name, values in expected.items()):
+                    raise ValueError("Every initialized epoch copy must be registered before stopped admission")
             ods_result = expire_window(ods_directory, ods_sink, now=current)
             state = load(Path(ods_directory) / "state.json")
             if state is None:
@@ -317,6 +330,13 @@ class RealRemoteLifecycle:
                 adapter = backend_checks.get(name)
                 if adapter is None:
                     raise ValueError("Missing actual initialized backend check: " + name)
+                if hasattr(adapter, "verify_stopped"):
+                    from .real_quiescent import StoppedBackend, validate_stopped_receipt
+                    if not isinstance(adapter, StoppedBackend):
+                        raise ValueError("Stopped admission requires the actual epoch verifier")
+                    receipt = adapter.verify_stopped(scope["resources"], current)
+                    receipts[name] = validate_stopped_receipt(receipt, name, scope["resources"], owner, snapshot, current)
+                    continue
                 receipt = adapter.purge_and_verify(scope["resources"], current)
                 if (receipt.get("backend") != name or receipt.get("resources_sha256") != digest(canonical(scope["resources"])) or
                         type(receipt.get("remaining_expired")) is not int or receipt["remaining_expired"] != 0 or

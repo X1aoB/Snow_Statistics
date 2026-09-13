@@ -4,6 +4,7 @@
 
 | 收据 | 生成工具与运行条件 |
 |---|---|
+| `production-integration.json` | 2026-09-13 独立 off 生产安装；140 条合成样例走 real 代码分支并绑定采集源代际，实际 Kafka/HDFS/YARN/Iceberg、ODS 到期、私有看板和 Marquez 读回；另有两个小容器物理清理 fixture，不能代替实时引擎验收 |
 | `ingest-receipt.json` | `tools/smoke_ingest.py`；snow-control 6 GiB，真实 Kafka/MySQL/Connect 容器，合成事件 |
 | `cdc-receipt.json` | `tools/cdc_receipt.py`；归档 CDC 的表、删除和事务元数据计数 |
 | `sync-receipt.json` | `tools/smoke_sync.py`；Kafka 5 次确认后故障注入，归档重放及位点恢复 |

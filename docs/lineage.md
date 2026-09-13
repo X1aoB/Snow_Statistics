@@ -1,5 +1,7 @@
 # 可暂停的表级血缘
 
+新增真实命名空间的当前覆盖：`tools/real_lineage.py` 只处理独立 real 元数据日志；`tools/verify_lineage_backend.py --source real` 对每条日志先检查来源白名单，再逐个从 Marquez 读回运行状态和输入输出。2026-09-13 已用两次实际 Spark/Iceberg 的隔离合成验收作业验证 4 条事件、2 次运行，最新图 6 节点/5 边。仅声明输入汇总包和四个 Iceberg 聚合目录，不声明 Kafka、Hive 或列级自动血缘；测试输入不是生产用户数据。投递副本确认不等于源日志已导入确认，仍按下文 SHA256/序号回执流程处理。
+
 目前覆盖 `snow_models` 的运营计算、行为计算和私有模型发布。运行时自动记录 OpenLineage 2-0-2 的 START、COMPLETE、FAIL，Marquez 0.50.0 保存并查询这些记录。采用显式映射：数据集身份来自固定输入清单、通过校验的 Hive 表名和真实发布文件；不是 SQL 自动解析或列级血缘。
 
 ```mermaid

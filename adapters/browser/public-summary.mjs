@@ -10,7 +10,7 @@ const dictionaries = {
   en: { disabled: "Statistics are not enabled.", unavailable: "Statistics are temporarily unavailable.",
     ok: "Delayed public aggregates", empty: "No public data yet", stale: "Previous results, awaiting an update",
     archived: "Historical archive", updated: "Updated", pending: "Awaiting publication", suppressed: "Insufficient sample",
-    noData: "No data", website: "Personal website", snow: "Snow Terminal", offline: "Unavailable; showing the previous result" },
+    noData: "No data", website: "Personal website", snow: "Xiaoji Terminal", offline: "Unavailable; showing the previous result" },
 };
 const appName = (app, labels) => app === "mywebsite" ? labels.website : labels.snow;
 const integer = value => Number.isSafeInteger(value) && value >= 0;

@@ -16,7 +16,7 @@ from .publication import publication_lock
 from .source_cursor import SourceGap, check_source, record_gap
 
 
-def sync_once(directory: Path, fetch, publish, *, identity=None, status=None, now=None):
+def sync_once(directory: Path, fetch, publish, *, identity=None, status=None, now=None, before_publish=None):
     directory = Path(directory)
     with publication_lock(directory):
         lifecycle = None
@@ -74,6 +74,8 @@ def sync_once(directory: Path, fetch, publish, *, identity=None, status=None, no
                     raise ValueError("invalid provenance")
                 if identity and identity.get("source") and row["source"] != identity["source"]:
                     raise ValueError("Unexpected source; refusing to archive mixed data")
+                if before_publish:
+                    before_publish(row)  # Admission before making a new physical copy.
             archive = f"batches/{after + 1:020d}-{response['next_cursor']:020d}.json"
             if lifecycle:
                 accepted = min(datetime.fromisoformat(r["accepted_at"].replace("Z", "+00:00")) for r in rows)
@@ -86,6 +88,11 @@ def sync_once(directory: Path, fetch, publish, *, identity=None, status=None, no
             write_json(pending, batch)
             if lifecycle:
                 lifecycle.cleanup(now)
+        # Validate the complete replay before any send. A rejected replay keeps
+        # its original archive, pending journal and cursor without renewing TTL.
+        if before_publish:
+            for row in response["events"]:
+                before_publish(row)
         for row in response["events"]:
             if row["source"] == "real":
                 if status is None:
@@ -95,6 +102,8 @@ def sync_once(directory: Path, fetch, publish, *, identity=None, status=None, no
                 if accepted.tzinfo is None or accepted + timedelta(days=7) <= current:
                     record_gap(directory, "expired_pending_batch", after)
                     raise SourceGap("Raw batch expired before publication; explicit recovery required")
+            if before_publish:
+                before_publish(row)  # Recheck the wall-clock deadline per send.
             publish(row)  # Must return only after a durable sink acknowledgement.
         write_json(state, {"cursor": response["next_cursor"]})
         pending.unlink()
@@ -102,7 +111,7 @@ def sync_once(directory: Path, fetch, publish, *, identity=None, status=None, no
 
 
 def kafka_sync(url, token, bootstrap, directory, *, lane=None, source=None, follow=False,
-               poll_seconds=1.0, stop=None, on_batch=None):
+               poll_seconds=1.0, stop=None, on_batch=None, before_publish=None):
     """Optional continuous reader; errors stop with its durable pending batch intact.
 
     Reuses connections between bounded polls. The caller/supervisor decides when
@@ -149,7 +158,7 @@ def kafka_sync(url, token, bootstrap, directory, *, lane=None, source=None, foll
             total = 0
             while not stop.is_set():
                 count = sync_once(directory, fetch, publish, identity=identity,
-                                  status=status if source == "real" else None)
+                                  status=status if source == "real" else None, before_publish=before_publish)
                 total += count
                 if on_batch:
                     on_batch(count)

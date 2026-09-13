@@ -12,7 +12,14 @@ set -a
 . lab/.env
 set +a
 mkdir -p runtime/scale/eventlogs
+driver_identity=()
+if [[ -n "${SNOW_REAL_DRIVER_CIDFILE:-}" ]]; then
+  [[ "$SNOW_REAL_DRIVER_CIDFILE" =~ ^/home/snow/Snow_Statistics/runtime/real/runs/[A-Za-z0-9_-]{1,100}/data/(daily|behavior)\.cid$ ]]
+  test ! -e "$SNOW_REAL_DRIVER_CIDFILE"
+  driver_identity=(--cidfile "$SNOW_REAL_DRIVER_CIDFILE")
+fi
 sudo docker run --rm --name snow-spark-yarn --memory 1280m --cpus 2 --network host --user 0:0 \
+  "${driver_identity[@]}" \
   --add-host "snow-control:$CONTROL_IP" --add-host "snow-compute:$COMPUTE_IP" --add-host "snow-analysis:$ANALYSIS_IP" \
   -e HADOOP_CONF_DIR=/etc/hadoop -e PYSPARK_PYTHON=/usr/bin/python3 \
   -v "$PWD:/opt/snow" -v "$PWD/lab/generated/hadoop:/etc/hadoop:ro" -w /tmp "$SPARK_IMAGE" \

@@ -26,6 +26,8 @@ VOLUMES = ("kafka", "doris-fe", "doris-be", "checkpoints", "flink-state")
 ENGINES = ("kafka", "doris-fe", "doris-be", "jobmanager", "taskmanager")
 LABEL_PREFIX = "org.snow-statistics."
 ROOT = Path(__file__).resolve().parents[2]
+KAFKA_TMPFS = {"/etc/kafka/secrets": "rw,noexec,nosuid,size=4m,uid=1000,gid=1000,mode=0750",
+               "/mnt/shared/config": "rw,noexec,nosuid,size=16m,uid=1000,gid=1000,mode=0750"}
 
 
 def labels(manifest):
@@ -38,16 +40,18 @@ def verify_manifest(manifest):
     epoch = manifest["epoch_id"]
     if (manifest["schema_version"] != 1 or manifest["owner"] != OWNER or manifest["source"] != "real"
             or not re.fullmatch(r"[a-z][a-z0-9-]{2,23}", epoch)
-            or manifest["mode"] not in {"engines", "fixture"}):
+            or manifest["mode"] not in {"engines", "fixture", "synthetic_engine_test"}):
         raise ValueError("Invalid owned real engine epoch")
-    if manifest["mode"] == "fixture" and (not epoch.startswith("fixture-") or manifest["input_origin"] != "synthetic fixtures"):
+    if manifest["mode"] in {"fixture", "synthetic_engine_test"} and (not epoch.startswith("fixture-") or manifest["input_origin"] != "synthetic fixtures"):
         raise ValueError("Physical cleanup fixture cannot be presented as real engine data")
+    if manifest["mode"] == "engines" and manifest["input_origin"] != "real":
+        raise ValueError("Real engines need explicitly real input provenance")
     if manifest["event_lane"] != epoch.replace("-", "_"):
         raise ValueError("Epoch event lane must use its immutable normalized identity")
     if timestamp(manifest["expires_at"]) != timestamp(manifest["original_min_accepted_at"]) + timedelta(days=7):
         raise ValueError("Epoch deadline must remain seven days from original acceptance")
     project = "snow-real-" + epoch
-    expected = {role: project + "-" + role for role in (ENGINES if manifest["mode"] == "engines" else ("fixture",))}
+    expected = {role: project + "-" + role for role in (ENGINES if manifest["mode"] != "fixture" else ("fixture",))}
     if (manifest["project"] != project or manifest["containers"] != expected or
             manifest["volumes"] != {role: project + "-" + role for role in VOLUMES}):
         raise ValueError("Epoch resource names escaped the exact owned scope")
@@ -57,9 +61,11 @@ def verify_manifest(manifest):
     return manifest
 
 
-def make_manifest(epoch, original_at, images, *, fixture=False, now=None):
+def make_manifest(epoch, original_at, images, *, fixture=False, synthetic_engine_test=False, now=None):
     current = now or datetime.now(UTC)
     origin = timestamp(original_at)
+    if fixture and synthetic_engine_test:
+        raise ValueError("Choose physical fixture or synthetic engine test, not both")
     if origin > current or origin + timedelta(days=7) <= current:
         raise ValueError("New epoch needs an unexpired original acceptance window")
     project = "snow-real-" + epoch
@@ -67,7 +73,8 @@ def make_manifest(epoch, original_at, images, *, fixture=False, now=None):
     if set(images) != required or any(not re.fullmatch(r"[A-Za-z0-9./:_-]+@sha256:[a-f0-9]{64}", v) for v in images.values()):
         raise ValueError("Epoch images must use the existing explicit digest locks")
     value = dict(schema_version=1, owner=OWNER, source="real", epoch_id=epoch, generation=str(uuid4()),
-                 mode="fixture" if fixture else "engines", input_origin="synthetic fixtures" if fixture else "real",
+                 mode="fixture" if fixture else "synthetic_engine_test" if synthetic_engine_test else "engines",
+                 input_origin="synthetic fixtures" if fixture or synthetic_engine_test else "real",
                  original_min_accepted_at=origin.isoformat(), expires_at=(origin + timedelta(days=7)).isoformat(),
                  project=project, event_lane=epoch.replace("-", "_"), host="snow-analysis", images=images,
                  containers={role: project + "-" + role for role in (("fixture",) if fixture else ENGINES)},
@@ -85,6 +92,7 @@ def compose_spec(manifest, directory, analysis_ip=None, jar=None):
 
     def service(role, image, command, mounts, memory, cpus, environment=None):
         return bounds | dict(container_name=manifest["containers"][role], image=image, entrypoint=["sh", "/snow/epoch-guard.sh"],
+                             pids_limit=512 if role == "doris-be" else 256,
                              command=command, volumes=[guard, *mounts], mem_limit=memory, cpus=cpus,
                              environment=common_env | (environment or {}))
 
@@ -105,11 +113,13 @@ def compose_spec(manifest, directory, analysis_ip=None, jar=None):
         if target.resolve() != target or target.suffix != ".jar" or not target.is_file():
             raise ValueError("Expected a real, immutable Flink JAR file")
         fe = ["bash", "-ec", "cat /snow/fe.conf >> /opt/apache-doris/fe/conf/fe.conf; "
-              "printf '\\npriority_networks = %s/32\\n' \"$SNOW_DORIS_IP\" >> /opt/apache-doris/fe/conf/fe.conf; exec bash init_fe.sh"]
-        be = ["bash", "-ec", "cat /snow/be.conf >> /opt/apache-doris/be/conf/be.conf; "
-              "printf '\\npriority_networks = %s/32\\n' \"$SNOW_DORIS_IP\" >> /opt/apache-doris/be/conf/be.conf; exec bash entry_point.sh"]
+              "printf '\\npriority_networks = %s/32\\n' \"$$SNOW_DORIS_IP\" >> /opt/apache-doris/fe/conf/fe.conf; exec bash init_fe.sh"]
+        be = ["bash", "-ec", "sh /snow/prepare-be-start.sh; cat /snow/be.conf >> /opt/apache-doris/be/conf/be.conf; "
+              "printf '\\npriority_networks = %s/32\\n' \"$$SNOW_DORIS_IP\" >> /opt/apache-doris/be/conf/be.conf; exec bash entry_point.sh"]
         flink_env = dict(KAFKA_BOOTSTRAP=analysis_ip + ":9092", SNOW_SOURCE="real", SNOW_REPLAY_LANE=manifest["event_lane"],
                          SNOW_INPUT_TOPIC="snow.real." + manifest["event_lane"] + ".events.v1",
+                         SNOW_REAL_EPOCH_ID=manifest["epoch_id"], SNOW_REAL_EPOCH_GENERATION=manifest["generation"],
+                         SNOW_REAL_EPOCH_FROM=manifest["original_min_accepted_at"], SNOW_REAL_EPOCH_UNTIL=manifest["expires_at"],
                          DORIS_FE=analysis_ip + ":8030", DORIS_TABLE="snow_real_" + manifest["epoch_id"].replace("-", "_") + ".events_realtime",
                          FLINK_PROPERTIES="\n".join(("jobmanager.rpc.address: 127.0.0.1", "jobmanager.bind-host: 127.0.0.1",
                            "rest.address: 127.0.0.1", "rest.bind-address: 127.0.0.1", "jobmanager.memory.process.size: 768m",
@@ -136,7 +146,8 @@ def compose_spec(manifest, directory, analysis_ip=None, jar=None):
                                 ["doris-fe:/opt/apache-doris/fe/doris-meta", str(Path(directory).absolute() / "fe.conf") + ":/snow/fe.conf:ro"],
                                 "1280m", 1, dict(FE_SERVERS="fe1:" + analysis_ip + ":9010", FE_ID="1", SNOW_DORIS_IP=analysis_ip)),
             "doris-be": service("doris-be", images["DORIS_BE_IMAGE"], be,
-                                ["doris-be:/opt/apache-doris/be/storage", str(Path(directory).absolute() / "be.conf") + ":/snow/be.conf:ro"],
+                                ["doris-be:/opt/apache-doris/be/storage", str(Path(directory).absolute() / "be.conf") + ":/snow/be.conf:ro",
+                                 str(Path(directory).absolute() / "prepare-be-start.sh") + ":/snow/prepare-be-start.sh:ro"],
                                 "1792m", 2, dict(FE_SERVERS="fe1:" + analysis_ip + ":9010", BE_ADDR=analysis_ip + ":9050", SNOW_DORIS_IP=analysis_ip)),
             "jobmanager": service("jobmanager", images["FLINK_IMAGE"], ["bash", "-ec",
                                   "mkdir -p /flink-state/tmp; chown flink:flink /checkpoints /flink-state /flink-state/tmp; exec /docker-entrypoint.sh jobmanager"],
@@ -147,6 +158,9 @@ def compose_spec(manifest, directory, analysis_ip=None, jar=None):
         }
         for value in services.values():
             value["network_mode"] = "host"
+        # The locked Kafka image declares both paths as VOLUME. Override them so
+        # Docker cannot create unowned anonymous storage outside the epoch.
+        services["kafka"]["tmpfs"] = [path + ":" + options for path, options in KAFKA_TMPFS.items()]
         for role in ("jobmanager", "taskmanager"):
             services[role]["user"] = "0:0"  # Initialize only this epoch's volumes; Flink entrypoint drops UID.
     return dict(name=manifest["project"], services=services,
@@ -180,7 +194,7 @@ class DockerEpoch:
                          if item.startswith("SNOW_EPOCH_EXPIRES_UNIX=")), None)
         return dict(labels=value["Config"]["Labels"] or {}, running=value["State"]["Running"],
                     restart=value["HostConfig"]["RestartPolicy"]["Name"], mounts=value["Mounts"],
-                    entrypoint=value["Config"]["Entrypoint"], deadline=deadline)
+                    entrypoint=value["Config"]["Entrypoint"], deadline=deadline, tmpfs=value["HostConfig"].get("Tmpfs") or {})
 
     def inspect_volume(self, name):
         return json.loads(self.command(["volume", "inspect", name]))[0]
@@ -202,7 +216,7 @@ class DockerEpoch:
         minimum_disk = (128 if manifest["mode"] == "fixture" else 1536 if stage == "storage" else 256) * 1024**2
         memory = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
         available = int(memory["MemAvailable"].split()[0]) * 1024
-        minimum_ram = (128 if manifest["mode"] == "fixture" else (3840 if stage == "storage" else 1536) if starting else 256) * 1024**2
+        minimum_ram = (128 if manifest["mode"] == "fixture" else (3584 if stage == "storage" else 1536) if starting else 256) * 1024**2
         free = shutil.disk_usage("/").free
         if free < minimum_disk or available < minimum_ram:
             raise ValueError("Insufficient analysis VM disk or memory for this isolated epoch")
@@ -237,10 +251,15 @@ class Epoch:
             if (data["entrypoint"] != ["sh", "/snow/epoch-guard.sh"] or
                     data["deadline"] != str(int(timestamp(manifest["expires_at"]).timestamp()))):
                 raise ValueError("Container lost its immutable expiry guard")
+            expected_tmpfs = KAFKA_TMPFS if name == manifest["containers"].get("kafka") else {}
+            if data.get("tmpfs", {}) != expected_tmpfs:
+                raise ValueError("Container temporary storage differs from the bounded epoch scope")
             for mount in data["mounts"]:
                 if mount["Type"] == "volume" and mount["Name"] in manifest["volumes"].values():
                     continue
                 if mount["Type"] == "bind" and not mount["RW"]:
+                    continue
+                if mount["Type"] == "tmpfs" and mount["Destination"] in expected_tmpfs:
                     continue
                 raise ValueError("Unknown writable or anonymous storage in real epoch")
             containers[name] = data
@@ -254,18 +273,26 @@ class Epoch:
 
     def stop(self):
         manifest = self.read()
-        containers, _ = self._inspect(manifest)
+        # Stopping readers is safe even when storage auditing failed. Never let
+        # an unexpected writable mount keep this exact owned process running.
+        # Retirement still performs the complete _inspect before any mutation.
+        expected, containers = labels(manifest), {}
+        for name in set(manifest["containers"].values()) & self.docker.containers():
+            data = self.docker.inspect_container(name)
+            if any(data["labels"].get(k) != v for k, v in expected.items()):
+                raise ValueError("Cannot stop a container whose epoch ownership changed")
+            containers[name] = data
         for name, value in containers.items():
             if value["running"]:
                 self.docker.stop(name)
-        if any(value["running"] for value in self._inspect(manifest)[0].values()):
+        if any(self.docker.inspect_container(name)["running"] for name in containers):
             raise RuntimeError("Real epoch still has running readers")
         return dict(epoch_id=manifest["epoch_id"], stopped=list(containers), data_deleted=False)
 
     def retire(self, *, now=None, fixture_clock=False):
         manifest = self.read()
         current = now or datetime.now(UTC)
-        if fixture_clock and manifest["mode"] != "fixture":
+        if fixture_clock and manifest["mode"] not in {"fixture", "synthetic_engine_test"}:
             raise ValueError("Only synthetic physical fixtures may advance a test clock")
         if now is not None and not fixture_clock:
             raise ValueError("Engine expiry uses the real wall clock")
@@ -309,7 +336,8 @@ class Epoch:
         manifest = self.read()
         if stage not in {"storage", "realtime"}:
             raise ValueError("Start storage and realtime in explicit stages")
-        if timestamp(manifest["expires_at"]) <= datetime.now(UTC) or (self.directory / "retirement.json").exists():
+        if (timestamp(manifest["expires_at"]) <= datetime.now(UTC) or (self.directory / "retirement.json").exists()
+                or (self.directory / "failed-fixture-retirement.json").exists()):
             raise ValueError("Expired or retired epoch must never restart")
         if (self.directory / "gate.json").exists():
             gate = json.loads((self.directory / "gate.json").read_bytes())
@@ -322,7 +350,7 @@ class Epoch:
         prior, _ = self._inspect(manifest)
         roles = (["fixture"] if manifest["mode"] == "fixture" else
                  ["kafka", "doris-fe", "doris-be"] if stage == "storage" else ["jobmanager", "taskmanager"])
-        if manifest["mode"] == "engines" and stage == "realtime":
+        if manifest["mode"] != "fixture" and stage == "realtime":
             if any(manifest["containers"][role] not in prior or not prior[manifest["containers"][role]]["running"]
                    for role in ("kafka", "doris-fe", "doris-be")):
                 raise ValueError("Start and validate the storage stage before realtime")
@@ -339,7 +367,7 @@ class Epoch:
             self.docker.start(self.directory / "compose.json", roles)
             containers, volumes = self._inspect(manifest)
             required_c = {manifest["containers"][role] for role in roles}
-            required_v = ({manifest["volumes"][role] for role in roles} if manifest["mode"] == "engines" and stage == "storage"
+            required_v = ({manifest["volumes"][role] for role in roles} if manifest["mode"] != "fixture" and stage == "storage"
                           else set(manifest["volumes"].values()))
             if (not required_c <= set(containers) or not required_v <= set(volumes)
                     or any(not containers[name]["running"] for name in required_c)):
@@ -348,10 +376,31 @@ class Epoch:
             self.stop()
             raise
         complete = manifest["mode"] == "fixture" or stage == "realtime"
-        write_json(self.directory / "gate.json", dict(open=complete, reason="started" if complete else "storage_stage_only",
+        write_json(self.directory / "gate.json", dict(open=complete and manifest["mode"] == "engines",
+                                                       serves_real_data=manifest["mode"] == "engines",
+                                                       fixture_ready=complete and manifest["mode"] != "engines",
+                                                       reason="started" if complete else "storage_stage_only",
                                                        expires_at=manifest["expires_at"], owner_manifest_sha256=digest(canonical(manifest))))
         return dict(epoch_id=manifest["epoch_id"], started=True, deadline=manifest["expires_at"], source="real",
                     input_origin=manifest["input_origin"], stage=stage, engines_verified=False)
+
+    def readable(self):
+        """Physical epoch gate; callers must still run logical backend permits."""
+        manifest = self.read()
+        gate = json.loads((self.directory / "gate.json").read_bytes())
+        owner_hash = digest(canonical(manifest))
+        if (manifest["mode"] != "engines" or manifest["input_origin"] != "real" or
+                not gate.get("open") or not gate.get("serves_real_data") or
+                gate.get("owner_manifest_sha256") != owner_hash or
+                timestamp(manifest["expires_at"]) <= datetime.now(UTC) or (self.directory / "retirement.json").exists()):
+            raise ValueError("Physical real engine epoch is not readable")
+        containers, volumes = self._inspect(manifest)
+        if (set(containers) != set(manifest["containers"].values()) or
+                set(volumes) != set(manifest["volumes"].values()) or any(not value["running"] for value in containers.values())):
+            raise ValueError("Real engine readers or storage are missing")
+        return dict(source="real", epoch_id=manifest["epoch_id"], generation=manifest["generation"],
+                    owner_manifest_sha256=owner_hash, expires_at=manifest["expires_at"],
+                    original_min_accepted_at=manifest["original_min_accepted_at"], event_lane=manifest["event_lane"])
 
 
 def prepare(directory, manifest, analysis_ip=None, jar=None):
@@ -362,10 +411,10 @@ def prepare(directory, manifest, analysis_ip=None, jar=None):
         raise ValueError("Epoch preparation path traverses a link")
     directory.mkdir(parents=True, mode=0o700)
     templates = ROOT / "deploy/real-epoch"
-    for name in ("epoch-guard.sh", "fe.conf", "be.conf"):
+    for name in ("epoch-guard.sh", "fe.conf", "be.conf", "prepare-be-start.sh"):
         (directory / name).write_bytes((templates / name).read_bytes().replace(b"\r\n", b"\n"))
     write_json(directory / "compose.json", compose_spec(manifest, directory, analysis_ip, jar))
-    manifest["files"] = {name: digest((directory / name).read_bytes()) for name in ("compose.json", "epoch-guard.sh", "fe.conf", "be.conf")}
+    manifest["files"] = {name: digest((directory / name).read_bytes()) for name in ("compose.json", "epoch-guard.sh", "fe.conf", "be.conf", "prepare-be-start.sh")}
     if jar:
         manifest["jar"] = dict(path=str(Path(jar).absolute()), sha256=digest(Path(jar).read_bytes()))
     write_json(directory / "manifest.json", manifest)

@@ -40,9 +40,11 @@ class Docker:
                 continue
             mounts = [{"Type": "volume", "Name": spec["volumes"][part.split(":")[0]]["name"], "RW": True}
                       for part in value["volumes"] if part.split(":")[0] in spec["volumes"]]
+            tmpfs = dict(item.split(":", 1) for item in value.get("tmpfs", []))
+            mounts += [{"Type": "tmpfs", "Destination": path, "RW": True} for path in tmpfs]
             self.c[value["container_name"]] = dict(labels=value["labels"], running=True, restart=value["restart"],
                                                    mounts=mounts, entrypoint=value["entrypoint"],
-                                                   deadline=value["environment"]["SNOW_EPOCH_EXPIRES_UNIX"])
+                                                   deadline=value["environment"]["SNOW_EPOCH_EXPIRES_UNIX"], tmpfs=tmpfs)
         self.actions.append(("start", spec["name"]))
 
     def stop(self, name):
@@ -76,6 +78,8 @@ def after(manifest):
 
 def test_physical_fixture_uses_only_owned_volumes_and_retirement_is_idempotent(tmp_path):
     epoch, docker, manifest = candidate(tmp_path)
+    with pytest.raises(ValueError, match="not readable"):
+        epoch.readable()
     unrelated = "snow-lab-synthetic-kafka"
     docker.v[unrelated] = {"Labels": {"source": "synthetic"}, "Driver": "local", "Options": None}
     result = epoch.retire(now=after(manifest), fixture_clock=True)
@@ -136,6 +140,17 @@ def test_stopping_preserves_data_and_unexpired_epochs_cannot_be_deleted(tmp_path
         epoch.retire(now=after(manifest))
 
 
+def test_unknown_mount_blocks_deletion_but_never_prevents_stopping_owned_readers(tmp_path):
+    epoch, docker, manifest = candidate(tmp_path)
+    name = manifest["containers"]["fixture"]
+    docker.c[name]["mounts"].append({"Type": "volume", "Name": "unregistered", "RW": True})
+    with pytest.raises(ValueError, match="Unknown writable"):
+        epoch.retire(now=after(manifest), fixture_clock=True)
+    assert docker.c[name]["running"] is True
+    assert epoch.stop()["data_deleted"] is False
+    assert docker.c[name]["running"] is False and len(docker.v) == 5
+
+
 def test_changed_frozen_config_blocks_start_and_engine_clock_cannot_be_faked(tmp_path):
     epoch, docker, manifest = candidate(tmp_path)
     epoch.stop()
@@ -162,6 +177,14 @@ def test_full_engine_profile_has_finite_independent_storage_and_pinned_jar(tmp_p
         assert item["labels"]["org.snow-statistics.source"] == "real"
         assert item["entrypoint"] == ["sh", "/snow/epoch-guard.sh"]
     assert set(value["name"] for value in spec["volumes"].values()) == set(manifest["volumes"].values())
+    for role in ("jobmanager", "taskmanager"):
+        env = spec["services"][role]["environment"]
+        assert env["SNOW_REAL_EPOCH_ID"] == manifest["epoch_id"]
+        assert env["SNOW_REAL_EPOCH_GENERATION"] == manifest["generation"]
+        assert env["SNOW_REAL_EPOCH_FROM"] == manifest["original_min_accepted_at"]
+        assert env["SNOW_REAL_EPOCH_UNTIL"] == manifest["expires_at"]
+    for role in ("doris-fe", "doris-be"):
+        assert '"$$SNOW_DORIS_IP"' in spec["services"][role]["command"][2]
     corrupt = copy.deepcopy(manifest)
     corrupt["volumes"]["kafka"] = "snow-lab-control_kafka"
     with pytest.raises(ValueError, match="escaped"):
@@ -185,3 +208,23 @@ def test_real_storage_stage_precedes_realtime_and_does_not_claim_engine_acceptan
     realtime = epoch.start("realtime")
     assert realtime["engines_verified"] is False and len(docker.c) == 5
     assert json.loads((directory / "gate.json").read_bytes())["open"] is True
+    assert epoch.readable()["event_lane"] == "epoch_stage"
+    docker.c[manifest["containers"]["taskmanager"]]["running"] = False
+    with pytest.raises(ValueError, match="missing"):
+        epoch.readable()
+
+
+def test_all_synthetic_engine_containers_running_cannot_grant_production_read_permission(tmp_path):
+    images = {key: IMAGE for key in ("KAFKA_IMAGE", "DORIS_FE_IMAGE", "DORIS_BE_IMAGE", "FLINK_IMAGE")}
+    manifest = make_manifest("fixture-engine-01", NOW.isoformat(), images, synthetic_engine_test=True, now=NOW)
+    jar = tmp_path / "fixture.jar"
+    jar.write_bytes(b"non-runnable synthetic jar")
+    folder = tmp_path / manifest["epoch_id"]
+    prepare(folder, manifest, "192.168.65.3", jar)
+    epoch = Epoch(folder, Docker())
+    epoch.start("storage")
+    epoch.start("realtime")
+    gate = json.loads((folder / "gate.json").read_bytes())
+    assert gate["fixture_ready"] is True and gate["open"] is False and gate["serves_real_data"] is False
+    with pytest.raises(ValueError, match="not readable"):
+        epoch.readable()
