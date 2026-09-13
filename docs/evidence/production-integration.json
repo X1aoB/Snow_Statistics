@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "verified_date": "2026-09-13",
+  "scope": "Independent off deployment and isolated synthetic acceptance of the real pipeline code",
+  "production": {
+    "collector_mode": "off",
+    "production_test_events_injected": 0,
+    "collector_image_id": "sha256:cd5e3c2f3aa6ebe35c7e765de0339e1581d25d7f857cad288c56d0aa8f91dd50",
+    "installed_source_bundle_sha256": "8089cf1b59f22fbdd44b15ceb543b0b8994661f44c4134a55eae8cfe3173d7f8",
+    "mount_quota_bytes": 536870912,
+    "collector_memory_limit_bytes": 268435456,
+    "collector_cpu_limit": 0.25,
+    "missing_mount_start_refused": true,
+    "empty_database_backup_integrity": "ok",
+    "gateway_loopback_public_allowlist_verified": true,
+    "gateway_private_routes_blocked": true,
+    "private_ssh": {
+      "account": "snow_stats_reader",
+      "allowed_tcp_destination": "127.0.0.1:8100",
+      "token_status_http": 200,
+      "no_token_status_http": 401,
+      "shell_sftp_other_port_remote_forward_rejected": true,
+      "root_deploy_effective_policies_unchanged": true,
+      "plan_sha256": "374968e791b62ae2a29aa24f2434e69b04bab56add5ba1d3dfc18b4485b2ab65",
+      "production_events_injected": 0,
+      "analysis_vm_status_http": 200
+    },
+    "public_tunnel_verified": false,
+    "products_promoted": false
+  },
+  "offline_current_contract": {
+    "input_origin": "synthetic fixtures",
+    "exercised_source_branch": "real",
+    "fixture_lane": "fixture_prod02",
+    "production_requests": 0,
+    "source_bundle_sha256": "0d6566c5047d0f70d1d3d1e4399e4d8ccbf68c90de2b0f4b782b2ff6fe188a6c",
+    "vm_memory_mib": {
+      "control": 2048,
+      "compute": 2048,
+      "analysis": 1024
+    },
+    "input_records": 140,
+    "input_partitions": 1,
+    "kafka_end_offset": 140,
+    "collector_generation_bound_through_archive_ods_and_models": true,
+    "daily": {
+      "engine": "Spark 3.5.7 on YARN",
+      "application_id": "application_1789302517038_0004",
+      "rows": 6,
+      "golden_equal": true,
+      "quality": {
+        "raw": 140,
+        "valid": 140,
+        "duplicates": 0,
+        "quarantined": 0,
+        "after_cutoff": 0
+      }
+    },
+    "behavior": {
+      "application_id": "application_1789302517038_0005",
+      "sessions": 44,
+      "session_daily_rows": 6,
+      "cohort_rows": 2,
+      "conversions": 14,
+      "funnel_rows": 3,
+      "all_five_tables_golden_equal": true,
+      "d1_missing_coverage_returned_null": true,
+      "hive_registration": false
+    },
+    "iceberg": {
+      "application_id": "application_1789302517038_0006",
+      "version": "1.10.0",
+      "aggregate_rows": {
+        "daily": 6,
+        "session_daily": 6,
+        "retention": 2,
+        "funnel": 3
+      },
+      "current_and_historical_readback_equal": true,
+      "additive_column": "model_revision",
+      "hive_registration": false,
+      "column_lineage": false
+    },
+    "ods_expiry": {
+      "clock": "simulated expiry of this declared synthetic fixture only",
+      "actual_hdfs_raw_batch_deleted": true,
+      "old_snapshot_unreadable": true,
+      "offset_head_preserved": true,
+      "remaining_raw_batches": 0
+    },
+    "private_view": {
+      "current_contract_checked": true,
+      "tables": 4,
+      "missing_coverage_label": true
+    },
+    "private_receipts": "runtime/production-acceptance/fixture02/"
+  },
+  "physical_epoch_expiry": {
+    "input_origin": "synthetic markers, no big-data engines",
+    "vm_memory_mib": 1024,
+    "simulated_clock_fixture": "fixture-physical-01",
+    "real_clock_fixture": "fixture-deadline-01",
+    "deadline_process_exit_code": 78,
+    "each_fixture_containers_removed": 1,
+    "each_fixture_volumes_removed": 5,
+    "exact_absence_readback": true,
+    "unrelated_container_and_volume_scope_preserved": true,
+    "forensic_media_erasure_claimed": false,
+    "private_receipts": "runtime/epoch-acceptance/"
+  },
+  "real_namespace_lineage": {
+    "input_origin": "metadata of two completed synthetic-fixture Iceberg executions",
+    "engine": "Marquez 0.50.0",
+    "vm_memory_mib": 2048,
+    "events_acknowledged_in_delivery_copy": 4,
+    "runs_verified": 2,
+    "latest_graph_nodes": 6,
+    "latest_graph_edges": 5,
+    "run_inputs_and_outputs_read_back": true,
+    "source_journal_ack_import_pending": true,
+    "scope": "Explicit Iceberg input bundle and four aggregate table locations; no Kafka, Hive or column-level claim"
+  },
+  "not_claimed": [
+    "Public DNS/TLS/Tunnel acceptance",
+    "Final production promotion and public regression",
+    "Production-user traffic volume or freshness P95",
+    "Real Hive registration",
+    "Production real epoch writer registration and staged offline permit"
+  ]
+}

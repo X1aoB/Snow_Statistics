@@ -5,8 +5,10 @@ journal survives all three; Kafka is never advanced by capture or landing.
 """
 import base64
 import json
-from datetime import UTC, datetime
+import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import UUID
 
 from snow_statistics.contracts import Event
 from snow_statistics.io import atomic_write, digest, write_json
@@ -16,36 +18,62 @@ TOPICS = ("snow.synthetic.events.v1", *(f"snow.synthetic.cdc.snow_ops.{t}" for t
 FILES = ("raw.jsonl", "events.jsonl", "changes.jsonl", "quarantine.jsonl")
 
 
+def collector_identity(value):
+    """Exact metadata copied from the controlled sync source.json, never events."""
+    if (not isinstance(value, dict) or set(value) != {"schema_version", "source", "instance_id", "generation"}
+            or type(value["schema_version"]) is not int or value["schema_version"] != 1 or value["source"] != "real"):
+        raise ValueError("Real Kafka input requires an explicit collector identity")
+    for key in ("instance_id", "generation"):
+        if not isinstance(value[key], str) or str(UUID(value[key])) != value[key]:
+            raise ValueError("Collector identity needs canonical UUIDs")
+    return value.copy()
+
+
+def topics_for(provenance, event_lane=None):
+    if provenance not in {"real", "synthetic"}:
+        raise ValueError("Invalid source")
+    if event_lane is not None and (provenance != "real" or not re.fullmatch(r"[a-z0-9_]{1,24}", event_lane)):
+        raise ValueError("Only an explicit real replay lane may select a separate event topic")
+    return TOPICS if provenance == "synthetic" else ("snow.real." + (event_lane + "." if event_lane else "") + "events.v1",)
+
+
 def load(path, default=None):
     return json.loads(path.read_bytes()) if path.exists() else default
 
 
 def checked_receipt(receipt):
     try:
-        snapshot = {k: receipt[k] for k in ("schema_version", "source", "identity", "offsets", "batches", "root")}
+        keys = ("schema_version", "source", "identity", "offsets", "batches", "root")
+        if receipt["schema_version"] == 2:
+            keys += ("head_batch_id",)
+        snapshot = {k: receipt[k] for k in keys}
+        if snapshot["source"] == "real":
+            collector_identity(snapshot["identity"].get("collector"))
         token = digest(canonical(snapshot))
-        if (token != receipt["snapshot_id"] or receipt["batch_id"] != snapshot["batches"][-1]["batch_id"] or
+        head = snapshot.get("head_batch_id") if receipt["schema_version"] == 2 else snapshot["batches"][-1]["batch_id"]
+        if (token != receipt["snapshot_id"] or receipt["batch_id"] != head or
                 receipt["input"] != snapshot["root"] + "/snapshots/" + token + "/_snapshot.json"):
             raise ValueError("Receipt/checkpoint checksum mismatch")
         return snapshot
-    except (KeyError, IndexError, TypeError) as exc:
+    except (KeyError, IndexError, TypeError, AttributeError) as exc:
         raise ValueError("Invalid receipt/checkpoint") from exc
 
 
-def normalize(record):
+def normalize(record, provenance="synthetic", event_lane=None):
     """Raw key/value bytes (including tombstones) remain in the separate raw ODS."""
     topic = record["topic"]
-    if topic not in TOPICS:
+    topics = topics_for(provenance, event_lane)
+    if topic not in topics:
         raise ValueError("Unexpected topic")
     value = record["value_b64"]
     if value is None:
-        if topic == TOPICS[0]:
+        if topic == topics[0]:
             raise ValueError("Event tombstone is not a v1 event")
         return "tombstones", None
     payload = json.loads(base64.b64decode(value, validate=True))
     position = dict(kafka_topic=topic, kafka_partition=record["partition"], kafka_offset=record["offset"])
-    if topic == TOPICS[0]:
-        if set(payload) != {"seq", "source", "accepted_at", "event"} or payload["source"] != "synthetic":
+    if topic == topics[0]:
+        if set(payload) != {"seq", "source", "accepted_at", "event"} or payload["source"] != provenance:
             raise ValueError("Invalid event envelope")
         if type(payload["seq"]) is not int or payload["seq"] < 1:
             raise ValueError("Invalid collector position")
@@ -86,18 +114,30 @@ def pending(directory):
     return token["batch_id"], manifest
 
 
-def capture(directory, source, max_records=10000, max_bytes=32 * 1024**2):
+def capture(directory, source, max_records=10000, max_bytes=32 * 1024**2, *, provenance="synthetic", now=None, event_lane=None):
     """Source interface: identity, bounds, committed, read(start, end), commit."""
     directory = Path(directory)
+    topics = topics_for(provenance, event_lane)
     if not 1 <= max_records <= 100000 or not 1 <= max_bytes <= 64 * 1024**2:
         raise ValueError("Invalid bounded capture limits")
     with publication_lock(directory):
+        if (directory / "cleanup.json").exists():
+            raise ValueError("Incomplete real cleanup blocks capture")
+        identity = source.identity()
+        if set(identity["topic_ids"]) != set(topics):
+            raise ValueError("Kafka topics do not match requested provenance")
+        if provenance == "real":
+            collector_identity(identity.get("collector"))
         if (directory / "pending.json").exists():
-            return pending(directory)[0]  # Always recover before polling newer records.
+            token, manifest = pending(directory)
+            if manifest["source"] != provenance or manifest["identity"] != identity:
+                raise ValueError("Pending archive belongs to another source identity")
+            return token  # Always recover before polling newer records.
         state = load(directory / "state.json", {})
         if state:
             checked_receipt(state)
-        identity = source.identity()
+        if state and state["source"] != provenance:
+            raise ValueError("Cannot reuse a landing directory for another source")
         if state and state["identity"] != identity:
             raise ValueError("Kafka cluster/topic incarnation or consumer group changed")
         bounds = source.bounds()
@@ -135,7 +175,7 @@ def capture(directory, source, max_records=10000, max_bytes=32 * 1024**2):
                     raise ValueError("Capture byte budget exceeded; reduce max_records")
                 groups["raw"].append(record)
                 try:
-                    kind, normalized = normalize(record)
+                    kind, normalized = normalize(record, provenance, event_lane)
                     if kind == "tombstones":
                         tombstones += 1
                     else:
@@ -148,9 +188,20 @@ def capture(directory, source, max_records=10000, max_bytes=32 * 1024**2):
         if source.identity() != identity:
             raise ValueError("Kafka identity changed during capture")
         contents = {name + ".jsonl": b"".join(canonical(r) + b"\n" for r in rows) for name, rows in groups.items()}
-        manifest = dict(schema_version=1, source="synthetic", identity=identity, starts=starts, ends=ends,
+        manifest = dict(schema_version=1, source=provenance, identity=identity, starts=starts, ends=ends,
                         parent=state.get("snapshot_id"), files={n: digest(v) for n, v in contents.items()},
                         counts={name: len(rows) for name, rows in groups.items()} | {"tombstones": tombstones})
+        if provenance == "real":
+            # Unknown payloads cannot be assigned a trustworthy original expiry.
+            # Refuse before archiving or committing; retain metadata-only evidence.
+            if groups["quarantine"] or not groups["events"]:
+                raise ValueError("Invalid real input; raw capture refused before persistence")
+            accepted = [datetime.fromisoformat(r["accepted_at"].replace("Z", "+00:00")) for r in groups["events"]]
+            current = now or datetime.now(UTC)
+            if min(accepted) + timedelta(days=7) <= current or max(accepted) > current:
+                raise ValueError("Real input is expired or future-dated; explicit gap recovery required")
+            manifest["original_min_accepted_at"] = min(accepted).isoformat()
+            manifest["expires_at"] = (min(accepted) + timedelta(days=7)).isoformat()
         batch = digest(canonical(manifest))
         folder = directory / "batches" / batch
         for name, body in contents.items():
@@ -168,10 +219,16 @@ def immutable(path, body):
         atomic_write(path, body)
 
 
-def land(directory, sink, fail_after_batch=False):
+def land(directory, sink, fail_after_batch=False, *, now=None):
     directory = Path(directory)
     with publication_lock(directory):
         batch, manifest = pending(directory)
+        if manifest["source"] == "real":
+            collector_identity(manifest["identity"].get("collector"))
+        if "/snow/ods/" + manifest["source"] + "/kafka/" not in sink.root:
+            raise ValueError("Landing source and HDFS destination differ")
+        if manifest["source"] == "real" and datetime.fromisoformat(manifest["expires_at"]) <= (now or datetime.now(UTC)):
+            raise ValueError("Real pending input expired before HDFS publication")
         state = load(directory / "state.json", {})
         if state:
             checked_receipt(state)
@@ -185,14 +242,21 @@ def land(directory, sink, fail_after_batch=False):
         sink.put_directory("batches/" + batch, files)
         if fail_after_batch:
             raise RuntimeError("Injected failure after HDFS batch commit, before snapshot commit")
-        entries = state["batches"] if already_checkpointed else state.get("batches", []) + [dict(batch_id=batch, files=manifest["files"], counts=manifest["counts"])]
-        snapshot = dict(schema_version=1, source="synthetic", identity=manifest["identity"], offsets=manifest["ends"],
+        entry = dict(batch_id=batch, files=manifest["files"], counts=manifest["counts"])
+        if manifest["source"] == "real":
+            entry.update({k: manifest[k] for k in ("original_min_accepted_at", "expires_at")})
+        entries = state["batches"] if already_checkpointed else state.get("batches", []) + [entry]
+        snapshot = dict(schema_version=1, source=manifest["source"], identity=manifest["identity"], offsets=manifest["ends"],
                         batches=entries, root=sink.root)
+        if manifest["source"] == "real":
+            snapshot.update(schema_version=2, head_batch_id=batch)
         snapshot_id = digest(canonical(snapshot))
         sink.put_directory("snapshots/" + snapshot_id, {"_snapshot.json": canonical(snapshot)})
         receipt = snapshot | {"snapshot_id": snapshot_id, "batch_id": batch,
                               "input": sink.root + "/snapshots/" + snapshot_id + "/_snapshot.json"}
         write_json(directory / "landed.json", receipt)
+        if manifest["source"] == "real":
+            write_json(directory / "receipts" / (snapshot_id + ".json"), receipt)
         return receipt
 
 

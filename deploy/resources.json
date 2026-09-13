@@ -230,6 +230,49 @@
       "vm_profile": "scale: 2048 / 2048 / 1024 MiB; sequential startup capacity checks",
       "yarn_logs": "/snow/yarn-logs in HDFS; existing NodeManager volume log/local directories"
     },
+    "real_data": {
+      "identity": "Collector instance_id and generation, Kafka cluster/topic IDs, one partition and explicit offsets; new generations require an explicit new lane",
+      "coordinator_host": "snow-analysis; stage verified immutable ODS metadata to snow-control for offline computation",
+      "local_registry": "runtime/real/**/.snow-real-owner.json and registered lifecycle manifests; private ignored directories only",
+      "raw_window": "7 days from original accepted_at; replicas and restores do not renew expiry",
+      "auxiliary_window": "At most 30 days from original accepted_at, minimal identity/session/attribution fields only",
+      "aggregate_window": "90 days from report date; immutable managed release plus metadata-only latest pointer",
+      "sync_and_capture": "runtime/real/runs/<run>/data and configured owned sync/ODS directories; original archive, pending capture, offset head and readable-window manifests",
+      "hdfs": [
+        "/snow/ods/real/kafka/<lane>",
+        "/snow/warehouse/real/<lane>",
+        "/snow/auxiliary/real/<lane>"
+      ],
+      "hdfs_policy": "Register output and failed staging before writing; delete expired raw batches and their referencing snapshots, preserving the separate offset head",
+      "hive": "snow_real database and exact registered table names; metadata is not proof that underlying partitions were removed",
+      "catalog": "Versioned public page/character metadata only; declared release SHA and published/candidate state remain distinct",
+      "lineage": "runtime/real/lineage/events.sqlite and acknowledged delivery copies; metadata only, no event rows",
+      "private_view": "Managed data/releases/<hash>.json with 90-day expiry; real-latest.json contains only path, hash and expiry; cleanup before every read",
+      "backup_policy": "Prefer aggregate/config/cursor backup. Every detail backup inherits original expiry. Unregistered VM snapshots and whole-disk copies are forbidden for real data",
+      "startup": "Resource admission then registered expiry cleanup, identity checks and permit before consumers, compute or private reads; failure closes the real gate",
+      "shutdown": "Stop only processes started by the current run. Preserve unexpired registered state; off does not delete all history"
+    },
+    "real_engine_epochs": {
+      "host": "snow-analysis only, realtime VM profile 4608 MiB; control and compute stopped during engine stages",
+      "guest_virtual_disk_gib": 29,
+      "disk_budget_note": "Analysis guest was explicitly expanded from 28 to 29 GiB for this phase and ext4 growth verified. Thin guest capacity is not host usage; the hard 64 GiB project, 35 GiB host disk and 4 GiB host available RAM checks remain. No further disk expansion is authorized by this record.",
+      "registry": "runtime/real/epochs/<epoch>/{manifest.json,compose.json,gate.json,retirement.json}; immutable writer registration and actual job receipts are separate from the startup gate",
+      "compose_project": "snow-real-<epoch>",
+      "exact_container_roles": ["kafka", "doris-fe", "doris-be", "jobmanager", "taskmanager"],
+      "exact_local_volume_roles": ["kafka", "doris-fe", "doris-be", "checkpoints", "flink-state"],
+      "resource_names": "snow-real-<epoch>-<role>; owner/source/epoch/generation/input-origin/expiry labels must all match",
+      "topic_scope": "snow.real.<immutable_underscore_lane>.{events,late,duplicates,quarantine}.v1",
+      "doris_scope": "snow_real_<immutable_underscore_lane>, independent user and events/daily tables",
+      "ports": "VM NAT Kafka 9092 and Doris 8030/9030/8040/9060; Flink REST only loopback 8081, access through verified SSH",
+      "stages": "storage: Kafka/FE/BE; realtime: JobManager/TaskManager only after actual storage health and remaining-memory checks",
+      "physical_deadline": "Earliest original accepted_at plus 7 days, immutable. PID1 stops at expiry and supervisor removes only fully verified owned containers and volumes",
+      "checkpoint_policy": "Minimal dedup hashes with bounded TTL; checkpoint and state volumes remain under the original epoch deadline, expired restore refused",
+      "recovery_metadata": "writer-recovery immutable chained records bind original writer/JAR/storage and each actual retained checkpoint; pause before shutdown, NO_CLAIM resume only before original expiry; incomplete recovery blocks reads/writes",
+      "cleanup_evidence": "Actual exact-object removal and absence readback, not forensic VMDK/SSD erasure; inspect all resource labels/mounts before mutation",
+      "shutdown": "restart=no; normal stop preserves unexpired volumes; startup cleanup runs before engine access",
+      "acceptance": "fixture-* physical markers and synthetic_engine_test are isolated synthetic fixtures and never authorize real reads",
+      "synthetic_engine_receipts": "engine-test/{storage.json,job.json,fixture-input.json,acceptance.json,failure.json,publication/,local-collector/}; secrets.json and job.env remain private mode 0600 and are not exported"
+    },
     "vm_names": [
       "snow-control",
       "snow-compute",
@@ -245,13 +288,60 @@
     "loopback_port": 8100,
     "network": "snow-statistics-lite",
     "private_route": "/analytics/private/v1/events",
+    "private_access": "Reader-token interfaces via verified SSH loopback only; private exact summary/status and health are not exposed by the public gateway",
+    "private_ssh": {
+      "user": "snow_stats_reader",
+      "configuration": "/etc/ssh/sshd_config.d/00-snow-statistics-reader.conf",
+      "authorized_keys_and_receipt": "/var/lib/snow-statistics-access",
+      "allowed_tcp_destination": "127.0.0.1:8100",
+      "scope": "Dedicated key, local forwarding only; MaxSessions=0; no shell/SFTP/agent/remote forwarding. Reader token is independently required",
+      "local_private_files": "runtime/real/ssh/collector.key and collector.known_hosts; runtime/real/secrets/reader.token",
+      "shutdown": "Close the owned SSH process; preserve credentials. Explicit retirement disables only this account's key/config after required exports"
+    },
     "public_routes": [
       "/analytics/v1/events",
-      "/analytics/public/v1/summary.json"
+      "/analytics/public/v1/summary.json",
+      "/analytics/public/v2/summary.json"
     ],
     "state_quota_bytes": 536870912,
     "state_root": "/var/lib/snow-statistics",
-    "systemd_service": "snow-statistics-lite.service"
+    "systemd_service": "snow-statistics-lite.service",
+    "source_and_configuration": "/opt/snow-statistics and /etc/snow-statistics; root-owned, private tokens separated by role",
+    "mount": "/var/lib/snow-statistics/state.img mounted at /var/lib/snow-statistics/state; missing mount refuses startup",
+    "gateway": {
+      "service": "gateway in snow-statistics-edge.service; loopback-only candidate starts the gateway Compose service separately",
+      "loopback_port": 8110,
+      "memory_bytes": 67108864,
+      "cpus": 0.1,
+      "policy": "Exact public paths/methods only; strip Authorization, Cookie and identifying proxy headers; /data and /config use tmpfs"
+    },
+    "tunnel": {
+      "service": "snow-statistics-edge.service",
+      "hostname": "stats.xiaob.dev",
+      "name": "snow-statistics-prod",
+      "memory_bytes": 134217728,
+      "cpus": 0.1,
+      "policy": "Independent credentials and edge network; only statistics gateway ingress plus 404 fallback; existing business Tunnel unchanged"
+    },
+    "log_reader": {
+      "service": "snow-statistics-log-reader.service",
+      "state": "/var/lib/snow-statistics-reader/spool.db",
+      "memory_bytes": 67108864,
+      "cpus": 0.1,
+      "window_hours": 24,
+      "database_limit_bytes": 16777216,
+      "maximum_rows": 4096,
+      "policy": "Fixed current/draining project-snow-public API labels, bounded filtered completion records; no analytics token; explicit truncation/gap counters"
+    },
+    "log_forwarder": {
+      "service": "snow-statistics-log-forwarder.service",
+      "state": "/var/lib/snow-statistics-forwarder/cursor.json",
+      "memory_bytes": 67108864,
+      "cpus": 0.1,
+      "policy": "Low-privilege UNIX-socket reader, token via systemd LoadCredential, no Docker socket/group; only 202 acknowledges receipt"
+    },
+    "backup_and_receipts": "Private /root/snow-statistics-candidates and registered original-expiry backups; installation receipts contain hashes and metadata only",
+    "business_dependencies": "None: no business database, Compose dependency, startup/health/CI requirement or business Tunnel modification"
   },
   "owner": "Snow_Statistics",
   "retirement": {

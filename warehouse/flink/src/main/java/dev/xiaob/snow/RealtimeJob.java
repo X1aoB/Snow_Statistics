@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Properties;
 import java.util.Set;
 import org.apache.doris.flink.cfg.DorisExecutionOptions;
@@ -65,12 +67,37 @@ public class RealtimeJob {
         // A lane belongs to one collector sequence generation; never reset it in place.
         out.put("business_version", Long.MAX_VALUE - envelope.path("seq").asLong());
         out.put("_event_id", event.path("event_id").asText());
-        out.put("_event_json", event.toString());
+        // Real dedup state needs a fingerprint, not a second complete event copy.
+        // Synthetic v2 stays compatible with its retained experimental checkpoints.
+        out.put("_event_json", expectedSource.equals("real") ? fingerprint(event.toString()) : event.toString());
         ObjectNode replay = JSON.createObjectNode();
         replay.put("source", expectedSource); replay.put("seq", envelope.path("seq").asLong());
         replay.put("accepted_at", accepted.toString()); replay.set("event", event);
         out.set("_envelope", replay);
         return out;
+    }
+
+    static String fingerprint(String value) throws Exception {
+        byte[] bytes = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder();
+        for (byte item : bytes) hex.append(String.format("%02x", item & 0xff));
+        return hex.toString();
+    }
+
+    static void realWindow(Instant accepted, Instant readableFrom, Instant notAfter, Instant now) {
+        if (!now.isBefore(notAfter) || notAfter.isAfter(readableFrom.plus(Duration.ofDays(7))))
+            throw new IllegalStateException("Real cleanup/restore window expired");
+        if (accepted.isBefore(readableFrom) || accepted.isAfter(now) || !accepted.plus(Duration.ofDays(7)).isAfter(now))
+            throw new IllegalStateException("Real event is outside registered retention window");
+    }
+
+    static void realEpoch(String epoch, String generation, Instant epochFrom, Instant epochUntil,
+                          Instant readableFrom, Instant notAfter, String lane) {
+        if (!epoch.matches("[a-z][a-z0-9-]{2,23}") || !lane.equals(epoch.replace('-', '_')) ||
+            !java.util.UUID.fromString(generation).toString().equals(generation) ||
+            !epochUntil.equals(epochFrom.plus(Duration.ofDays(7))) ||
+            !readableFrom.equals(epochFrom) || !notAfter.equals(epochUntil))
+            throw new IllegalArgumentException("Real job differs from frozen storage epoch");
     }
 
     static boolean tooLate(long timestamp, long watermark) {
@@ -88,14 +115,20 @@ public class RealtimeJob {
         ObjectNode result = JSON.createObjectNode();
         result.put("reason", reason); result.put("seq", row.path("_envelope").path("seq").asLong());
         result.put("event_id", row.path("_event_id").asText());
+        if (row.path("_envelope").path("source").asText().equals("real")) {
+            result.put("source", "real");
+            result.put("accepted_at", row.path("_envelope").path("accepted_at").asText());
+        }
         return result.toString();
     }
 
     static class EventDeduplicate extends KeyedProcessFunction<String, String, String> {
         private transient ValueState<String> seen;
+        private final boolean real;
+        EventDeduplicate(boolean real) { this.real = real; }
         @Override public void open(Configuration parameters) {
-            ValueStateDescriptor<String> descriptor = new ValueStateDescriptor<>("event-fingerprint-v2", String.class);
-            descriptor.enableTimeToLive(StateTtlConfig.newBuilder(Duration.ofDays(8)).build());
+            ValueStateDescriptor<String> descriptor = new ValueStateDescriptor<>(real ? "event-sha256-real-v1" : "event-fingerprint-v2", String.class);
+            descriptor.enableTimeToLive(StateTtlConfig.newBuilder(Duration.ofDays(real ? 30 : 8)).build());
             seen = getRuntimeContext().getState(descriptor);
         }
         @Override public void processElement(String value, Context context, Collector<String> out) throws Exception {
@@ -111,9 +144,11 @@ public class RealtimeJob {
 
     static class RequestDeduplicate extends KeyedProcessFunction<String, String, String> {
         private transient ValueState<Boolean> seen;
+        private final boolean real;
+        RequestDeduplicate(boolean real) { this.real = real; }
         @Override public void open(Configuration parameters) {
             ValueStateDescriptor<Boolean> descriptor = new ValueStateDescriptor<>("seen-v1", Boolean.class);
-            descriptor.enableTimeToLive(StateTtlConfig.newBuilder(Duration.ofDays(8)).build());
+            descriptor.enableTimeToLive(StateTtlConfig.newBuilder(Duration.ofDays(real ? 30 : 8)).build());
             seen = getRuntimeContext().getState(descriptor);
         }
         @Override public void processElement(String value, Context context, Collector<String> out) throws Exception {
@@ -124,21 +159,37 @@ public class RealtimeJob {
 
     static class Parse extends ProcessFunction<String, String> {
         private final String source;
-        Parse(String source) { this.source = source; }
+        private final Instant readableFrom, notAfter;
+        Parse(String source, Instant readableFrom, Instant notAfter) {
+            this.source = source; this.readableFrom = readableFrom; this.notAfter = notAfter;
+        }
         @Override public void processElement(String value, Context context, Collector<String> out) {
-            try { out.collect(normalize(value, source).toString()); }
+            ObjectNode normalized;
+            try { normalized = normalize(value, source); }
             catch (Exception error) {
                 System.err.println("snow_realtime_rejected class=" + error.getClass().getSimpleName());
                 context.output(INVALID, "{\"reason\":\"invalid_contract\"}");
+                return;
             }
+            // Fail the real job, rather than sending an expired payload to another topic.
+            if (source.equals("real")) realWindow(Instant.parse(normalized.path("_envelope").path("accepted_at").asText()),
+                                                  readableFrom, notAfter, Instant.now());
+            out.collect(normalized.toString());
         }
     }
 
     public static void main(String[] args) throws Exception {
         String bootstrap = required("KAFKA_BOOTSTRAP"), sourceName = required("SNOW_SOURCE");
         if (!Set.of("real", "synthetic").contains(sourceName)) throw new IllegalArgumentException("source");
+        boolean real = sourceName.equals("real");
+        Instant readableFrom = real ? Instant.parse(required("SNOW_REAL_READABLE_FROM")) : null;
+        Instant notAfter = real ? Instant.parse(required("SNOW_REAL_RESTORE_NOT_AFTER")) : null;
+        if (real) realWindow(readableFrom, readableFrom, notAfter, Instant.now());
         String lane = System.getenv().getOrDefault("SNOW_REPLAY_LANE", "live");
         if (!lane.matches("[a-z0-9_-]{1,32}")) throw new IllegalArgumentException("lane");
+        if (real) realEpoch(required("SNOW_REAL_EPOCH_ID"), required("SNOW_REAL_EPOCH_GENERATION"),
+                            Instant.parse(required("SNOW_REAL_EPOCH_FROM")), Instant.parse(required("SNOW_REAL_EPOCH_UNTIL")),
+                            readableFrom, notAfter, lane);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1); env.enableCheckpointing(10_000, CheckpointingMode.EXACTLY_ONCE);
         env.getCheckpointConfig().setMinPauseBetweenCheckpoints(1000);
@@ -148,23 +199,32 @@ public class RealtimeJob {
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, org.apache.flink.api.common.time.Time.seconds(5)));
         String topic = System.getenv().getOrDefault("SNOW_INPUT_TOPIC", "snow." + sourceName + ".events.v1");
         if (!topic.matches("snow\\." + sourceName + "\\.[a-z0-9_.-]{1,100}\\.v1")) throw new IllegalArgumentException("topic/source");
+        if (real && !topic.equals("snow.real." + lane + ".events.v1"))
+            throw new IllegalArgumentException("Real topic is outside its frozen epoch lane");
         // First acceptance ordering is validated for one collector/partition in this release.
         Properties adminProperties = new Properties();
         adminProperties.put("bootstrap.servers", bootstrap);
         adminProperties.put("default.api.timeout.ms", "10000");
         adminProperties.put("request.timeout.ms", "5000");
         try (org.apache.kafka.clients.admin.AdminClient admin = org.apache.kafka.clients.admin.AdminClient.create(adminProperties)) {
-            if (admin.describeTopics(java.util.List.of(topic)).allTopicNames().get().get(topic).partitions().size() != 1)
+            var description = admin.describeTopics(java.util.List.of(topic)).allTopicNames().get().get(topic);
+            if (description.partitions().size() != 1)
                 throw new IllegalArgumentException("Realtime v2 requires one ordered input partition");
+            if (real && (!description.topicId().toString().equals(required("SNOW_REAL_TOPIC_ID")) ||
+                         !admin.describeCluster().clusterId().get().equals(required("SNOW_REAL_CLUSTER_ID"))))
+                throw new IllegalArgumentException("Real Kafka generation differs from registered input");
         }
         String sidePrefix = "snow." + sourceName + "." + lane;
         KafkaSource<String> source = KafkaSource.<String>builder().setBootstrapServers(bootstrap)
             .setTopics(topic).setGroupId("snow-flink-" + sourceName + "-" + lane)
-            .setStartingOffsets(OffsetsInitializer.committedOffsets(org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST))
+            .setStartingOffsets(real ? OffsetsInitializer.offsets(java.util.Map.of(
+                new org.apache.kafka.common.TopicPartition(topic, 0), Long.parseLong(required("SNOW_REAL_START_OFFSET"))),
+                org.apache.kafka.clients.consumer.OffsetResetStrategy.NONE) :
+                OffsetsInitializer.committedOffsets(org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST))
             .setValueOnlyDeserializer(new SimpleStringSchema()).build();
         var parsed = env.fromSource(source, WatermarkStrategy.noWatermarks(), "accepted-events-v1")
             .uid("source-v2")
-            .process(new Parse(sourceName)).uid("parse-v1");
+            .process(new Parse(sourceName, readableFrom, notAfter)).uid("parse-v1");
         var events = parsed
             .assignTimestampsAndWatermarks(WatermarkStrategy.<String>forBoundedOutOfOrderness(Duration.ofSeconds(30))
                 .withTimestampAssigner((value, previous) -> {
@@ -172,15 +232,19 @@ public class RealtimeJob {
                     catch (Exception error) { throw new IllegalArgumentException("timestamp"); }
                 }).withIdleness(Duration.ofMinutes(1)))
             .keyBy(value -> { JsonNode row = JSON.readTree(value); return row.path("source").asText()+":"+row.path("app").asText()+":"+row.path("_event_id").asText(); })
-            .process(new EventDeduplicate()).uid("event-dedup-v2");
+            .process(new EventDeduplicate(real)).uid("event-dedup-v2");
         var stream = events.keyBy(value -> { JsonNode row = JSON.readTree(value); return row.path("source").asText()+":"+row.path("app").asText()+":"+row.path("business_key").asText(); })
-            .process(new RequestDeduplicate()).uid("request-dedup-v2");
+            .process(new RequestDeduplicate(real)).uid("request-dedup-v2");
         parsed.getSideOutput(INVALID).union(events.getSideOutput(INVALID))
             .sinkTo(kafkaSink(bootstrap, sidePrefix + ".quarantine.v1")).uid("quarantine-v2");
         events.getSideOutput(DUPLICATE).union(stream.getSideOutput(DUPLICATE))
             .sinkTo(kafkaSink(bootstrap, sidePrefix + ".duplicates.v1")).uid("duplicates-v2");
         String table = System.getenv().getOrDefault("DORIS_TABLE", "snow_realtime_v2.events_realtime");
         if (!table.matches("snow(?:_[a-z0-9_]{1,40})?\\.events_realtime")) throw new IllegalArgumentException("table");
+        if (real && !table.matches("snow_real_[a-z0-9_]{1,30}\\.events_realtime"))
+            throw new IllegalArgumentException("Real output requires an independently permissioned snow_real_* database");
+        if (real && !table.equals("snow_real_" + lane + ".events_realtime"))
+            throw new IllegalArgumentException("Real output is outside its frozen epoch lane");
         Properties props = new Properties(); props.setProperty("format", "json"); props.setProperty("read_json_by_line", "true");
         DorisSink<String> sink = DorisSink.<String>builder()
             .setDorisOptions(DorisOptions.builder().setFenodes(required("DORIS_FE"))
@@ -194,9 +258,17 @@ public class RealtimeJob {
     }
     static KafkaSink<String> kafkaSink(String bootstrap, String topic) {
         return KafkaSink.<String>builder().setBootstrapServers(bootstrap)
-            .setRecordSerializer(KafkaRecordSerializationSchema.builder().setTopic(topic)
-                .setValueSerializationSchema(new SimpleStringSchema()).build())
+            .setRecordSerializer((KafkaRecordSerializationSchema<String>) (value, context, timestamp) ->
+                new org.apache.kafka.clients.producer.ProducerRecord<byte[], byte[]>(topic, null,
+                    originalKafkaTimestamp(value, timestamp), null, value.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
             .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE).build();
+    }
+    static Long originalKafkaTimestamp(String value, Long fallback) {
+        try {
+            JsonNode row = JSON.readTree(value);
+            return row.path("source").asText().equals("real")
+                ? EventContract.instant(row.path("accepted_at").asText()).toEpochMilli() : fallback;
+        } catch (Exception error) { throw new IllegalArgumentException("Missing original real Kafka timestamp", error); }
     }
     static String required(String key) {
         String value = System.getenv(key);

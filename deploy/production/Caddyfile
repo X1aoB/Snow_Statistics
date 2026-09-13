@@ -1,0 +1,62 @@
+{
+	admin off
+	auto_https off
+	log default {
+		output discard
+	}
+	servers {
+		timeouts {
+			read_header 5s
+			read_body 5s
+			write 10s
+			idle 30s
+		}
+	}
+}
+
+(collector) {
+	reverse_proxy collector:8100 {
+		header_up -Authorization
+		header_up -Cookie
+		header_up -X-Forwarded-For
+		header_up -X-Real-IP
+		header_up -CF-Connecting-IP
+		header_up -CF-IPCountry
+		header_up -Referer
+		transport http {
+			dial_timeout 1s
+			response_header_timeout 5s
+		}
+	}
+}
+
+:8080 {
+	request_body {
+		max_size 65536
+	}
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Cache-Control no-store
+	}
+	@ingest {
+		host stats.xiaob.dev
+		path /analytics/v1/events
+		method POST OPTIONS
+	}
+	@summary {
+		host stats.xiaob.dev
+		path /analytics/public/v1/summary.json /analytics/public/v2/summary.json
+		method GET OPTIONS
+	}
+	handle @ingest {
+		import collector
+	}
+	handle @summary {
+		import collector
+	}
+	handle {
+		respond 404
+	}
+}

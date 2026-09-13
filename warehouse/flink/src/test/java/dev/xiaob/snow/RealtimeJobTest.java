@@ -14,9 +14,44 @@ class RealtimeJobTest {
     @Test void provenanceCannotCross() {
         assertThrows(IllegalArgumentException.class, () -> RealtimeJob.normalize(fixture, "real"));
     }
+    @Test void realFingerprintDoesNotRetainFullEventAndWindowDoesNotRefresh() throws Exception {
+        String real = fixture.replace("synthetic", "real");
+        String hash = RealtimeJob.normalize(real, "real").path("_event_json").asText();
+        assertTrue(hash.matches("[0-9a-f]{64}"));
+        assertFalse(hash.contains("path"));
+        var origin = java.time.Instant.parse("2026-01-01T16:00:01Z");
+        var expiry = origin.plus(java.time.Duration.ofDays(7));
+        assertDoesNotThrow(() -> RealtimeJob.realWindow(origin, origin, expiry, origin.plusSeconds(1)));
+        assertThrows(IllegalStateException.class, () -> RealtimeJob.realWindow(origin, origin, expiry, expiry));
+        assertThrows(IllegalStateException.class, () -> RealtimeJob.realWindow(origin, origin, expiry.plusSeconds(1), origin));
+        assertThrows(IllegalStateException.class, () -> RealtimeJob.realWindow(origin.minusSeconds(1), origin, expiry, origin));
+    }
     @Test void oversizedVersionCannotWrapToV1() {
         assertThrows(IllegalArgumentException.class,
             () -> RealtimeJob.normalize(fixture.replace("\"schema_version\":1", "\"schema_version\":4294967297"), "synthetic"));
+    }
+    @Test void realJobCannotReplaceStorageEpochWindowOrLane() {
+        var origin = java.time.Instant.parse("2026-09-13T12:00:00Z");
+        var until = origin.plus(java.time.Duration.ofDays(7));
+        String generation = "00000000-0000-4000-8000-000000000001";
+        assertDoesNotThrow(() -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin, until, "real_start_01"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin.minusSeconds(1), until, "real_start_01"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin, until.plusSeconds(1), "real_start_01"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin, until, "another_lane"));
+        assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", "0-0-0-0-0", origin, until, origin, until, "real_start_01"));
+    }
+    @Test void realDiagnosticAndKafkaReplayPreserveOriginalExpiryBasis() throws Exception {
+        var normalized = RealtimeJob.normalize(fixture.replace("synthetic", "real"), "real");
+        var value = RealtimeJob.diagnostic(normalized.toString(), "event_duplicate");
+        var row = RealtimeJob.JSON.readTree(value);
+        assertEquals("real", row.path("source").asText());
+        assertEquals("2026-01-01T16:00:01Z", row.path("accepted_at").asText());
+        assertEquals(java.time.Instant.parse("2026-01-01T16:00:01Z").toEpochMilli(),
+            RealtimeJob.originalKafkaTimestamp(value, System.currentTimeMillis()));
+        assertFalse(value.contains("path"));
+        assertFalse(value.contains("anonymous_id"));
+        assertThrows(IllegalArgumentException.class,
+            () -> RealtimeJob.originalKafkaTimestamp("{\"source\":\"real\"}", 0L));
     }
     @Test void acceptedMicrosecondsAndAnonymousUuidAreValid() throws Exception {
         var envelope = (com.fasterxml.jackson.databind.node.ObjectNode) RealtimeJob.JSON.readTree(fixture);

@@ -1,0 +1,361 @@
+{
+  "$defs": {
+    "AccessMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "pv": {
+          "minimum": 0,
+          "title": "Pv",
+          "type": "integer"
+        },
+        "uv": {
+          "minimum": 10,
+          "title": "Uv",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "pv",
+        "uv"
+      ],
+      "title": "AccessMetrics",
+      "type": "object"
+    },
+    "HeatMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "minimum": 10,
+          "title": "Count",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "page",
+            "character"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "count"
+      ],
+      "title": "HeatMetric",
+      "type": "object"
+    },
+    "ProtectedGroup_AccessMetrics_": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "published",
+            "suppressed",
+            "pending",
+            "empty"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AccessMetrics"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "ProtectedGroup[AccessMetrics]",
+      "type": "object"
+    },
+    "ProtectedGroup_QualityMetrics_": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "published",
+            "suppressed",
+            "pending",
+            "empty"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualityMetrics"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "ProtectedGroup[QualityMetrics]",
+      "type": "object"
+    },
+    "ProtectedGroup_list_HeatMetric__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "published",
+            "suppressed",
+            "pending",
+            "empty"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/HeatMetric"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "ProtectedGroup[list[HeatMetric]]",
+      "type": "object"
+    },
+    "PublicDay": {
+      "additionalProperties": false,
+      "properties": {
+        "access": {
+          "$ref": "#/$defs/ProtectedGroup_AccessMetrics_"
+        },
+        "app": {
+          "enum": [
+            "mywebsite",
+            "project_snow"
+          ],
+          "title": "App",
+          "type": "string"
+        },
+        "cutoff_at": {
+          "title": "Cutoff At",
+          "type": "string"
+        },
+        "date": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "title": "Date",
+          "type": "string"
+        },
+        "popularity": {
+          "$ref": "#/$defs/ProtectedGroup_list_HeatMetric__"
+        },
+        "quality": {
+          "$ref": "#/$defs/ProtectedGroup_QualityMetrics_"
+        }
+      },
+      "required": [
+        "app",
+        "date",
+        "cutoff_at",
+        "access",
+        "quality",
+        "popularity"
+      ],
+      "title": "PublicDay",
+      "type": "object"
+    },
+    "PublicPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "delay_days": {
+          "const": 3,
+          "default": 3,
+          "title": "Delay Days",
+          "type": "integer"
+        },
+        "frozen_days": {
+          "const": true,
+          "default": true,
+          "title": "Frozen Days",
+          "type": "boolean"
+        },
+        "publication_time": {
+          "const": "00:15",
+          "default": "00:15",
+          "title": "Publication Time",
+          "type": "string"
+        },
+        "stale_after_seconds": {
+          "const": 93600,
+          "default": 93600,
+          "title": "Stale After Seconds",
+          "type": "integer"
+        },
+        "threshold": {
+          "const": 10,
+          "default": 10,
+          "title": "Threshold",
+          "type": "integer"
+        },
+        "timezone": {
+          "const": "Asia/Hong_Kong",
+          "default": "Asia/Hong_Kong",
+          "title": "Timezone",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "title": "PublicPolicy",
+      "type": "object"
+    },
+    "QualityMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "requests": {
+          "minimum": 10,
+          "title": "Requests",
+          "type": "integer"
+        },
+        "success_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Success Rate",
+          "type": "number"
+        },
+        "successes": {
+          "minimum": 0,
+          "title": "Successes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "requests",
+        "successes",
+        "success_rate"
+      ],
+      "title": "QualityMetrics",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "completeness": {
+      "const": "accepted_events_only",
+      "default": "accepted_events_only",
+      "title": "Completeness",
+      "type": "string"
+    },
+    "cutoff_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Cutoff At"
+    },
+    "daily": {
+      "items": {
+        "$ref": "#/$defs/PublicDay"
+      },
+      "maxItems": 180,
+      "title": "Daily",
+      "type": "array"
+    },
+    "date_from": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Date From"
+    },
+    "date_to": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Date To"
+    },
+    "generated_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Generated At"
+    },
+    "policy": {
+      "$ref": "#/$defs/PublicPolicy"
+    },
+    "schema_version": {
+      "const": 2,
+      "default": 2,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "empty",
+        "stale",
+        "unavailable",
+        "archived"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "generated_at",
+    "cutoff_at",
+    "date_from",
+    "date_to",
+    "status",
+    "daily"
+  ],
+  "title": "PublicSummary",
+  "type": "object"
+}
