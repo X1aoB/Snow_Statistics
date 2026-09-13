@@ -10,7 +10,7 @@ def read_events(spark, path, source, cutoff):
         ("event_id", "schema_version", "app", "event_type", "occurred_at", "anonymous_id", "session_id", "path", "character_id", "jump_id", "channel", "request_id", "success", "elapsed_ms")])
     schema = StructType([StructField("seq", LongType()), StructField("source", StringType()),
                          StructField("accepted_at", StringType()), StructField("event", event_schema), StructField("_corrupt_record", StringType())])
-    paths, snapshot = spark_inputs(spark, path, "events")
+    paths, snapshot = spark_inputs(spark, path, "events", source)
     if snapshot and source != snapshot["source"]:
         raise ValueError("Snapshot source differs from the requested model")
     raw = spark.read.schema(schema).json(paths).cache()

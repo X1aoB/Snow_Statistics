@@ -91,13 +91,25 @@ def connect():
                            autocommit=True, connect_timeout=5, read_timeout=60, write_timeout=60)
 
 
+def publication_database(source):
+    database = os.environ.get("SNOW_DORIS_DATABASE", "snow_real_warehouse" if source == "real" else "snow")
+    if not re.fullmatch(r"snow(?:_[a-z0-9_]{1,40})?", database):
+        raise ValueError("Invalid publication database")
+    if source == "real" and not re.fullmatch(r"snow_real_[a-z0-9_]{1,30}", database):
+        raise ValueError("Real publication requires an isolated snow_real_* database")
+    if source == "synthetic" and database.startswith("snow_real_"):
+        raise ValueError("Synthetic publication cannot use a real database")
+    return database
+
+
 def publish(db, package, lock_directory, fail_after_load=False):
     manifest, rows, hashes, version, cutoff = validate(package)
     run_id, source = manifest["run_id"], manifest["source"]
+    database = publication_database(source)
     # Content-addressed ID makes retries identical and prevents run ID reuse mutating old snapshots.
     snapshot = hashlib.sha256(canonical({"daily": rows, "hashes": hashes, "cutoff": manifest["cutoff"]})).hexdigest()
     with publication_lock(lock_directory), db.cursor() as cursor:
-        cursor.execute("SELECT business_date,business_version,content_hash FROM snow.offline_releases WHERE source=%s AND business_date BETWEEN %s AND %s",
+        cursor.execute(f"SELECT business_date,business_version,content_hash FROM {database}.offline_releases WHERE source=%s AND business_date BETWEEN %s AND %s",
                        (source, manifest["date_from"], manifest["date_to"]))
         for day, old_version, old_hash in cursor.fetchall():
             if old_version > version:
@@ -105,9 +117,9 @@ def publish(db, package, lock_directory, fail_after_load=False):
             if old_version == version and old_hash != hashes[str(day)]:
                 raise ValueError("Same cutoff produced conflicting results; investigate inputs")
         if rows:
-            cursor.executemany("INSERT INTO snow.daily_snapshots VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+            cursor.executemany(f"INSERT INTO {database}.daily_snapshots VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                                [(snapshot, source, r["app"], r["date"], *(r[k] for k in METRICS)) for r in rows])
-        cursor.execute("SELECT app,business_date,pv,uv,requests,successes FROM snow.daily_snapshots WHERE snapshot_id=%s AND source=%s",
+        cursor.execute(f"SELECT app,business_date,pv,uv,requests,successes FROM {database}.daily_snapshots WHERE snapshot_id=%s AND source=%s",
                        (snapshot, source))
         actual = sorted((app, str(day), *map(int, metrics)) for app, day, *metrics in cursor.fetchall())
         expected = sorted((r["app"], r["date"], *(r[k] for k in METRICS)) for r in rows)
@@ -118,7 +130,7 @@ def publish(db, package, lock_directory, fail_after_load=False):
         # One INSERT statement is the commit point for the whole correction window.
         # Empty days also get a pointer: corrections can remove all prior rows safely.
         values = [(source, day, snapshot, run_id, digest, version, cutoff) for day, digest in hashes.items()]
-        cursor.execute("INSERT INTO snow.offline_releases VALUES " + ",".join(["(%s,%s,%s,%s,%s,%s,%s)"] * len(values)),
+        cursor.execute(f"INSERT INTO {database}.offline_releases VALUES " + ",".join(["(%s,%s,%s,%s,%s,%s,%s)"] * len(values)),
                        tuple(value for row in values for value in row))
     return {"run_id": run_id, "snapshot_id": snapshot, "source": source, "daily_rows": len(rows),
             "published_dates": len(hashes), "business_version": version, "readback_equal": True}
@@ -127,11 +139,12 @@ def publish(db, package, lock_directory, fail_after_load=False):
 def read_published(db, source="synthetic"):
     if source not in ("synthetic", "real"):
         raise ValueError("Invalid source")
+    database = publication_database(source)
     with db.cursor() as cursor:
         # Read rows and provenance in one statement so a concurrent release cannot
         # label an old result with a new cutoff between two separate queries.
-        cursor.execute("""SELECT source,business_date,run_id,cutoff,app,pv,uv,requests,successes
-            FROM snow.report_published WHERE source=%s ORDER BY business_date,app""", (source,))
+        cursor.execute(f"""SELECT source,business_date,run_id,cutoff,app,pv,uv,requests,successes
+            FROM {database}.report_published WHERE source=%s ORDER BY business_date,app""", (source,))
         daily, releases = [], {}
         for s, day, run, cutoff, app, *metrics in cursor.fetchall():
             releases[str(day)] = dict(date=str(day), run_id=run, cutoff=str(cutoff))

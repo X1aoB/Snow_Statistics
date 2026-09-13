@@ -1,0 +1,34 @@
+[Unit]
+Description=Optional isolated completion-event forwarder
+After=snow-statistics-log-reader.service snow-statistics-lite.service
+Wants=snow-statistics-log-reader.service
+
+[Service]
+Type=simple
+User=snow-statistics-log
+Group=snow-statistics-log
+WorkingDirectory=/opt/snow-statistics
+EnvironmentFile=/etc/snow-statistics/log-forwarder.env
+LoadCredential=server-token:/etc/snow-statistics/server-token
+ExecStart=/usr/bin/python3 -I /opt/snow-statistics/tools/production_log_forwarder.py
+Restart=on-failure
+RestartSec=10
+StateDirectory=snow-statistics-forwarder
+StateDirectoryMode=0700
+UMask=0077
+MemoryMax=64M
+CPUQuota=10%
+TasksMax=16
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+ReadWritePaths=/var/lib/snow-statistics-forwarder
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

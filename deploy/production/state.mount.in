@@ -1,0 +1,13 @@
+[Unit]
+Description=Snow Statistics dedicated quota filesystem
+Before=snow-statistics-lite.service
+
+[Mount]
+What=/var/lib/snow-statistics/state.img
+Where=/var/lib/snow-statistics/state
+Type=ext4
+Options=loop,nodev,nosuid,noexec
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target

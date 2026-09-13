@@ -4,7 +4,7 @@ import re
 import subprocess
 import time
 
-from snow_statistics.landing import TOPICS
+from snow_statistics.landing import topics_for
 
 
 def b64(value):
@@ -12,11 +12,12 @@ def b64(value):
 
 
 class KafkaSource:
-    def __init__(self, bootstrap, group):
+    def __init__(self, bootstrap, group, *, source="synthetic", event_lane=None):
         from kafka import KafkaAdminClient, KafkaConsumer
         if not re.fullmatch(r"snow-ods-[a-z0-9-]{1,60}", group):
             raise ValueError("Use an independently owned snow-ods-* consumer group")
         self.bootstrap, self.group = bootstrap, group
+        self.topics = topics_for(source, event_lane)
         self.admin = KafkaAdminClient(bootstrap_servers=bootstrap, request_timeout_ms=15000)
         self.consumer = KafkaConsumer(bootstrap_servers=bootstrap, group_id=group,
                                       enable_auto_commit=False, auto_offset_reset="none",
@@ -29,10 +30,10 @@ class KafkaSource:
         result = subprocess.run(["sudo", "docker", "compose", "--env-file", "lab/locks/images.env",
                                  "--env-file", "lab/.env", "-f", "lab/compose.control.yaml", "exec", "-T", "kafka",
                                  "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", self.bootstrap,
-                                 "--describe", "--topic", "(" + "|".join(re.escape(t) for t in TOPICS) + ")"],
+                                 "--describe", "--topic", "(" + "|".join(re.escape(t) for t in self.topics) + ")"],
                                 input="", capture_output=True, text=True, check=True, timeout=45)
         topics = dict(re.findall(r"Topic:\s+(\S+)\s+TopicId:\s+(\S+)", result.stdout))
-        if set(topics) != set(TOPICS):
+        if set(topics) != set(self.topics):
             raise ValueError("Missing topic incarnation metadata")
         cluster = self.admin.describe_cluster()["cluster_id"]
         if not cluster:
@@ -48,10 +49,10 @@ class KafkaSource:
     def bounds(self):
         from kafka import TopicPartition
         partitions = []
-        for topic in TOPICS:
+        for topic in self.topics:
             ids = self.consumer.partitions_for_topic(topic)
             if ids is None:
-                raise ValueError("Missing required synthetic topic")
+                raise ValueError("Missing required source topic")
             partitions.extend(TopicPartition(topic, p) for p in sorted(ids))
         self.consumer.assign(partitions)
         starts = self.consumer.beginning_offsets(partitions)
