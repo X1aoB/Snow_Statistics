@@ -89,13 +89,15 @@ def capture_fixture(directory, lane, bootstrap):
         listener.close()
         if worker.is_alive():
             raise TimeoutError("Fixture collector did not stop")
-    broker = KafkaSource(bootstrap, "snow-ods-" + lane.replace("_", "-"), source="real", event_lane=lane)
+    collector = json.loads((directory / "sync/source.json").read_bytes())
+    broker = KafkaSource(bootstrap, "snow-ods-" + lane.replace("_", "-"), source="real", event_lane=lane,
+                         collector_identity=collector)
     try:
         batch = capture(directory / "ods", broker, provenance="real", event_lane=lane)
     finally:
         broker.close()
     receipt = dict(input_origin="synthetic fixtures", exercised_branch="real", production_requests=0,
-                   topic=topic, synced=synced, batch_id=batch, lite_equal=True,
+                   topic=topic, synced=synced, batch_id=batch, lite_equal=True, collector=collector,
                    date_from=min(r["date"] for r in oracle), date_to=max(r["date"] for r in oracle),
                    cutoff=datetime.now(UTC).isoformat())
     write_json(directory / "fixture-receipt.json", receipt)
@@ -122,7 +124,8 @@ def main():
         finally:
             sink.client.close()
     else:
-        broker = KafkaSource(env["CONTROL_IP"] + ":9092", "snow-ods-" + args.lane.replace("_", "-"), source="real", event_lane=args.lane)
+        broker = KafkaSource(env["CONTROL_IP"] + ":9092", "snow-ods-" + args.lane.replace("_", "-"), source="real", event_lane=args.lane,
+                             collector_identity=json.loads((directory / "sync/source.json").read_bytes()))
         try:
             result = acknowledge(directory / "ods", broker)
         finally:

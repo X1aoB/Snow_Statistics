@@ -137,9 +137,9 @@ class KafkaClient:
     """Pinned Kafka 3.9 CLI identity plus kafka-python 2.2.15 bounded reads."""
     def __init__(self, bootstrap, container):
         from kafka import KafkaAdminClient, KafkaConsumer
-        if not re.fullmatch(r"[A-Za-z0-9.-]+:9092", bootstrap) or container not in {
+        if not re.fullmatch(r"[A-Za-z0-9.-]+:9092", bootstrap) or (container not in {
             "snow-lab-control-kafka-1", "snow-lab-realtime-kafka-1"
-        }:
+        } and not re.fullmatch(r"snow-real-[a-z][a-z0-9-]{2,31}-kafka", container)):
             raise ValueError("Unknown Kafka host or owned broker container")
         self.bootstrap, self.container = bootstrap, container
         self.admin = KafkaAdminClient(bootstrap_servers=bootstrap, request_timeout_ms=10000)
@@ -149,6 +149,13 @@ class KafkaClient:
 
     def identity(self, topics):
         # Topic IDs prevent deleting a new topic that reused an old registered name.
+        if self.container.startswith("snow-real-"):
+            metadata = subprocess.run(["sudo", "docker", "inspect", "--format", "{{json .Config.Labels}}", self.container],
+                                      capture_output=True, check=True, timeout=10)
+            owned = json.loads(metadata.stdout)
+            if (owned.get("org.snow-statistics.owner") != "Snow_Statistics" or owned.get("org.snow-statistics.source") != "real"
+                    or self.container != "snow-real-" + owned.get("org.snow-statistics.epoch", "") + "-kafka"):
+                raise ValueError("Kafka container does not belong to the registered real epoch")
         pattern = "(" + "|".join(re.escape(name) for name in sorted(topics)) + ")"
         result = subprocess.run(["sudo", "docker", "exec", self.container, "/opt/kafka/bin/kafka-topics.sh",
                                  "--bootstrap-server", self.bootstrap, "--describe", "--topic", pattern],
@@ -261,7 +268,10 @@ class DorisRetention:
                     from zoneinfo import ZoneInfo
                     origin = datetime.combine(earliest, datetime.min.time(), ZoneInfo("Asia/Hong_Kong")).astimezone(UTC)
                     upper = datetime.combine(latest, datetime.min.time(), ZoneInfo("Asia/Hong_Kong")).astimezone(UTC)
-                if origin < timestamp(entry["original_min_accepted_at"]) or upper > now:
+                # DATETIMEV2(3) truncates sub-millisecond source precision. This
+                # allowance can only retire a row earlier, never extend its age.
+                precision = timedelta(milliseconds=1) if detail else timedelta(0)
+                if origin + precision < timestamp(entry["original_min_accepted_at"]) or upper > now:
                     raise ValueError("Doris source range differs from original registered provenance")
             before = self._query(f"SELECT COUNT(*) FROM {table} WHERE {column}<=%s", (threshold,))[0][0]
             if before:
@@ -276,7 +286,8 @@ class DorisRetention:
                 else:
                     from zoneinfo import ZoneInfo
                     original = datetime.combine(oldest, datetime.min.time(), ZoneInfo("Asia/Hong_Kong")).astimezone(UTC)
-                if original < timestamp(entry["original_min_accepted_at"]) or original > now:
+                precision = timedelta(milliseconds=1) if detail else timedelta(0)
+                if original + precision < timestamp(entry["original_min_accepted_at"]) or original > now:
                     raise ValueError("Doris original provenance differs from registration")
                 expiry = original + timedelta(days=days)
                 if expiry <= now:
@@ -334,7 +345,7 @@ class FlinkReadBarrier:
         if len(response.content) > 1048576:
             raise ValueError("Flink inventory exceeds bound")
         rows = response.json()["jobs"]
-        terminal = {"FINISHED", "CANCELED", "FAILED", "SUSPENDED"}
+        terminal = {"FINISHED", "CANCELED", "FAILED"}
         for row in rows:
             if row["jid"] in self.jobs or row.get("name", "").startswith("Snow Statistics real "):
                 if row["state"] not in terminal:

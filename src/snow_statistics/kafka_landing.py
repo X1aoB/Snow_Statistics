@@ -1,9 +1,10 @@
-"""Manual assignment and explicit offsets for the single-writer synthetic lane."""
+"""Manual offsets and collector-bound real lanes; synthetic defaults unchanged."""
 import base64
 import re
 import subprocess
 import time
 
+from snow_statistics.landing import collector_identity as validate_collector_identity
 from snow_statistics.landing import topics_for
 
 
@@ -12,24 +13,37 @@ def b64(value):
 
 
 class KafkaSource:
-    def __init__(self, bootstrap, group, *, source="synthetic", event_lane=None):
-        from kafka import KafkaAdminClient, KafkaConsumer
+    def __init__(self, bootstrap, group, *, source="synthetic", event_lane=None, collector_identity=None,
+                 kafka_container=None):
         if not re.fullmatch(r"snow-ods-[a-z0-9-]{1,60}", group):
             raise ValueError("Use an independently owned snow-ods-* consumer group")
         self.bootstrap, self.group = bootstrap, group
         self.topics = topics_for(source, event_lane)
+        self.collector = validate_collector_identity(collector_identity) if source == "real" else None
+        if source != "real" and collector_identity is not None:
+            raise ValueError("Synthetic Kafka must not claim a real collector")
+        if kafka_container is not None and (source != "real" or
+                not re.fullmatch(r"snow-real-[a-z][a-z0-9-]{2,31}-kafka", kafka_container)):
+            raise ValueError("Only an explicit owned real epoch Kafka container may override Compose")
+        self.kafka_container = kafka_container
+        from kafka import KafkaAdminClient, KafkaConsumer
         self.admin = KafkaAdminClient(bootstrap_servers=bootstrap, request_timeout_ms=15000)
-        self.consumer = KafkaConsumer(bootstrap_servers=bootstrap, group_id=group,
-                                      enable_auto_commit=False, auto_offset_reset="none",
-                                      allow_auto_create_topics=False, max_partition_fetch_bytes=1048576)
+        try:
+            self.consumer = KafkaConsumer(bootstrap_servers=bootstrap, group_id=group,
+                                          enable_auto_commit=False, auto_offset_reset="none",
+                                          allow_auto_create_topics=False, max_partition_fetch_bytes=1048576)
+        except Exception:
+            self.admin.close()
+            raise
 
     def identity(self):
         # kafka-python 2.2.15 MetadataResponse stops at v7 (no TopicId).
         # Read IDs using the pinned broker's own 3.9.1 CLI instead of silently
         # treating delete/recreate of a topic as the same input stream.
-        result = subprocess.run(["sudo", "docker", "compose", "--env-file", "lab/locks/images.env",
-                                 "--env-file", "lab/.env", "-f", "lab/compose.control.yaml", "exec", "-T", "kafka",
-                                 "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", self.bootstrap,
+        command = (["sudo", "docker", "exec", self.kafka_container] if self.kafka_container else
+                   ["sudo", "docker", "compose", "--env-file", "lab/locks/images.env", "--env-file", "lab/.env",
+                    "-f", "lab/compose.control.yaml", "exec", "-T", "kafka"])
+        result = subprocess.run(command + ["/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", self.bootstrap,
                                  "--describe", "--topic", "(" + "|".join(re.escape(t) for t in self.topics) + ")"],
                                 input="", capture_output=True, text=True, check=True, timeout=45)
         topics = dict(re.findall(r"Topic:\s+(\S+)\s+TopicId:\s+(\S+)", result.stdout))
@@ -38,7 +52,10 @@ class KafkaSource:
         cluster = self.admin.describe_cluster()["cluster_id"]
         if not cluster:
             raise ValueError("Missing Kafka cluster ID")
-        return dict(cluster_id=cluster, topic_ids=topics, group=self.group)
+        identity = dict(cluster_id=cluster, topic_ids=topics, group=self.group)
+        if self.collector is not None:
+            identity["collector"] = self.collector.copy()
+        return identity
 
     @staticmethod
     def partition(key):

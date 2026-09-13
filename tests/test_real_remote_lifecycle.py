@@ -44,7 +44,7 @@ class FixtureHdfs:
 class FixtureOds:
     def __init__(self, directory):
         self.root = ODS
-        snapshot = dict(schema_version=2, source="real", identity="fixture_kafka", offsets={"snow.real.fixture.events.v1:0": 1},
+        snapshot = dict(schema_version=2, source="real", identity={"collector": {"schema_version": 1, "source": "real", **IDENTITY}}, offsets={"snow.real.fixture.events.v1:0": 1},
                         batches=[dict(batch_id="a" * 64, files={}, counts={"events": 1, "quarantine": 0},
                                       original_min_accepted_at=(NOW - timedelta(days=1)).isoformat(),
                                       expires_at=(NOW + timedelta(days=6)).isoformat())], root=ODS, head_batch_id="a" * 64)
@@ -165,3 +165,17 @@ def test_changed_source_identity_and_missing_allocation_cannot_get_permit(tmp_pa
     write_json(coverage, data)
     with pytest.raises(ValueError, match="generation"):
         permit(manager, job, coverage, hdfs, ods, sink, tmp_path / "never.json")
+
+
+def test_bound_ods_collector_must_match_remote_owner_before_cleanup(tmp_path):
+    manager, job, coverage, hdfs, ods, sink = setup(tmp_path)
+    manager.reserve_job(job, (NOW - timedelta(days=1)).isoformat(), (NOW - timedelta(days=1)).isoformat(), now=NOW)
+    state = json.loads((ods / "state.json").read_bytes())
+    state["identity"]["collector"]["generation"] = "67b920a0-b918-4457-8fbd-802ac414b49b"
+    snapshot = {k: state[k] for k in ("schema_version", "source", "identity", "offsets", "batches", "root", "head_batch_id")}
+    state["snapshot_id"] = digest(canonical(snapshot))
+    state["input"] = state["root"] + "/snapshots/" + state["snapshot_id"] + "/_snapshot.json"
+    write_json(ods / "state.json", state)
+    with pytest.raises(ValueError, match="collector generation"):
+        permit(manager, job, coverage, hdfs, ods, sink, tmp_path / "never.json")
+    assert manager.journal.exists() and not hdfs.deleted

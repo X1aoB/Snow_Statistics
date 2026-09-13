@@ -55,6 +55,7 @@ if not date.fromisoformat(args.date_from) <= date.fromisoformat(args.date_to) <=
 events, quality, _, snapshot = read_events(spark, args.input, "real", args.cutoff)
 if not snapshot or snapshot["source"] != "real":
     raise ValueError("Real behavior requires an immutable real ODS snapshot")
+coverage = validate_coverage(coverage, args.cutoff, snapshot["collector"])
 if quality["quarantined"]:
     raise ValueError("ODS quality gate failed")
 retained_from = max(stamp(coverage["continuous_from"]), now - timedelta(days=30),

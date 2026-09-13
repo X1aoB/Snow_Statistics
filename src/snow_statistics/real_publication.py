@@ -4,21 +4,99 @@ import math
 import re
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
+from uuid import UUID
 
 from .io import digest, write_json
 from .lifecycle import RealLifecycle
 from .model_publication import FIELDS
 from .publication import canonical, publication_lock, validate
-from .real_behavior import HK, observation_status, real_path, stamp, validate_coverage
+from .real_behavior import AUX_FIELDS, HK, observation_status, real_path, stamp, validate_coverage
 
 GROUPS = {"session_daily", "retention", "funnel"}
 COUNTS = {*GROUPS, "sessions", "conversions"}
+COMMON_MANIFEST = {"schema_version", "run_id", "cutoff", "date_from", "date_to", "source", "input", "output",
+                   "quality", "engine", "master", "application_id", "generated_at", "input_snapshot"}
+MODEL_MANIFEST = COMMON_MANIFEST | {"kind", "complete_through", "cohort_definition", "observation_scope", "coverage",
+                                  "retained_from", "auxiliary", "counts", "hive_tables", "golden_equal", "resources"}
+AUXILIARY_FIELDS = {"schema_version", "source", "kind", "path", "rows", "instance_id", "generation",
+                    "original_min_accepted_at", "expires_at", "fields", "cutoff", "retained_from", "retention"}
+
+
+def validate_manifest(manifest, kind):
+    """Metadata is retained with aggregates, so it needs its own privacy allowlist."""
+    allowed = MODEL_MANIFEST if kind == "behavior" else COMMON_MANIFEST | {"hive_table"}
+    if set(manifest) - allowed or manifest.get("schema_version") != 1:
+        raise ValueError("Unexpected real manifest metadata fields")
+    if manifest.get("engine") != "Spark 3.5.7" or manifest.get("master") != "yarn" or not re.fullmatch(
+            r"application_[0-9]+_[0-9]+", manifest.get("application_id", "")):
+        raise ValueError("Real publication needs actual Spark/YARN execution metadata")
+    if set(manifest["quality"]) != {"raw", "valid", "duplicates", "quarantined", "after_cutoff"}:
+        raise ValueError("Unexpected quality metadata")
+    snapshot = manifest["input_snapshot"]
+    if set(snapshot) != {"snapshot_id", "source", "batches", "offsets", "collector"} or snapshot["source"] != "real":
+        raise ValueError("Real snapshot lacks its collector binding")
+    token = snapshot["snapshot_id"]
+    if not re.fullmatch(r"[a-f0-9]{64}", token) or not re.fullmatch(
+            r"hdfs://[A-Za-z0-9.-]+:9000/snow/ods/real/kafka/[a-z0-9-]{1,60}/snapshots/" + token + r"/_snapshot.json", manifest["input"]):
+        raise ValueError("Manifest must use the same immutable snapshot path and checksum")
+    if (type(snapshot["batches"]) is not int or snapshot["batches"] < 1 or not isinstance(snapshot["offsets"], dict) or
+            len(snapshot["offsets"]) != 1 or any(not re.fullmatch(r"snow\.real\.(?:[a-z0-9_]{1,24}\.)?events\.v1:0", k) or
+            type(v) is not int or v < 0 for k, v in snapshot["offsets"].items())):
+        raise ValueError("Unexpected real input partition metadata")
+    collector = snapshot["collector"]
+    if set(collector) != {"schema_version", "source", "instance_id", "generation"} or collector["schema_version"] != 1 or collector["source"] != "real":
+        raise ValueError("Invalid collector metadata")
+    UUID(collector["instance_id"])
+    UUID(collector["generation"])
+    if kind == "behavior":
+        validate_coverage(manifest["coverage"], manifest["cutoff"], collector)
+    if "generated_at" in manifest:
+        stamp(manifest["generated_at"])
+    if kind == "daily":
+        if not re.fullmatch(r"(?:hdfs://[A-Za-z0-9.-]+:9000)?/snow/warehouse/real/[A-Za-z0-9_/-]{1,220}", manifest["output"]) or ".." in manifest["output"]:
+            raise ValueError("Invalid real output metadata")
+        if manifest.get("hive_table") is not None and not re.fullmatch(r"snow_real\.[A-Za-z0-9_]{1,160}", manifest["hive_table"]):
+            raise ValueError("Unexpected real Hive table metadata")
+    else:
+        if set(manifest.get("hive_tables", {})) - COUNTS or any(not re.fullmatch(r"snow_real\.[A-Za-z0-9_]{1,160}", name)
+                                                              for name in manifest.get("hive_tables", {}).values()):
+            raise ValueError("Unexpected real Hive table metadata")
+        if "golden_equal" in manifest and type(manifest["golden_equal"]) is not bool:
+            raise ValueError("Invalid golden evidence flag")
+        auxiliary = manifest.get("auxiliary")
+        resources = manifest.get("resources", [])
+        if not isinstance(resources, list) or len(resources) > 10:
+            raise ValueError("Unbounded real resource metadata")
+        for item in ([auxiliary] if auxiliary else []) + resources:
+            if item.get("fields") is not None:
+                if set(item) != AUXILIARY_FIELDS or item["fields"] != list(AUX_FIELDS) or item["schema_version"] != 1:
+                    raise ValueError("Unexpected auxiliary metadata fields")
+                for key in ("instance_id", "generation"):
+                    if item[key] != collector[key]:
+                        raise ValueError("Auxiliary metadata collector differs")
+                if (type(item["rows"]) is not int or item["rows"] < 0 or
+                        item["retention"] != "original accepted_at plus 30 days; startup prune before reads"):
+                    raise ValueError("Invalid auxiliary metadata")
+                if stamp(item["cutoff"]) != stamp(manifest["cutoff"]) or stamp(item["retained_from"]) > stamp(item["cutoff"]):
+                    raise ValueError("Invalid auxiliary coverage metadata")
+            elif set(item) != {"source", "kind", "path", "original_min_accepted_at", "expires_at"}:
+                raise ValueError("Unexpected retained resource metadata fields")
+            if item["source"] != "real" or item["kind"] not in {"aggregate", "auxiliary"}:
+                raise ValueError("Invalid real resource class")
+            category = "auxiliary" if "/snow/auxiliary/real/" in item["path"] else "warehouse"
+            real_path(item["path"], category)
+            if item["expires_at"] is not None:
+                stamp(item["expires_at"])
+            if item["original_min_accepted_at"] is not None:
+                stamp(item["original_min_accepted_at"])
+    return collector
 
 
 def validate_real_model(package):
     if set(package) != {"schema_version", "manifest", "aggregates"} or package["schema_version"] != 2:
         raise ValueError("Invalid real behavior package")
     m, groups = package["manifest"], package["aggregates"]
+    validate_manifest(m, "behavior")
     if m["source"] != "real" or m["kind"] != "real_behavior" or set(groups) != GROUPS:
         raise ValueError("Real releases cannot include simulated operations")
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", m["run_id"]):
@@ -95,7 +173,9 @@ def validate_real_model(package):
 
 def validate_real_pair(daily, behavior):
     basic = validate(daily)[0]
+    collector = validate_manifest(basic, "daily")
     modeled = validate_real_model(behavior)
+    validate_coverage(modeled["coverage"], modeled["cutoff"], collector)
     if basic["source"] != "real":
         raise ValueError("Invalid real release")
     for key in ("input", "input_snapshot", "date_from", "date_to"):

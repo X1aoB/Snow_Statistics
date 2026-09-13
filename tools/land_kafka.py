@@ -1,4 +1,4 @@
-"""Staged capture / HDFS land / Kafka ACK; only this project's synthetic topics."""
+"""Staged capture / HDFS land / Kafka ACK for explicit source-isolated topics."""
 import argparse
 import json
 from pathlib import Path
@@ -14,6 +14,9 @@ def main():
     parser.add_argument("--lane", default="main-v1")
     parser.add_argument("--source", choices=("synthetic", "real"), default="synthetic")
     parser.add_argument("--event-lane", help="Explicit real sync replay lane; topic snow.real.<lane>.events.v1")
+    parser.add_argument("--collector-identity", type=Path, help="Required for real Kafka capture/ACK: controlled sync/source.json")
+    parser.add_argument("--bootstrap", help="Explicit broker host:port; default is the control VM")
+    parser.add_argument("--kafka-container", help="Optional exact snow-real-<epoch>-kafka container for the pinned identity CLI")
     parser.add_argument("--directory", type=Path, default=Path("runtime/ods/main-v1"))
     parser.add_argument("--max-records", type=int, default=10000)
     parser.add_argument("--fail-after-batch", action="store_true")
@@ -35,7 +38,14 @@ def main():
             sink.client.close()
         print(json.dumps({k: receipt[k] for k in ("batch_id", "snapshot_id", "input", "offsets")}))
     else:
-        source = KafkaSource(env["CONTROL_IP"] + ":9092", "snow-ods-" + args.lane, source=args.source, event_lane=args.event_lane)
+        if args.source == "real" and args.collector_identity is None:
+            parser.error("Real capture/ACK requires --collector-identity from the controlled sync directory")
+        if args.collector_identity is not None and args.collector_identity.stat().st_size > 4096:
+            parser.error("Collector identity metadata is too large")
+        identity = json.loads(args.collector_identity.read_bytes()) if args.collector_identity else None
+        source = KafkaSource(args.bootstrap or env["CONTROL_IP"] + ":9092", "snow-ods-" + args.lane,
+                             source=args.source, event_lane=args.event_lane, collector_identity=identity,
+                             kafka_container=args.kafka_container)
         try:
             if args.phase == "capture":
                 print(json.dumps({"batch_id": capture(args.directory, source, args.max_records, provenance=args.source,

@@ -247,6 +247,12 @@ class RealRemoteLifecycle:
                 raise ValueError("Resolve prior failed cleanup before changing its resource registry")
             if owner["roots"]["ods"] != ods_sink.root:
                 raise ValueError("ODS cleanup destination differs from owned lane")
+            initial = load(Path(ods_directory) / "state.json")
+            if initial is None:
+                raise ValueError("Real read permit requires a committed ODS head")
+            bound = checked_receipt(initial)["identity"]["collector"]
+            if any(bound[key] != owner[key] for key in ("instance_id", "generation")):
+                raise ValueError("ODS collector generation differs from the registered owner")
             ods_result = expire_window(ods_directory, ods_sink, now=current)
             state = load(Path(ods_directory) / "state.json")
             if state is None:

@@ -8,6 +8,7 @@ import json
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import UUID
 
 from snow_statistics.contracts import Event
 from snow_statistics.io import atomic_write, digest, write_json
@@ -15,6 +16,17 @@ from snow_statistics.publication import canonical, publication_lock
 
 TOPICS = ("snow.synthetic.events.v1", *(f"snow.synthetic.cdc.snow_ops.{t}" for t in ("campaigns", "contents", "tickets")))
 FILES = ("raw.jsonl", "events.jsonl", "changes.jsonl", "quarantine.jsonl")
+
+
+def collector_identity(value):
+    """Exact metadata copied from the controlled sync source.json, never events."""
+    if (not isinstance(value, dict) or set(value) != {"schema_version", "source", "instance_id", "generation"}
+            or type(value["schema_version"]) is not int or value["schema_version"] != 1 or value["source"] != "real"):
+        raise ValueError("Real Kafka input requires an explicit collector identity")
+    for key in ("instance_id", "generation"):
+        if not isinstance(value[key], str) or str(UUID(value[key])) != value[key]:
+            raise ValueError("Collector identity needs canonical UUIDs")
+    return value.copy()
 
 
 def topics_for(provenance, event_lane=None):
@@ -35,13 +47,15 @@ def checked_receipt(receipt):
         if receipt["schema_version"] == 2:
             keys += ("head_batch_id",)
         snapshot = {k: receipt[k] for k in keys}
+        if snapshot["source"] == "real":
+            collector_identity(snapshot["identity"].get("collector"))
         token = digest(canonical(snapshot))
         head = snapshot.get("head_batch_id") if receipt["schema_version"] == 2 else snapshot["batches"][-1]["batch_id"]
         if (token != receipt["snapshot_id"] or receipt["batch_id"] != head or
                 receipt["input"] != snapshot["root"] + "/snapshots/" + token + "/_snapshot.json"):
             raise ValueError("Receipt/checkpoint checksum mismatch")
         return snapshot
-    except (KeyError, IndexError, TypeError) as exc:
+    except (KeyError, IndexError, TypeError, AttributeError) as exc:
         raise ValueError("Invalid receipt/checkpoint") from exc
 
 
@@ -109,14 +123,19 @@ def capture(directory, source, max_records=10000, max_bytes=32 * 1024**2, *, pro
     with publication_lock(directory):
         if (directory / "cleanup.json").exists():
             raise ValueError("Incomplete real cleanup blocks capture")
-        if (directory / "pending.json").exists():
-            return pending(directory)[0]  # Always recover before polling newer records.
-        state = load(directory / "state.json", {})
-        if state:
-            checked_receipt(state)
         identity = source.identity()
         if set(identity["topic_ids"]) != set(topics):
             raise ValueError("Kafka topics do not match requested provenance")
+        if provenance == "real":
+            collector_identity(identity.get("collector"))
+        if (directory / "pending.json").exists():
+            token, manifest = pending(directory)
+            if manifest["source"] != provenance or manifest["identity"] != identity:
+                raise ValueError("Pending archive belongs to another source identity")
+            return token  # Always recover before polling newer records.
+        state = load(directory / "state.json", {})
+        if state:
+            checked_receipt(state)
         if state and state["source"] != provenance:
             raise ValueError("Cannot reuse a landing directory for another source")
         if state and state["identity"] != identity:
@@ -204,6 +223,8 @@ def land(directory, sink, fail_after_batch=False, *, now=None):
     directory = Path(directory)
     with publication_lock(directory):
         batch, manifest = pending(directory)
+        if manifest["source"] == "real":
+            collector_identity(manifest["identity"].get("collector"))
         if "/snow/ods/" + manifest["source"] + "/kafka/" not in sink.root:
             raise ValueError("Landing source and HDFS destination differ")
         if manifest["source"] == "real" and datetime.fromisoformat(manifest["expires_at"]) <= (now or datetime.now(UTC)):

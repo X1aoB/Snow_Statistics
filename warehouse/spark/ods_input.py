@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 from datetime import datetime, timezone
+from uuid import UUID
 
 
 def resolve_snapshot(path, body, kind, source="synthetic", now=None):
@@ -15,6 +16,15 @@ def resolve_snapshot(path, body, kind, source="synthetic", now=None):
         raise ValueError("Invalid ODS snapshot identity/path")
     if source == "real" and kind != "events":
         raise ValueError("Real input does not contain simulated CDC")
+    collector = None
+    if source == "real":
+        collector = snapshot["identity"].get("collector")
+        if (not isinstance(collector, dict) or set(collector) != {"schema_version", "source", "instance_id", "generation"}
+                or type(collector["schema_version"]) is not int or collector["schema_version"] != 1 or collector["source"] != "real"):
+            raise ValueError("Real ODS snapshot lacks explicit collector identity")
+        for key in ("instance_id", "generation"):
+            if not isinstance(collector[key], str) or str(UUID(collector[key])) != collector[key]:
+                raise ValueError("Invalid collector generation metadata")
     paths, seen = [], set()
     for entry in snapshot["batches"]:
         batch = entry["batch_id"]
@@ -27,7 +37,10 @@ def resolve_snapshot(path, body, kind, source="synthetic", now=None):
             paths.append(root + "/batches/" + batch + "/" + kind + ".jsonl")
     if not paths:
         raise ValueError("Snapshot has no input records for this model")
-    return paths, dict(snapshot_id=token, offsets=snapshot["offsets"], batches=len(seen), source=source)
+    metadata = dict(snapshot_id=token, offsets=snapshot["offsets"], batches=len(seen), source=source)
+    if collector is not None:
+        metadata["collector"] = collector.copy()
+    return paths, metadata
 
 
 def spark_inputs(spark, path, kind, source="synthetic"):
