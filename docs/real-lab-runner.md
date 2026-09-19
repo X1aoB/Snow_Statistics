@@ -33,7 +33,7 @@
 |---|---|---|
 | start-offline | Windows → 三台 VM | 对已关机 VM 配置 scale 2/2/1 GiB，启动精确 NameNode/ResourceManager/DataNode/NodeManager |
 | stop-offline | Windows → 三台 VM | 只 stop 上述服务；加 --power-off 后软关闭三台本项目 VM |
-| start-storage | Windows → control/analysis | control 2 GiB、analysis 4.5 GiB；analysis 启动已登记 epoch 的 Kafka/Doris 存储阶段 |
+| start-storage | Windows → analysis（real） | 正式模式仅 analysis 4.5 GiB，启动已登记 epoch 的 Kafka/Doris 存储；只有显式合成 control 传输配置才额外启动 control 2 GiB |
 | start-realtime | analysis | 启动同一 epoch 的 Flink 阶段；此前必须已验证存储阶段 |
 | initialize-writer | analysis | 创建独立账号、精确四 Topic/四物理表后实际读回空库、空状态及 collector 身份，登记不可变 writer |
 | submit-writer | analysis | 从冻结 JAR 实际提交首个 Flink 作业并读回 JobID/状态，登记本次受控提交参数 |
@@ -44,14 +44,14 @@
 | sync | transport VM | 受控回环 SSH 转发、reader token 私有读取、原始校验归档、Kafka ACK 后推进位点 |
 | capture / land / ack | transport VM | 分别冻结 Kafka 范围、写入 HDFS 并回读、最后推进 Kafka 位点 |
 | prepare | transport VM | 校验指定 job、ODS 和 writer 代际，登记 Kafka 四 Topic、Doris 四物理表、两个状态卷和全部预期 HDFS 输出 |
-| cleanup / permit | transport VM | 实际清理 HDFS；在线后端走在线检查，已停止的完整 epoch 走专门的未到期存储准入 |
+| cleanup / permit | transport VM | 实际清理 HDFS；未到期的停止 epoch 走实际存储准入，到期 epoch 走实际物理退役核验；退役后只允许有效聚合读取，禁止计算 permit |
 | stage-compute | Windows | 从 transport 下载指定 job/coverage/permit/receipt/ODS state，再把经过校验的元数据复制到 control |
 | stage-release | Windows | control 导出已验证聚合，Windows 校验和中转，analysis 在登记原到期时间后接收并读回成对发布物 |
 | daily / behavior | control | 每次先验证短期许可，用 scale Spark 参数执行该模型；写入已登记的本地输出和日志 |
 | validate | control | 读取前清理本地到期文件，验证两个模型为同一来源、快照、日期与截止时间 |
 | publish-private | control | 发布经过验证的私有不可变聚合及元数据指针 |
 | publish-doris | analysis | 调用 tools/real_writer.py publish，由实际 epoch/writer 检查包围每次 SQL；正式 control 直连保持禁用 |
-| view | control | 在 127.0.0.1:8502 启动独立真实汇总页；需另行通过受控隧道访问 |
+| view | transport VM（real 为 analysis） | 必须指定 --run-id；实际完整清理及受管聚合校验后在 127.0.0.1:8502 展示，需另行通过受控隧道访问 |
 
 start-* 对运行中的 VM 不强制改内存。切换阶段前须显式停止原服务并软关机。启动失败只尝试软停止本次已经启动的 VM；不会硬关其他 VM。单项停止失败会继续尝试其余节点，并返回失败状态供检查。
 
@@ -96,6 +96,8 @@ Flink 1.20.3 的保留 Checkpoint 与恢复方式依据[官方 Checkpoint 文档
 
 初版统一入口只接受 register_hive=false、auxiliary_file=null。已有辅助状态的重写和继续计算仍使用 docs/real-lifecycle.md 中的登记路径；入口不会略过辅助清理。coverage 的接收覆盖起点来自受控同步证据，不能用事件发生日期倒填。
 
+聚合 Hive 登记使用独立的 [real_hive 入口](real-hive.md)，不打开旧作业的 inline register_hive 开关。一旦已有 Hive 登记，统一 cleanup/permit 会加入实际 Hive catalog 清理适配器；metastore 或客户端资源窗口不可用时停止，不能跳过已登记副本。
+
 在所需后端实际可用时运行：
 
     uv run python tools/real_lab.py --config runtime/real/config/run.json prepare --run-id <run-id>
@@ -128,6 +130,16 @@ Doris 外部配置分支只接受 host/user/password/database，host 必须是 a
 
 命令在 analysis 通过受控 SSH 通路读取 collector 身份，调用独立 tools/real_writer.py publish --release-directory 指向该 run 的 published 目录。实际 SQL 发布依赖原 epoch 仍未到期、物理对象和冻结版本仍匹配。传输或发布失败只尝试停止该 epoch，并保留原进度；不会把传输成功当作 Doris 发布成功。
 
+## 私有聚合看板
+
+正式模式先完成 `stage-release`，使 analysis 上存在该 run 的受管聚合副本。仅在 HDFS 与所有已登记后端的检查窗口可用时执行：
+
+    uv run python tools/real_lab.py --config runtime/real/config/run.json view --run-id <run-id>
+
+这条 Windows 命令通过受控 SSH 在配置指定的 transport VM 启动 Streamlit；正式模式为 analysis，监听 `127.0.0.1:8502`。它不自动启动 VM、HDFS、Hive 或实时 epoch。第一次展示前必须完成实际远端清理、本地副本独立 90 日清理、聚合校验和已登记 HDFS 路径检查。
+
+读回成功后只在当前 Streamlit 进程内保存最多 60 秒的聚合读取许可，同时受最早远端期限、本地目录最早副本期限和当前聚合原期限约束。页面每秒读取当前 lane 和发布目录的小型元数据，检查登记及所有者哈希、本地 gate、远端失败 journal 和到期时间；不会扫描整个仓库。到期后再次做实际清理，任何失败都会撤下数据，显示「私有看板已暂停」和上次已验证截止。不能从磁盘成功 JSON 导入许可，不用零值替代缺口。用户关闭电脑只影响这个私有看板，不影响线上基础统计。
+
 ## 已知的阶段边界
 
 analysis 的 4.5 GiB 实时 epoch 与离线 analysis DataNode 分阶段运行。real_quiescent.py 已实现独立的停止存储准入：先由实际 epoch manager 清理到期卷并读回，再核验当前 epoch 的全部五个容器已停、五个卷仍属于同一 generation、容器 ID 和卷创建时间未变、绑定与挂载未变、初始化及实际作业回执齐全、ODS 的 collector/Kafka 身份与原始时间窗口一致。
@@ -138,6 +150,8 @@ analysis 的 4.5 GiB 实时 epoch 与离线 analysis DataNode 分阶段运行。
 
 prepare 的真实分支根据不可变 writer 注册自动登记全部后端副本。省略 backend_config_file 不会使这些副本消失；停止存储路径直接执行 Docker 检查，不依赖预制 passed.json。同步在新批次归档前、整个重放第一次发送前和每条发送前都检查原始接收时间，失败保持位点及已存在的原始批次，不延长其期限。
 
+到达原 7 日截止后，`real_retired.py` 通过历史不可变登记、实际 `Epoch.retire()` 和 Docker 全量不存在检查证明原存储已物理退役。它不依赖已经清理的旧 JAR，不允许变代或同名重建，不将原登记改成未初始化。HDFS/Hive 和本地聚合仍可按各自原 90 日期限清理、校验和读取；计算 permit、同步、writer、Checkpoint 恢复以及 Doris 发布仍保持关闭。退役适配和私有看板准入已通过合成回归，实际跨阶段环境验收仍待进行。
+
 ## 失败与退出
 
 - SSH 失败：检查私有 known-hosts、端口映射和精确账户权限；不关闭主机指纹检查。
@@ -147,3 +161,5 @@ prepare 的真实分支根据不可变 writer 注册自动登记全部后端副�
 - 停用：stop-* 只停止服务。到期清理是独立操作；不会因为关机自动删除全部历史。
 
 验收命令：uv run python -m pytest tests/test_real_lab.py tests/test_real_transfer.py tests/test_real_writer.py tests/test_real_quiescent.py tests/test_real_remote_lifecycle.py tests/test_sync_target.py tests/test_pipeline.py -q。测试覆盖严格配置、精确阶段服务、启动失败收尾、空数据、来源校验、停止副本的实际检查接口、初始化/作业回执缺失、资源替换、物理删除失败、聚合转移和不延长保留期、重放及容器 ID 收尾。测试使用合成数据/替身进程，不是引擎整链路实测。
+
+2026-09-19 的 Hive/退役/私有读取追加验收：`uv run python -m pytest tests/test_real_retired.py tests/test_real_aggregate_read.py tests/test_real_lab.py tests/test_real_remote_lifecycle.py tests/test_real_quiescent.py tests/test_real_hive.py tests/test_real_writer_recovery.py -q --tb=short`，164 项通过。所有新入口仍须在资源允许的离线窗口保存实际引擎验收回执。

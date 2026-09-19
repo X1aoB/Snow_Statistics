@@ -103,6 +103,8 @@ def secret_file(root, relative, limit=65536):
 
 
 def route(config, phase):
+    if phase == "view":
+        return config["transport_node"]
     if phase == "publish-doris" and config["input_origin"] == "real":
         return "snow-analysis"
     return config["transport_node"] if phase in TRANSPORT else "snow-analysis" if phase in {
@@ -365,11 +367,18 @@ def lifecycle_phase(config, root, phase, run_id):
     job, paths = job_data(config, root, run_id) if phase in {"prepare", "permit"} else (None, None)
     if job and state["input"] != job["input"]:
         raise ValueError("Job must bind the current committed ODS snapshot")
-    registry = None
+    registry, retired = None, None
     if config["input_origin"] == "real":
         from .real_quiescent import backend_resources, bind_ods
         registry = writer_registry(config, root)
-        registration = registry.ready(snapshot["identity"]["collector"])
+        if timestamp(registry.epoch.read()["expires_at"]) <= datetime.now(UTC):
+            from .real_retired import RetiredStorage
+            retired = RetiredStorage(registry.epoch, snapshot)
+            registration = retired.registration()
+            if phase == "prepare":
+                raise ValueError("A retired engine epoch cannot reserve new raw compute outputs")
+        else:
+            registration = registry.ready(snapshot["identity"]["collector"])
         bind_ods(registration, snapshot)
     if phase == "prepare":
         identity = snapshot["identity"]["collector"]
@@ -397,7 +406,9 @@ def lifecycle_phase(config, root, phase, run_id):
     with hdfs_context(config) as (sink, hdfs):
         filename = config["backend_config_file"]
         adapters = backend_adapters(secret_file(root, filename), hdfs) if filename else nullcontext({})
-        if registry:
+        if retired:
+            adapters = nullcontext(retired.adapters())
+        elif registry:
             from .real_quiescent import StoppedStorage
             containers, _ = registry.epoch._inspect(registry.epoch.read())
             if containers and all(not value["running"] for value in containers.values()):
@@ -405,6 +416,11 @@ def lifecycle_phase(config, root, phase, run_id):
                 # recorded as uninitialized or as having passed online SQL.
                 adapters = nullcontext(StoppedStorage(registry, snapshot).adapters())
         with adapters as checks:
+            _, retained = manager._read()
+            if retained["backends"]["hive"]["state"] == "initialized" or (manager.directory / "hive-catalog.json").exists():
+                from .real_hive import HiveRegistry, HiveRetention, SparkCatalog
+                catalog_registry = HiveRegistry(manager)
+                checks["hive"] = HiveRetention(catalog_registry, SparkCatalog(root, catalog_registry, config["nodes"]["snow-control"]))
             if phase == "cleanup":
                 return manager.cleanup(hdfs, ods, sink, backend_checks=checks)
             return manager.issue_permit(job, root / paths["coverage"], None, root / paths["permit"], hdfs, ods, sink, backend_checks=checks)
@@ -614,8 +630,10 @@ def execute_linux(runner, phase, run_id=None):
     if phase in {"daily", "behavior", "validate", "publish-private", "publish-doris"}:
         return model_phase(runner, phase, run_id)
     if phase == "view":
+        metadata_paths(config, run_id)
         runner.run([sys.executable, "-m", "streamlit", "run", "dashboard/real_app.py", "--server.address=127.0.0.1",
-                    "--server.port=8502", "--server.headless=true"], timeout=43200)
+                    "--server.port=8502", "--server.headless=true"], timeout=43200,
+                   env=os.environ | {"SNOW_REAL_VIEW_CONFIG": runner.config_file, "SNOW_REAL_VIEW_RUN_ID": run_id})
         return {"view_stopped": True}
     raise ValueError("Use Windows for VM orchestration or an explicit Linux phase")
 

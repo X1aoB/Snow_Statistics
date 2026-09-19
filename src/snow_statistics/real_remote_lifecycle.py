@@ -266,6 +266,18 @@ class RealRemoteLifecycle:
                 if any(data["backends"][name] != {"state": "initialized", "resources": values}
                        for name, values in expected.items()):
                     raise ValueError("Every initialized epoch copy must be registered before stopped admission")
+            if any(hasattr(adapter, "verify_retired") for adapter in backend_checks.values()):
+                from .real_quiescent import backend_resources
+                from .real_retired import BACKENDS, RetiredBackend
+                selected = [backend_checks.get(name) for name in BACKENDS]
+                if any(not isinstance(adapter, RetiredBackend) for adapter in selected):
+                    raise ValueError("Retired admission must cover all engine backends together")
+                retired = selected[0].retired
+                expected = backend_resources(retired.registration())
+                if any(adapter.retired is not retired for adapter in selected):
+                    raise ValueError("Retired backends must bind one physical epoch")
+                if any(data["backends"][name] != {"state": "initialized", "resources": values} for name, values in expected.items()):
+                    raise ValueError("Every retired engine copy must remain explicitly registered")
             ods_result = expire_window(ods_directory, ods_sink, now=current)
             state = load(Path(ods_directory) / "state.json")
             if state is None:
@@ -330,6 +342,13 @@ class RealRemoteLifecycle:
                 adapter = backend_checks.get(name)
                 if adapter is None:
                     raise ValueError("Missing actual initialized backend check: " + name)
+                if hasattr(adapter, "verify_retired"):
+                    from .real_retired import RetiredBackend, validate_retired_receipt
+                    if not isinstance(adapter, RetiredBackend):
+                        raise ValueError("Retired admission requires the actual physical absence verifier")
+                    receipt = adapter.verify_retired(scope["resources"], current)
+                    receipts[name] = validate_retired_receipt(receipt, name, scope["resources"], owner, snapshot, current)
+                    continue
                 if hasattr(adapter, "verify_stopped"):
                     from .real_quiescent import StoppedBackend, validate_stopped_receipt
                     if not isinstance(adapter, StoppedBackend):
@@ -381,6 +400,8 @@ class RealRemoteLifecycle:
         if any(path not in data["artifacts"] for path in expected):
             raise ValueError("Reserve every prospective output before issuing a read permit")
         receipt = self.cleanup(hdfs, ods_directory, ods_sink, backend_checks=backend_checks, auxiliary_rewrites=auxiliary_rewrites, now=current)
+        if any(item.get("verification") == "retired_storage_absent" for item in receipt["backends"].values()):
+            raise ValueError("Retired storage grants aggregate reads only, never raw computation permits")
         if receipt["input_snapshot"] != job["input"]:
             raise ValueError("ODS cleanup changed the window; bind the new snapshot explicitly")
         auxiliary_bytes = Path(auxiliary_file).read_bytes() if auxiliary_file else None
