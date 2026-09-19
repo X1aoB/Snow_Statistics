@@ -11,7 +11,9 @@ import selectors
 import socket
 import sqlite3
 import subprocess
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
@@ -204,33 +206,29 @@ def collect(now, run=docker_output):
     return sorted(events, key=lambda e: (e["occurred_at"], e["event_id"])), incomplete or targets == 0
 
 
-def main():
-    import grp
-    import sys
-    if len(sys.argv) != 1 or os.geteuid() != 0:
-        raise SystemExit("Root reader accepts no arguments")
-    spool = Spool()
-    if SOCKET.exists():
-        if not SOCKET.is_socket():
-            raise SystemExit("Unexpected runtime socket path")
-        SOCKET.unlink()
-    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    server.bind(str(SOCKET))
-    os.chown(SOCKET, 0, grp.getgrnam("snow-statistics-log").gr_gid)
-    os.chmod(SOCKET, 0o660)
-    server.listen(4)
+def serve(spool, server, *, poll=collect, stop=None, poll_interval=10):
+    """Serve committed batches while one bounded Docker poll runs separately.
+
+    Only this thread owns SQLite. The worker returns already projected events;
+    there is one in-flight future and no queued polls or raw-log handoff. A slow
+    poll leaves last_poll unchanged, so stale coverage is visible to clients.
+    """
+    stop = stop if stop is not None else threading.Event()
     server.settimeout(0.5)
-    last_poll = 0.0
-    try:
-        while True:
-            if time.monotonic() - last_poll >= 10:
+    next_poll, pending = 0.0, None
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="completion-log-poll") as worker:
+        while not stop.is_set():
+            if pending is not None and pending.done():
                 try:
-                    events, incomplete = collect(datetime.now(UTC))
+                    events, incomplete = pending.result()
                     spool.ingest(events, time.time(), incomplete=incomplete)
                 except Exception:
                     with spool.db:
                         spool.add_metric("reader_failures")
-                last_poll = time.monotonic()
+                pending = None
+                next_poll = time.monotonic() + poll_interval
+            if pending is None and time.monotonic() >= next_poll:
+                pending = worker.submit(poll, datetime.now(UTC))
             try:
                 connection, _ = server.accept()
             except TimeoutError:
@@ -253,6 +251,25 @@ def main():
                     connection.sendall(json.dumps(result, separators=(",", ":")).encode() + b"\n")
                 except (ValueError, TypeError, OSError):
                     pass
+
+
+def main():
+    import grp
+    import sys
+    if len(sys.argv) != 1 or os.geteuid() != 0:
+        raise SystemExit("Root reader accepts no arguments")
+    spool = Spool()
+    if SOCKET.exists():
+        if not SOCKET.is_socket():
+            raise SystemExit("Unexpected runtime socket path")
+        SOCKET.unlink()
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server.bind(str(SOCKET))
+    os.chown(SOCKET, 0, grp.getgrnam("snow-statistics-log").gr_gid)
+    os.chmod(SOCKET, 0o660)
+    server.listen(4)
+    try:
+        serve(spool, server)
     finally:
         spool.db.close()
         server.close()

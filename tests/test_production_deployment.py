@@ -2,6 +2,10 @@ import base64
 import copy
 import importlib.util
 import json
+import socket
+import threading
+import time
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -32,6 +36,117 @@ def fixture(request="request_a", at=NOW):
                   chat="private chat", ip="private address", api_key="private key")
     line = (at.isoformat() + " INFO: " + json.dumps(record, separators=(",", ":"))).encode()
     return record, line
+
+
+@contextmanager
+def running_reader(tmp_path, poll, seed):
+    # Portable loopback transport exercises the same framing/serve loop; the
+    # production entry point still creates only its permissioned AF_UNIX socket.
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(4)
+    address = listener.getsockname()
+    ready, stop, errors = threading.Event(), threading.Event(), []
+    def run():
+        spool = reader.Spool(tmp_path / "concurrent-reader.db")
+        try:
+            seed(spool)
+            ready.set()
+            reader.serve(spool, listener, poll=poll, stop=stop, poll_interval=60)
+        except BaseException as error:
+            errors.append(error)
+            ready.set()
+        finally:
+            spool.db.close()
+            listener.close()
+    thread = threading.Thread(target=run)
+    thread.start()
+    try:
+        assert ready.wait(3) and not errors
+        yield address
+    finally:
+        stop.set()
+        thread.join(timeout=5)
+        assert not thread.is_alive(), "Reader and its one polling worker must terminate"
+        assert not errors
+
+
+def socket_batch(address, after=0):
+    with socket.create_connection(address, timeout=2) as stream:
+        stream.sendall(json.dumps({"after": after}).encode() + b"\n")
+        result = bytearray()
+        while b"\n" not in result:
+            chunk = stream.recv(65536)
+            assert chunk and len(result) < 65536
+            result.extend(chunk)
+    return json.loads(result)
+
+
+def test_slow_poll_does_not_block_committed_socket_batches_or_overlap(tmp_path):
+    entered, release = threading.Event(), threading.Event()
+    now = datetime.now(UTC)
+    old = reader.project_line(fixture("already_committed", at=now)[1], now)
+    new = reader.project_line(fixture("next_poll", at=now)[1], now)
+    polls = []
+    def poll(at):
+        polls.append(at)
+        entered.set()
+        assert release.wait(5), "Synthetic poll must be released during cleanup"
+        return [new], False
+    def seed(spool):
+        spool.ingest([old], now.timestamp())
+    with running_reader(tmp_path, poll, seed) as address:
+        try:
+            assert entered.wait(2)
+            # The poll remains blocked throughout all three real socket reads.
+            # A serial poll/accept loop would time out here before any response.
+            batches = [socket_batch(address) for _ in range(3)]
+            assert len(polls) == 1 and not release.is_set()
+            assert all([row["event"] for row in batch["records"]] == [old] for batch in batches)
+            assert all(batch["metrics"]["last_poll"] == now.timestamp() for batch in batches)
+            release.set()
+            deadline = time.monotonic() + 3
+            while True:
+                batch = socket_batch(address)
+                if len(batch["records"]) == 2 or time.monotonic() >= deadline:
+                    break
+                time.sleep(0.01)
+            assert [row["event"] for row in batch["records"]] == [old, new]
+            assert len(polls) == 1
+        finally:
+            release.set()
+
+
+def test_failed_poll_keeps_batches_and_historical_coverage_metrics(tmp_path):
+    entered, release = threading.Event(), threading.Event()
+    now = datetime.now(UTC)
+    old = reader.project_line(fixture("retained_after_failure", at=now)[1], now)
+    def poll(at):
+        entered.set()
+        assert release.wait(5)
+        raise OSError("synthetic slow Docker failure")
+    def seed(spool):
+        spool.ingest([old], now.timestamp(), incomplete=True)
+        with spool.db:
+            spool.add_metric("reader_failures", 4)
+    with running_reader(tmp_path, poll, seed) as address:
+        try:
+            assert entered.wait(2)
+            before = socket_batch(address)
+            assert before["metrics"]["reader_failures"] == 4
+            release.set()
+            deadline = time.monotonic() + 3
+            while True:
+                after = socket_batch(address)
+                if after["metrics"]["reader_failures"] == 5 or time.monotonic() >= deadline:
+                    break
+                time.sleep(0.01)
+            assert after["metrics"]["reader_failures"] == 5
+            assert after["metrics"]["incomplete_polls"] == 1
+            assert after["metrics"]["last_poll"] == before["metrics"]["last_poll"]
+            assert after["records"] == before["records"]
+        finally:
+            release.set()
 
 
 def test_projection_matches_existing_v1_adapter_and_drops_all_arbitrary_fields():
@@ -89,6 +204,18 @@ def test_forwarder_never_advances_on_timeout_or_auth_failure_and_replays(tmp_pat
     assert json.loads(state.read_bytes())["acknowledged"] == 1
     assert forwarder.forward_once(state, fetch, lambda _: pytest.fail("No duplicate HTTP request expected"))
     spool.db.close()
+
+
+def test_successful_forwarding_retains_historical_failures(tmp_path):
+    event = reader.project_line(fixture()[1], NOW)
+    path = tmp_path / "cursor.json"
+    path.write_text(json.dumps(dict(cursor=0, acknowledged=0, rejected=0, failures=33)), encoding="utf-8")
+    batch = dict(schema_version=1, records=[dict(seq=1, event=event)], next_cursor=1,
+                 metrics={"incomplete_polls": 2, "reader_failures": 4})
+    assert forwarder.forward_once(path, lambda _: batch, lambda _: 202)
+    result = json.loads(path.read_bytes())
+    assert result["cursor"] == 1 and result["acknowledged"] == 1
+    assert result["failures"] == 33 and result["reader_metrics"] == batch["metrics"]
 
 
 def test_reader_follows_only_exact_blue_green_labels_and_reports_bounded_input():
