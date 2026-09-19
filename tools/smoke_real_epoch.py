@@ -13,11 +13,14 @@ import secrets
 import socket
 import threading
 import time
+import traceback
 from contextlib import contextmanager
 from datetime import UTC, datetime
 
 from snow_statistics.io import write_json
 from snow_statistics.real_engine_fixture import (
+    account_statements,
+    be_integer_settings,
     diagnostics,
     events,
     java_environment,
@@ -26,6 +29,7 @@ from snow_statistics.real_engine_fixture import (
     retained_checkpoint,
     schema_statements,
     test_scope,
+    verify_be_setting,
 )
 from snow_statistics.real_epoch import ROOT, DockerEpoch, Epoch, expire_due, private_epoch_root
 
@@ -85,10 +89,158 @@ class Acceptance:
             cursor.execute(sql, values)
             return cursor.fetchall()
 
-    def storage(self):
+    def be_readback(self, phase):
+        import httpx
+        self.current()
+        be = self.manifest["containers"]["doris-be"]
+        inspected = json.loads(self.docker.command(["inspect", be]))[0]
+        assert inspected["State"]["Running"] and not inspected["State"]["OOMKilled"]
+        counters = {name: self.docker.command(["exec", be, "cat", "/sys/fs/cgroup/" + name]).decode().strip()
+                    for name in ("pids.current", "pids.max", "pids.events", "memory.current", "memory.peak", "memory.max")}
+        assert int(counters["pids.max"]) == self.compose["services"]["doris-be"]["pids_limit"] == 512
+        assert 0 < int(counters["pids.current"]) < 512
+        assert int(dict(line.split() for line in counters["pids.events"].splitlines())["max"]) == 0
+        projected = self.docker.command(["exec", be, "bash", "-c",
+            "for p in /proc/[0-9]*; do read -r name < \"$p/comm\" || continue; "
+            "[ \"$name\" = doris_be ] || continue; printf 'BE_PID=%s\\n' \"${p##*/}\"; "
+            "awk '/^Threads:/{print \"BE_THREADS=\"$2}' \"$p/status\"; "
+            "tr '\\0' '\\n' < \"$p/environ\" | grep -E '^(JAVA_OPTS|LIBHDFS_OPTS)='; done"]).decode()
+        fields = [line.split("=", 1) for line in projected.splitlines()]
+        assert len(fields) == 4 and {key for key, _ in fields} == {"BE_PID", "BE_THREADS", "JAVA_OPTS", "LIBHDFS_OPTS"}
+        process = dict(fields)
+        assert all("-Xmx256m" in process[key].split() and "-Xmx2048m" not in process[key].split()
+                   for key in ("JAVA_OPTS", "LIBHDFS_OPTS"))
+        settings = be_integer_settings((self.epoch.directory / "be.conf").read_text())
+        actual = {}
+        with httpx.Client(base_url="http://127.0.0.1:8040", timeout=10, trust_env=False, auth=("root", "")) as client:
+            for key, expected in settings.items():
+                response = client.get("/api/show_config", params={"conf_item": key})
+                response.raise_for_status()
+                if len(response.content) > 4096:
+                    raise ValueError("Exact BE option readback exceeded its bound")
+                actual[key] = verify_be_setting(key, expected, response.json())
+        result = dict(input_origin="synthetic fixtures", epoch_id=self.manifest["epoch_id"],
+                      generation=self.manifest["generation"], phase=phase, counters=counters,
+                      parameters=actual, checked_at=datetime.now(UTC).isoformat(),
+                      process=dict(pid=int(process["BE_PID"]), threads=int(process["BE_THREADS"]),
+                                   jni_max_heap_mib=256, both_effective_java_environments_checked=True))
+        write_json(self.directory / ("be-readback-" + phase + ".json"), result)
+        return result
+
+    def bootstrap_retry_preflight(self, failed_attempt_sha256, failed_attempt_receipt="failure.json", role_readback_sha256=None):
+        """Only a reviewed, empty synthetic schema can resume a failed bootstrap."""
+        if not re.fullmatch(r"[0-9a-f]{64}", failed_attempt_sha256):
+            raise ValueError("Explicit failed bootstrap digest required")
+        if not re.fullmatch(r"(?:storage-attempt-[1-9][0-9]?/)?failure\.json", failed_attempt_receipt):
+            raise ValueError("Failed bootstrap receipt must be an exact owned attempt path")
+        receipt_path = self.directory / failed_attempt_receipt
+        if receipt_path.resolve() != receipt_path.absolute():
+            raise ValueError("Failed bootstrap receipt cannot traverse links")
+        raw = receipt_path.read_bytes()
+        failure = json.loads(raw)
+        self.retry_role = None
+        expected_error = ("ValueError", None, "resume-bootstrap") if role_readback_sha256 else ("OperationalError", 1105, "storage")
+        if (hashlib.sha256(raw).hexdigest() != failed_attempt_sha256
+                or failure.get("complete") is not False or failure.get("owned_readers_stopped") is not True
+                or (failure.get("error_class"), failure.get("error_number"), failure.get("action")) != expected_error):
+            raise ValueError("Reviewed failed synthetic bootstrap changed")
+        if role_readback_sha256:
+            if (not re.fullmatch(r"[0-9a-f]{64}", role_readback_sha256) or receipt_path.parent == self.directory
+                    or failure.get("stack", [{}])[-1].get("function") != "mogrify"):
+                raise ValueError("Granted-role retry requires the reviewed driver failure")
+            role_path = receipt_path.parent / "role-readback.json"
+            if role_path.resolve() != role_path.absolute():
+                raise ValueError("Role evidence cannot traverse links")
+            role_raw = role_path.read_bytes()
+            if hashlib.sha256(role_raw).hexdigest() != role_readback_sha256:
+                raise ValueError("Reviewed role readback changed")
+            previous_raw = (self.directory / "bootstrap-retry.json").read_bytes()
+            previous = json.loads(previous_raw)
+            if (previous.get("complete") is not False or previous.get("input_origin") != "synthetic fixtures"
+                    or previous.get("action") != "explicit_empty_bootstrap_retry"
+                    or any(previous.get(key) != self.manifest[key] for key in
+                           ("epoch_id", "generation", "original_min_accepted_at", "expires_at"))):
+                raise ValueError("Original partial bootstrap receipt changed")
+            self.retry_role = dict(readback=json.loads(role_raw), sha256=role_readback_sha256,
+                                   previous_bootstrap_sha256=hashlib.sha256(previous_raw).hexdigest())
+        forbidden = ["storage.json", "account-bootstrap-retry.json", "job.json", "job.env", "run-in-progress.json",
+                     "fixture-input.json", "local-collector", "session-pause.json", "acceptance.json"]
+        if not role_readback_sha256:
+            forbidden.append("bootstrap-retry.json")
+        for name in forbidden:
+            if (self.directory / name).exists():
+                raise ValueError("Bootstrap retry cannot follow any initialization or input")
+        containers, volumes = self.current()
+        if (any(value["running"] for value in containers.values())
+                or set(containers) != {self.manifest["containers"][name] for name in ("kafka", "doris-fe", "doris-be")}
+                or set(volumes) != {self.manifest["volumes"][name] for name in ("kafka", "doris-fe", "doris-be")}):
+            raise ValueError("Bootstrap retry requires stopped storage with no Flink or checkpoint resources")
+        path = self.directory / "secrets.json"
+        if path.is_symlink() or path.resolve() != path.absolute() or (os.name == "posix" and path.stat().st_mode & 0o077):
+            raise ValueError("Original bootstrap credential must remain private")
+        account = self.credentials()
+        if (set(account) != {"user", "password"} or account["user"] != self.scope["user"]
+                or not re.fullmatch(r"[A-Za-z0-9_-]{32,100}", account["password"])):
+            raise ValueError("Original synthetic credential differs from the exact scope")
+        return account
+
+    def bootstrap_retry_live_checks(self, admin):
+        expected = {name: "BASE TABLE" for name in ("events_realtime", "daily_offline", "daily_snapshots", "offline_releases")}
+        expected.update({name: "VIEW" for name in ("daily_realtime", "daily_published", "report_published")})
+        databases = {row[0] for row in self.query("SHOW DATABASES", admin=True)}
+        if self.database not in databases or databases - {self.database, "__internal_schema", "information_schema", "mysql"}:
+            raise ValueError("Bootstrap retry found another user database")
+        with self.connect(True) as connection, connection.cursor() as cursor:
+            cursor.execute(f"SHOW FULL TABLES FROM {self.database}")
+            columns = [value[0] for value in cursor.description]
+            if columns != ["Tables_in_" + self.database, "Table_type", "Storage_format", "Inverted_index_storage_format"]:
+                raise ValueError("Bootstrap retry SHOW FULL TABLES metadata changed")
+            raw_rows = cursor.fetchall()
+            if any(len(row) != 4 for row in raw_rows):
+                raise ValueError("Bootstrap retry SHOW FULL TABLES row width changed")
+            if any(tuple(row[2:]) != (("V2", "V2") if row[1] == "BASE TABLE" else ("NONE", "NONE")) for row in raw_rows):
+                raise ValueError("Bootstrap retry storage format changed")
+            rows = [(row[0], row[1]) for row in raw_rows]
+        if len(rows) != len(expected) or dict(rows) != expected:
+            raise ValueError("Bootstrap retry schema differs from the exact empty fixture")
+        counts = {name: self.query(f"SELECT COUNT(*) FROM {self.database}.{name}", admin=True)[0][0]
+                  for name, kind in expected.items() if kind == "BASE TABLE"}
+        if any(type(value) is not int or value != 0 for value in counts.values()):
+            raise ValueError("Bootstrap retry refuses existing fixture data")
+        role_evidence = getattr(self, "retry_role", None)
+        roles = {row[0] for row in self.query("SHOW ROLES", admin=True)}
+        users = {row[0] for row in self.query("SHOW ALL GRANTS", admin=True)}
+        allowed_roles = {"admin", "operator", "public"} | ({self.scope["role"]} if role_evidence else set())
+        if roles - allowed_roles or any(not re.fullmatch(r"'(?:root|admin)'@'(?:%|localhost)'", user) for user in users):
+            raise ValueError("Bootstrap retry found an existing application role or account")
+        if role_evidence:
+            expected_role = {key: None for key in ("GlobalPrivs", "CatalogPrivs", "TablePrivs", "ResourcePrivs", "CloudClusterPrivs",
+                                                  "CloudStagePrivs", "StorageVaultPrivs", "WorkloadGroupPrivs", "ComputeGroupPrivs")}
+            expected_role.update(Name=self.scope["role"], Comment="", Users="",
+                                 DatabasePrivs="internal." + self.database + ".*: Select_priv,Load_priv")
+            with self.connect(True) as connection, connection.cursor() as cursor:
+                cursor.execute("SHOW ROLES")
+                columns = [value[0] for value in cursor.description]
+                rows = cursor.fetchall()
+            if set(columns) != set(expected_role) or len(columns) != len(expected_role) or columns[0] != "Name" or any(len(row) != len(columns) for row in rows):
+                raise ValueError("Granted-role metadata changed")
+            actual_role = [dict(zip(columns, row)) for row in rows if row[0] == self.scope["role"]]
+            evidence = role_evidence["readback"]
+            if (actual_role != [expected_role] or evidence.get("role") != actual_role
+                    or sorted(evidence.get("role_names", [])) != sorted(roles)
+                    or sorted(evidence.get("users", [])) != sorted(users) or evidence.get("production_touched") is not False):
+                raise ValueError("Granted-role exact scope or privileges changed")
+        if admin.list_topics() != []:
+            raise ValueError("Bootstrap retry requires an empty Kafka topic inventory")
+        return dict(tables=expected, rows=counts, application_roles_absent=not bool(role_evidence),
+                    exact_granted_role_checked=bool(role_evidence), application_accounts_absent=True,
+                    kafka_topics_empty=True, flink_resources_never_created=True)
+
+    def storage(self, failed_attempt_sha256=None, failed_attempt_receipt="failure.json", role_readback_sha256=None):
         from kafka.admin import KafkaAdminClient, NewTopic
 
         from snow_statistics.real_backend_lifecycle import KafkaClient
+        account = self.bootstrap_retry_preflight(failed_attempt_sha256, failed_attempt_receipt, role_readback_sha256) if failed_attempt_sha256 else None
         expire_due(self.root, self.docker)
         self.epoch.start("storage")
         self.current()
@@ -110,37 +262,54 @@ class Acceptance:
         assert 0 <= size < 32 * 1024**2
         startup = dict(patched_script_sha256=startup_hash, binary_bytes=int(binary[0]), binary_mode=binary[1],
                        writable_layer_bytes=size, large_binary_copyup_avoided=True)
-        pids = int(self.docker.command(["exec", be, "cat", "/sys/fs/cgroup/pids.current"]))
-        pids_limit = int(self.docker.command(["exec", be, "cat", "/sys/fs/cgroup/pids.max"]))
-        pid_events = dict(line.split() for line in self.docker.command(["exec", be, "cat", "/sys/fs/cgroup/pids.events"]).decode().splitlines())
-        logs = self.docker.command(["logs", "--tail", "500", be]).decode()
-        jni = re.findall(r"set final LIBHDFS_OPTS: ([^\n]*)", logs)
-        assert jni and "-Xmx256m" in jni[-1] and "-Xmx2048m" not in jni[-1]
-        assert pids_limit == self.compose["services"]["doris-be"]["pids_limit"] == 512
-        assert 0 < pids < pids_limit and int(pid_events["max"]) == 0
-        startup.update(pids_current=pids, pids_limit=pids_limit, pids_limit_hit_count=int(pid_events["max"]),
-                       effective_jni_max_heap_mib=256)
+        # Read the running BE process. A bounded historical log tail may no longer
+        # contain the JNI startup line even when the effective configuration is correct.
+        profile = self.be_readback("storage")
+        startup.update(pids_current=int(profile["counters"]["pids.current"]),
+                       pids_limit=int(profile["counters"]["pids.max"]), pids_limit_hit_count=0,
+                       effective_jni_max_heap_mib=profile["process"]["jni_max_heap_mib"], thread_configuration=profile)
         if (self.directory / "storage.json").exists():
             assert self.query(f"SELECT COUNT(*) FROM {self.database}.events_realtime")[0][0] == 0
             return json.loads((self.directory / "storage.json").read_bytes())
-        if (self.directory / "secrets.json").exists():
+        if account is None and (self.directory / "secrets.json").exists():
             raise ValueError("Partial bootstrap retained; inspect it or create a new explicit fixture epoch")
-        assert self.query("SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=%s", (self.database,), True)[0][0] == 0
-        account = dict(user=self.scope["user"], password=secrets.token_urlsafe(32))
-        write_json(self.directory / "secrets.json", account)
-        os.chmod(self.directory / "secrets.json", 0o600)
+        retry = None
+        if account is not None:
+            admin = KafkaAdminClient(bootstrap_servers=self.host + ":9092", request_timeout_ms=10000)
+            try:
+                checked = self.bootstrap_retry_live_checks(admin)
+            finally:
+                admin.close()
+            retry = {key: self.manifest[key] for key in ("epoch_id", "generation", "original_min_accepted_at", "expires_at")}
+            retry.update(input_origin="synthetic fixtures", action="explicit_empty_bootstrap_retry", complete=False,
+                         previous_failure_sha256=failed_attempt_sha256, previous_failure_receipt=failed_attempt_receipt,
+                         checks=checked, reused_original_credential=True,
+                         source_sha256={str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+                                        for path in (ROOT / "tools/smoke_real_epoch.py", ROOT / "src/snow_statistics/real_engine_fixture.py",
+                                                     ROOT / "src/snow_statistics/real_epoch.py")}, checked_at=datetime.now(UTC).isoformat())
+            if self.retry_role:
+                retry.update(action="explicit_granted_role_bootstrap_retry", role_readback_sha256=self.retry_role["sha256"],
+                             previous_bootstrap_sha256=self.retry_role["previous_bootstrap_sha256"])
+            retry_path = self.directory / ("account-bootstrap-retry.json" if self.retry_role else "bootstrap-retry.json")
+            write_json(retry_path, retry)
+        else:
+            assert {row[0] for row in self.query("SHOW DATABASES", admin=True)} <= {"__internal_schema", "information_schema", "mysql"}
+            assert self.query("SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=%s", (self.database,), True)[0][0] == 0
+            account = dict(user=self.scope["user"], password=secrets.token_urlsafe(32))
+            write_json(self.directory / "secrets.json", account)
+            os.chmod(self.directory / "secrets.json", 0o600)
         with self.connect(True) as connection, connection.cursor() as cursor:
-            for name in ("schema.sql", "publication.sql"):
-                text = (ROOT / "warehouse/doris" / name).read_text()
-                for statement in schema_statements(text, self.database):
-                    cursor.execute(statement)
-            cursor.execute(f"CREATE ROLE '{self.scope['role']}'")
-            cursor.execute(f"GRANT SELECT_PRIV,LOAD_PRIV ON {self.database}.* TO ROLE '{self.scope['role']}'")
-            cursor.execute(f"CREATE USER '{self.scope['user']}'@'%' IDENTIFIED BY %s DEFAULT ROLE '{self.scope['role']}'", (account["password"],))
+            if retry is None:
+                for name in ("schema.sql", "publication.sql"):
+                    text = (ROOT / "warehouse/doris" / name).read_text()
+                    for statement in schema_statements(text, self.database):
+                        cursor.execute(statement)
+            for statement, parameters in account_statements(self.scope, account)[2 if role_readback_sha256 else 0:]:
+                cursor.execute(statement, parameters)
         assert self.query(f"SELECT COUNT(*) FROM {self.database}.events_realtime")[0][0] == 0
         admin = KafkaAdminClient(bootstrap_servers=self.host + ":9092", request_timeout_ms=10000)
         try:
-            assert not set(self.scope["topics"].values()) & set(admin.list_topics())
+            assert admin.list_topics() == []
             admin.create_topics([NewTopic(name, 1, 1, topic_configs={
                 "retention.ms": "604800000", "segment.ms": "60000", "segment.bytes": "16777216",
                 "file.delete.delay.ms": "1000", "cleanup.policy": "delete", "message.timestamp.type": "CreateTime"
@@ -164,6 +333,9 @@ class Acceptance:
                       grants="SELECT_PRIV,LOAD_PRIV only on the new epoch database", topics=self.scope["topics"],
                       identity=identity, retention=retention, storage_health=True, be_startup_readback=startup)
         write_json(self.directory / "storage.json", result)
+        if retry is not None:
+            write_json(retry_path, retry | dict(complete=True,
+                storage_receipt_sha256=hashlib.sha256((self.directory / "storage.json").read_bytes()).hexdigest()))
         return result
 
     def metrics(self):
@@ -285,6 +457,7 @@ class Acceptance:
                     producer.close(timeout=10)
                 after = until(lambda: (value if len(value := self.side("duplicates")) >= before + 2 else None), "restored dedup state", 45)
                 assert self.metrics() == accepted["integer_metrics"] == oracle(rows)
+                be = self.be_readback("session-restored")
                 current = self.checkpoint_files()
                 assert all(current["files"].get(name) == record for name, record in previous["checkpoint_files"]["files"].items())
                 result = dict(input_origin="synthetic fixtures", source_branch="real", production_requests=0,
@@ -295,6 +468,7 @@ class Acceptance:
                     epoch_id=self.manifest["epoch_id"], generation=self.manifest["generation"],
                     original_expiry_unchanged=self.manifest["expires_at"], all_engines_stopped_then_restarted=True,
                     new_session_empty_before_submit=True, local_synthetic_evidence_only=True)
+                result["be_runtime"] = be
                 write_json(self.directory / "session-resume.json", result)
                 accepted.update(session_recovery_pending=False, full_session_checkpoint_restore_verified=True)
                 write_json(self.directory / "acceptance.json", accepted)
@@ -408,6 +582,7 @@ class Acceptance:
                                 assert value["source"] == "real" and "accepted_at" in value
                                 assert item["timestamp_ms"] == int(datetime.fromisoformat(value["accepted_at"]).timestamp() * 1000)
                     assert self.metrics() == expected
+                    be = self.be_readback("taskmanager-restored")
                     os.environ["SNOW_DORIS_DATABASE"] = self.database
                     assert publication_database("real") == self.database
                     package = dict(schema_version=1, manifest=dict(run_id=self.manifest["event_lane"], source="real",
@@ -425,7 +600,8 @@ class Acceptance:
                                   checkpoint_before=before, checkpoint_restored=restored,
                                   duplicate_delivery="at_least_once side diagnostics; exact SQL integer metrics", sides=sides,
                                   freshness=summarize(samples, count), freshness_is_production_sla_evidence=False,
-                                  session_recovery_pending=True, full_session_checkpoint_restore_verified=False)
+                                  session_recovery_pending=True, full_session_checkpoint_restore_verified=False,
+                                  be_runtime=be)
                     self.pause_session(flink, job)
                     write_json(self.directory / "acceptance.json", result)
                     return result
@@ -473,13 +649,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", required=True)
     parser.add_argument("--epoch", required=True)
-    parser.add_argument("--action", choices=["storage", "run", "resume"], required=True)
+    parser.add_argument("--action", choices=["storage", "resume-bootstrap", "run", "resume"], required=True)
+    parser.add_argument("--failed-attempt-sha256")
+    parser.add_argument("--failed-attempt-receipt", default="failure.json")
+    parser.add_argument("--resume-role-readback-sha256")
     parser.add_argument("--events", type=int, default=20)
     args = parser.parse_args()
     task = None
     try:
         task = Acceptance(args.root, args.epoch)
-        result = task.storage() if args.action == "storage" else task.run(args.events) if args.action == "run" else task.resume()
+        if ((args.action == "resume-bootstrap") != bool(args.failed_attempt_sha256)
+                or (args.action != "resume-bootstrap" and (args.failed_attempt_receipt != "failure.json" or args.resume_role_readback_sha256))):
+            raise ValueError("Only explicit bootstrap retry accepts the reviewed failure digest")
+        result = task.storage(args.failed_attempt_sha256, args.failed_attempt_receipt, args.resume_role_readback_sha256) if args.action in {"storage", "resume-bootstrap"} else task.run(args.events) if args.action == "run" else task.resume()
         print(json.dumps({key: result[key] for key in ("input_origin",) if key in result} | {"action": args.action, "complete": True}))
     except Exception as error:
         if task:
@@ -491,7 +673,10 @@ def main():
                 pass
             write_json(task.directory / "failure.json", dict(error_class=type(error).__name__, action=args.action,
                                                                input_origin="synthetic fixtures", complete=False,
-                                                               owned_readers_stopped=stopped))
+                                                               owned_readers_stopped=stopped,
+                error_number=error.args[0] if error.args and type(error.args[0]) is int else None,
+                stack=[dict(file=os.path.basename(frame.filename), line=frame.lineno, function=frame.name)
+                       for frame in traceback.extract_tb(error.__traceback__)]))
         raise SystemExit("Synthetic engine acceptance failed; private metadata retained, no production action") from None
 
 

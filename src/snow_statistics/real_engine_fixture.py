@@ -100,6 +100,43 @@ def schema_statements(text, database):
     return [statement for statement in text.split(";") if statement.strip()]
 
 
+def account_statements(scope, account):
+    """Host and password are driver parameters, avoiding literal-percent formatting."""
+    database, role, user = scope["database"], scope["role"], scope["user"]
+    if (not re.fullmatch(r"snow_real_fixture_[a-z0-9_]{1,16}", database)
+            or user != database or role != database + "_role" or account["user"] != user):
+        raise ValueError("Fixture account escaped its isolated namespace")
+    return [(f"CREATE ROLE `{role}`", ()),
+            (f"GRANT SELECT_PRIV,LOAD_PRIV ON {database}.* TO ROLE '{role}'", ()),
+            (f"CREATE USER '{user}'@%s IDENTIFIED BY %s DEFAULT ROLE '{role}'", ("%", account["password"]))]
+
+
+def be_integer_settings(text):
+    """Only this frozen small profile's integer options enter the API readback."""
+    values = {}
+    for line in text.splitlines():
+        match = re.fullmatch(r"\s*([a-z][a-z0-9_]*)\s*=\s*(-?[0-9]+)\s*", line)
+        if match:
+            key, value = match.groups()
+            if key in values:
+                raise ValueError("Ambiguous duplicate BE option")
+            values[key] = int(value)
+    mandatory = {"brpc_heavy_work_pool_threads", "brpc_light_work_pool_threads", "brpc_arrow_flight_work_pool_threads"}
+    if any(values.get(key) != 4 for key in mandatory) or values.get("arrow_flight_sql_port") != -1:
+        raise ValueError("All three eager BRPC work pools must have explicit small bounds")
+    if any(value < 1 for key, value in values.items() if key != "arrow_flight_sql_port"):
+        raise ValueError("Thread counts must be explicit positive values")
+    return values
+
+
+def verify_be_setting(name, expected, rows):
+    if (not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], list)
+            or len(rows[0]) < 3 or rows[0][0] != name or type(rows[0][2]) is not str
+            or rows[0][2] != str(expected)):
+        raise ValueError("Actual BE configuration differs from the frozen small profile")
+    return dict(value=expected, type=rows[0][1], actual_api_read=True)
+
+
 def checkpoint_path(value, job, identifier):
     """Normalize only Flink's two local URI spellings, never another epoch path."""
     if not re.fullmatch(r"[a-f0-9]{32}", job) or type(identifier) is not int or identifier < 1:

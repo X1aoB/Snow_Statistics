@@ -35,17 +35,17 @@ cd /home/snow/Snow_Statistics
 .venv/bin/python tools/real_hive.py --help
 
 # 替换成该 VM 上已有的私有 runner 配置；不是凭据正文。
-.venv/bin/python tools/real_hive.py --config runtime/real/config/prod.json cleanup
+.venv/bin/python tools/real_hive.py --config runtime/real/config/production.json cleanup
 
 # RUN_ID 必须已计算、validate_real_pair 验收并正式进入受管私有发布物。
-.venv/bin/python tools/real_hive.py --config runtime/real/config/prod.json register --run-id RUN_ID
-.venv/bin/python tools/real_hive.py --config runtime/real/config/prod.json verify --run-id RUN_ID
+.venv/bin/python tools/real_hive.py --config runtime/real/config/production.json register --run-id RUN_ID
+.venv/bin/python tools/real_hive.py --config runtime/real/config/production.json verify --run-id RUN_ID
 
 # 给已 prepare 的新真实 Spark 作业颁发既有短期 permit；仍做全部后端检查。
-.venv/bin/python tools/real_hive.py --config runtime/real/config/prod.json permit --run-id NEXT_RUN_ID
+.venv/bin/python tools/real_hive.py --config runtime/real/config/production.json permit --run-id NEXT_RUN_ID
 
 # 只清理 Hive 到期目录引用，不读取行、不颁发读权限，也不声称 HDFS 已清理。
-.venv/bin/python tools/real_hive.py --config runtime/real/config/prod.json catalog-cleanup
+.venv/bin/python tools/real_hive.py --config runtime/real/config/production.json catalog-cleanup
 ```
 
 生产模式的发布物必须先用既有 `real_lab stage-release` 路径转移到 analysis，位于 `runtime/real/transfers/<lane>/<run_id>/published/`，有原 90 日期限登记和哈希。合成候选使用 `runtime/real/publication/`。不允许传任意「成功 JSON」或选择未登记目录来跳过检查。

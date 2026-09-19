@@ -97,3 +97,11 @@ python tools/smoke_real_epoch.py --root "$PWD/runtime/real/epochs" \
 合成引擎验收分 storage、run、resume 三步；run 在 TaskManager 故障、整数对账和三类诊断之后取消作业、冻结最终外部 Checkpoint 元数据与文件哈希，再停止所有本 epoch 引擎。resume 要求全体已停止、同代际/原截止和同 JAR，先启动存储再启动新 Flink session，使用精确 --fromSavepoint 与 --claimMode no_claim；实际 REST 必须确认新 JobID 从原 Checkpoint 恢复，重放两个原事件后诊断增加但整数不变。最终 acceptance 只有 resume 实测通过才设置 full_session_checkpoint_restore_verified。
 
 05 实际运行已越过 ScannerScheduler，但 AgentServer 后续常驻 worker 仍触及 pids=256。06 仅将 BE pids_limit 调整为 512，其他容器仍 256；已有19项小线程池和 JNI256 保持，内存上限、guest磁盘准入和host三项硬门槛不变。storage实际读取pids.max并校验等于冻结配置，记录pids.current及pids.events，不能以新上限宣称容量已测。
+
+2026-09-19 的07候选补齐同一个 PInternalService 构造中的 heavy/light/arrow 三个工作池，各设4；Arrow网络端口仍显式关闭。仅限制 heavy/light 会漏掉即使端口关闭仍立即创建的512线程Arrow工作池。按编译commit和tag逐字节核对的后续启动审计见 `docs/evidence/doris-small-profile-audit.md`。候选 storage、TM恢复后及整个session恢复后都需实际读取冻结整数配置、pids计数/限额/额度命中数、内存峰值、BE进程线程数及两个有效JNI环境变量；不会把源码推导当作整个引擎的容量通过。
+
+07 的首次 SQL 初始化暴露了锁定 Doris 版本的角色语法差异：`CREATE ROLE` 接受标识符（本工具使用反引号），而 `GRANT ... TO ROLE` 和 `DEFAULT ROLE` 仍接受单引号字符串。原失败回执与源码包保留，不能把它们改为成功。
+
+对于已经明确审查、停在创建角色之前的空合成 schema，可显式使用 `--action resume-bootstrap --failed-attempt-sha256 <已审核 failure.json 的 SHA256>`。这是合成验收专用入口：要求同一个未到期 manifest、三个停止的存储容器及专属卷、没有 Flink/Checkpoint 资源、没有输入/Job/完成回执，复用原 0600 凭据；启动后还必须实际证明数据库全集无其他业务库、精确七个表/视图、四张基础表全为零、没有应用角色或账户、Kafka 主题全集为空。任何检查失败都停止本 epoch；不会忽略 SQL 错误或覆盖凭据。独立 `bootstrap-retry.json` 绑定原失败 SHA、实际检查、当前脚本/模块 SHA 及原始期限，成功后再绑定新 `storage.json`，不授予生产 writer 任意恢复初始化的权限。
+
+后续发现 PyMySQL 的参数替换会把账户主机字面量 `%` 一并解释；账户语句现将主机和密码都作为独立参数传递。07 已创建角色但账户语句尚未发出时，先保留该次失败、未完成 bootstrap 回执及精确角色读回，再以 `--failed-attempt-receipt storage-attempt-N/failure.json` 绑定原失败，并额外传入 `--resume-role-readback-sha256`。该分支只接受原失败为驱动 `mogrify` 错误、角色读回文件哈希相同、同代际空库、无应用用户、无 Kafka 主题和无 Flink 资源；现存角色所有字段必须与已审核的 SELECT/LOAD 单库权限完全相同。只补账户和主题，不删除、重建或重授权角色；另写 `account-bootstrap-retry.json` 绑定本段结果，保留前段原始失败结论。两个显式恢复入口均不能用于已经进入实时验收或正式用户数据的 epoch。
