@@ -36,7 +36,19 @@
     "allowed_character_ids": 22,
     "allowed_origins": 2,
     "quality_log_units_active": true,
-    "business_containers_unchanged_by_activation": true
+    "business_containers_unchanged_by_activation": true,
+    "quality_reader_upgrade": {
+      "source_revision": "34d7b989a5b94fab2d31ff9b6104072ead0040f7",
+      "completed_at": "2026-09-19T08:36:12.292076+00:00",
+      "plan_sha256": "f77136aca5f9ed1d4e7103137e0abd712b2fd777b495d66333efdcd877780367",
+      "reader_sha256": "3a50ad75936e17bcfea458789a5fa29d3953592610defdf613db645c9d6ac32a",
+      "actual_socket_probe_count": 113,
+      "max_probe_seconds": 0.045,
+      "new_failures_during_acceptance": 0,
+      "historical_forwarder_failures_retained": 37,
+      "business_and_configuration_unchanged": true,
+      "real_generation_delivery_verified": false
+    }
   },
   "acceptance": {
     "pre_activation_http_checks_passed": 73,

@@ -231,6 +231,18 @@
       "yarn_logs": "/snow/yarn-logs in HDFS; existing NodeManager volume log/local directories"
     },
     "real_data": {
+      "hive_metadata_profile": {
+        "name": "hive-only",
+        "vm_memory_mib": {"snow-control": 2048, "snow-compute": 1024, "snow-analysis": 1536},
+        "additional_start_reserve_mib": 256,
+        "services": {"snow-control": ["namenode", "hive"], "snow-compute": ["datanode"], "snow-analysis": []},
+        "temporary_client": "snow-analysis only: existing locked Spark local[1], container 768 MiB, driver heap 512 MiB, observed guest MemAvailable at least 768 MiB before each request",
+        "input_requirement": "Existing validated managed aggregate pair; all referenced HDFS blocks must be readable from compute before pausing the analysis DataNode",
+        "replicas": "Keep both DataNode volumes. Only compute DataNode is online during catalog work; restore the offline phase and verify both replicas afterward. No new ODS landing or YARN computation in this window.",
+        "capacity": "4.5 GiB VM total plus 256 MiB per-start headroom, same 64 GiB project / 35 GiB host disk / 4 GiB host RAM gates; require cached Spark image and Hive-client JAR inventory or preflight their full additional footprint",
+        "acceptance": "Candidate profile and local tests only; actual engine/available-memory, catalog, single-replica readability and post-phase two-replica acceptance pending",
+        "shutdown": "Finish exact Hive client; stop only named Hive/NameNode/DataNode containers and soft-stop these three project VMs. Do not delete either DataNode volume, Hive metadata, epochs, or historical evidence."
+      },
       "small_batch_profile": {
         "name": "real-small",
         "vm_memory_mib": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 768},

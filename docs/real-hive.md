@@ -62,6 +62,110 @@ cd /home/snow/Snow_Statistics
 
 这是阶段安排要求，不是新的常驻 profile。工具自己只运行临时 Spark 客户端，不自动停业务或其他实验容器，不改变现有 VM 容量。
 
+## 受限容量下的 Hive-only 候选窗口
+
+2026-09-19 新增 `vmware_lab.py configure --profile hive-only`：control 2048 MiB、compute 1024 MiB、analysis 1536 MiB，总计 4608 MiB。**当前仅新增配置、合成参数测试和本操作说明，尚未实际验证该组合下的 Hive、内存峰值和阶段恢复。** `real_lab.py` 的离线编排没有新增 Hive 阶段，不能把 `start-offline` 当作保留这个 profile 的操作；它会按自己的 scale / real-small 选择重新配置。
+
+| VM | 此窗口允许的持久容器 | 容器上限 / JVM 配置 | 必须停止 |
+|---|---|---|---|
+| control 2048 MiB | 已有 NameNode、Hive metastore | NameNode 使用 control-scale 的 512 MiB / heap256；Hive 沿用 1024 MiB / `HADOOP_CLIENT_OPTS=-Xmx512m` | ResourceManager、Airflow、Kafka及其他控制面实验 |
+| compute 1024 MiB | 已有 DataNode | 下方使用 compute-scale 的 384 MiB / heap192；不启动NodeManager | NodeManager、Flink及其他实验 |
+| analysis 1536 MiB | 无 | 临时Spark Hive客户端 768 MiB / heap512、1CPU、128PID；每次请求前实际MemAvailable至少768 MiB | analysis DataNode、所有epoch引擎和治理服务 |
+
+容器上限不是可相加的实测峰值；analysis剩余内存还要容纳Linux、Docker、Python协调器和监督进程。客户端本身会检查空容器窗口与可用内存，失败时停止，不通过减小门槛绕开。三台VM的4.5 GiB总内存与实时analysis单机相同，启动每台仍额外预留256 MiB，宿主项目64 GiB、空闲磁盘35 GiB、可用RAM4 GiB不变。
+
+若某次观测项目63.42 GiB已经包含运行中analysis的4.5 GiB `.vmem`，那么在该文件确实随软关机消失后，冷态约为58.92 GiB，Hive-only重新启动后仍约63.42 GiB；这是容量推算，**必须以实际关机后的status重新检查**。剩下约0.58 GiB还要承受VMDK增长、日志、源包及临时文件，256 MiB预留不会制造更多空间。禁止删除历史证据或放宽门槛；缺失镜像/JAR时先算完整安装增长，不在这个余量里盲目拉镜像。
+
+### 阶段图与输入条件
+
+```mermaid
+flowchart TD
+    A[已验证且日期闭合的受管聚合pair] --> B[停止同步 正常pause真实writer]
+    B --> C[双DataNode检查 所需块均在compute且可读]
+    C --> D[停本项目服务 softoff三VM 保留所有卷]
+    D --> E[hive-only配置 逐台带256MiB预留启动]
+    E --> F[control NN+Hive compute仅DN analysis无容器]
+    F --> G[实际cleanup register verify或私有view]
+    G --> H[停精确服务 softoff]
+    H --> I[恢复离线双DN 实际两副本读回]
+```
+
+输入必须已经通过 `validate_real_pair` 并按 `stage-release` 到达analysis受管发布目录。当前只有当天未闭合访问事件时，不能制造昨日零值、未来cutoff或空行为包来通过前置检查；等待符合当前模型要求的闭合输入，或先对明确的独立合成候选执行验收。
+
+在双DN离线阶段，先对登记范围执行 `hdfs fsck`，确认所有本次Hive待读聚合和ODS清理所需元数据块在compute有副本、没有missing/corrupt blocks。Hive窗口保留两个DN原卷，但只运行compute DN，因此**不能声称这一阶段两副本在线**。如果某个必需块只在analysis上，就停止切换，不复制到未登记目录或修改副本计数凑条件。`land`要求两副本读回，不能放在Hive-only窗口执行；这里不跑YARN daily/behavior/Iceberg重计算。
+
+### 1. 镜像、JAR与原元数据卷的只读准备
+
+analysis上必须已有与 `lab/locks/images.env` 一致的 Spark 镜像、`runtime/hive-client` 中完整且匹配 `lab/locks/hive-client.sha256` 的JAR。Hive客户端使用`--pull=never`。`tools/prepare_hive_client.sh`会从锁定Hive镜像复制依赖；它可能新增大量文件或触发缺失镜像下载，不是本窗口可无条件执行的检查。先核对analysis是否已有缓存、实际大小和剩余预算，需要准备时另设受控安装步骤，不复制旧raw/Checkpoint或额外整盘快照。
+
+control沿用已有的 `snow-lab-control_hive` metastore卷、`snow-lab-control_namenode`卷；compute沿用 `snow-lab-compute_datanode`。必须核对原容器挂载的精确卷名、持久位置及镜像摘要，不能在旧卷缺失时让Compose创建空元数据库并宣称原目录恢复。Hive仅保存表级元数据，原聚合Parquet仍在登记的HDFS路径。
+
+### 2. 停止并配置三台项目VM
+
+先在Windows仓库完成现有正常暂停路线；如果已经paused，不重复首次初始化。离线HDFS仍在运行时，先完成上述块检查，再用 `real_lab ... stop-offline --power-off` 停五个离线服务并软关三台VM。若仍处于实时阶段，先 `pause-writer`、`stop-epoch --power-off`，并确认另外两台没有残留任务。**所有服务已经正常停止，VM完全关机**后才能执行以下配置；不支持对运行或挂起VM直接改内存。
+
+```powershell
+# Windows PowerShell，Snow_Statistics仓库根目录
+uv run python tools/vmware_lab.py status
+uv run python tools/vmware_lab.py configure --node snow-control --profile hive-only
+uv run python tools/vmware_lab.py configure --node snow-compute --profile hive-only
+uv run python tools/vmware_lab.py configure --node snow-analysis --profile hive-only
+# 每台成功后再次检查实际容量和状态；任一步失败不要继续启动其他节点
+uv run python tools/vmware_lab.py start --node snow-control --reserve-mib 256
+uv run python tools/vmware_lab.py start --node snow-compute --reserve-mib 256
+uv run python tools/vmware_lab.py start --node snow-analysis --reserve-mib 256
+```
+
+这些底层VM命令不自动协调整组失败收尾；若第三台启动失败，检查并软关本次已启动的control/compute，不执行全局VM停止。只改本项目VMX的内存字段，不重建磁盘、seed、身份或epoch。监督服务开机应先处理到期副本，不能被禁用来取得Hive读取许可。
+
+### 3. 只启动精确的已有服务
+
+每段均在注明的Linux VM，工作目录 `/home/snow/Snow_Statistics`。先检查 `sudo docker ps --format '{{.Names}}'`，确认没有其他阶段容器；遇到不认识的进程先核实，不扩展停止范围。以下up使用明确服务、`--no-deps --no-build --pull never`，不会顺带启动全部batch profile或下载新镜像。
+
+```bash
+# control：沿用scale的NameNode限额，Hive沿用既有配置和卷
+cd /home/snow/Snow_Statistics
+test "$(hostname)" = snow-control
+sudo docker compose --env-file lab/locks/images.env --env-file lab/.env \
+  -f lab/compose.control.yaml -f lab/compose.control-scale.yaml \
+  up -d --no-deps --no-build --pull never namenode hive
+```
+
+```bash
+# compute：仅启动384MiB/heap192的DataNode；NodeManager继续停止
+cd /home/snow/Snow_Statistics
+test "$(hostname)" = snow-compute
+sudo docker compose --env-file lab/locks/images.env --env-file lab/.env \
+  -f lab/compose.compute.yaml -f lab/compose.compute-scale.yaml \
+  up -d --no-deps --no-build --pull never datanode
+```
+
+analysis不执行Compose up。确认analysis没有运行容器、实际 `MemAvailable >= 786432 kB`，再确认control的Hive通过原Derby元数据库schema检查并监听9083、NameNode可读。由NameNode观察compute DN已live，且本次所有必需块可通过它实际读取；刚关掉analysis DN时不能只凭进程状态断言NameNode已经停止选择旧副本。读回失败保持关闭，等待确定的可读窗口，不改HDFS网络或保留策略。
+
+### 4. Hive验收、私有看板和收尾
+
+在analysis使用本页前文的 `real_hive cleanup`、`register --run-id`、`verify --run-id`。预期四组外表类型、位置、分区、期限和聚合哈希均实际一致；没有足够条件时失败，不把只读配置当成功。已有Hive登记后，`real_lab view --run-id` 的周期性生命周期检查也会运行同一临时客户端，因此只能在这个资源窗口打开；view本身不启动Hive或更改VM内存。
+
+view使用宿主Python/Streamlit，有额外内存；1536 MiB analysis是否能在它运行时继续满足每次Hive客户端768 MiB可用门槛，需要单独实测。若不足，显示暂停，不能延长旧60秒读取许可或跳过catalog检查。可先完成CLI Hive登记/验证，私有view只在实际余量检查通过后运行。
+
+停止view和临时客户端后，只停以下拥有的服务，不删除卷：
+
+```bash
+# control，/home/snow/Snow_Statistics
+sudo docker compose --env-file lab/locks/images.env --env-file lab/.env \
+  -f lab/compose.control.yaml -f lab/compose.control-scale.yaml stop hive namenode
+```
+
+```bash
+# compute，/home/snow/Snow_Statistics
+sudo docker compose --env-file lab/locks/images.env --env-file lab/.env \
+  -f lab/compose.compute.yaml -f lab/compose.compute-scale.yaml stop datanode
+```
+
+回Windows逐台 `vmware_lab.py stop --node ...` 软关机并检查状态。然后才能按既有离线入口恢复scale/real-small，读回两台DN在线、原输入/聚合文件可读且两副本恢复。不能在compute仅1GiB时启动NodeManager，不能在analysis1536MiB时启动实时epoch；切阶段要先停再重新配置。整个过程保留Hive元数据、两份DN卷和所有历史实验，不提供prune或`down -v`。
+
+Hive登记之后，后续cleanup/permit也需要实际catalog检查。现有Spark计算入口排斥control同时运行Hive，且768MiB analysis排斥Hive客户端，因此不能把Hive注册后继续重算简单拼接成一段“全部up”。应在Hive窗口完成相应实际清理/短期许可，再在其期限内受控切换所需计算窗口；任何绑定、登记或期限改变均重新验收。Iceberg正式registry由analysis持有而作业在control执行，尚需独立受控交接核对，不能复制一份可随意变更的registry到control绕过真实登记。
+
 ## 检查与失败行为
 
 `register` 先持久化元数据登记意图，再登记 Hive 生命周期资源；即使中断，重试也不会丢失待清理范围。未实际创建的预登记表可以暂时不存在；已经验证的存活表消失则报错。`verify` 不创建缺失表。
