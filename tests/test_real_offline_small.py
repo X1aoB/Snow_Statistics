@@ -1,10 +1,12 @@
 import copy
+import errno
 import io
 import json
 import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from contextlib import nullcontext
 from datetime import UTC, datetime, timedelta
@@ -476,7 +478,8 @@ def test_actual_node_copy_expiry_precedes_worker_launch(tmp_path, monkeypatch):
         raise RuntimeError("synthetic launch boundary reached")
     monkeypatch.setattr(small.subprocess, "Popen", launch)
     with pytest.raises(RuntimeError, match="launch boundary"):
-        small.node_execute(config(), "runtime/real/config/test.json", tmp_path, "land", None, "a" * 32, io.BytesIO(b""))
+        small.node_execute(config(), "runtime/real/config/test.json", tmp_path, "land", None, "a" * 32,
+                           SimpleNamespace(fileno=lambda: 123))
     assert not target.exists()
 
 
@@ -518,6 +521,79 @@ def test_actual_sighup_closes_detached_frozen_child_and_runs_cleanup(tmp_path):
     finally:
         small.stop_tree(parent)
         parent.stdin.close()
+        if child and small.process_identity(child) is not None:
+            os.killpg(child, signal.SIGKILL)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Actual Linux worker exit with an open SSH-like stdin pipe")
+@pytest.mark.parametrize("exit_code", [0, 7])
+def test_actual_worker_exits_with_controller_stdin_still_open(tmp_path, exit_code):
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools/real_lab.py").write_text(
+        "import sys,time\ntime.sleep(0.3)\nprint('{\"offline_services\":\"up\"}')\n"
+        f"sys.exit({exit_code})\n")
+    code = ("import json,sys,pathlib\nfrom snow_statistics import real_offline_small as s\n"
+            "s.driver_cleanup=lambda *a:pathlib.Path(sys.argv[1],'cleaned').write_text('exact cleanup')\n"
+            "result=s.node_execute(json.loads(sys.argv[2]),'runtime/real/config/test.json',"
+            "pathlib.Path(sys.argv[1]),'node-start-offline',None,'a'*32)\nprint(json.dumps(result))\n")
+    parent = subprocess.Popen([sys.executable, "-c", code, str(tmp_path), json.dumps(config())],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              start_new_session=True)
+    try:
+        parent.stdin.write(b"ping\n")
+        parent.stdin.flush()
+        # Do not use communicate(): it closes stdin and would hide the actual
+        # shutdown defect observed when the Windows SSH controller keeps it open.
+        parent.wait(timeout=12)
+        assert not parent.stdin.closed
+        stdout, stderr = parent.stdout.read(), parent.stderr.read()
+        assert b"Fatal Python error" not in stderr and b"_enter_buffered_busy" not in stderr
+        assert (tmp_path / "cleaned").read_text() == "exact cleanup"
+        if exit_code == 0:
+            assert parent.returncode == 0, stderr.decode()
+            assert json.loads(stdout)["frozen_process_exit_code"] == 0
+        else:
+            assert parent.returncode != 0
+            assert b"Frozen offline phase failed" in stderr
+    finally:
+        small.stop_tree(parent)
+        parent.stdin.close()
+        parent.stdout.close()
+        parent.stderr.close()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Actual Linux stdin EOF and detached child cleanup")
+def test_actual_controller_pipe_eof_stops_detached_child(tmp_path):
+    (tmp_path / "tools").mkdir()
+    child_file = tmp_path / "child.pid"
+    (tmp_path / "tools/real_lab.py").write_text(
+        "import os,pathlib,time\npathlib.Path('child.pid').write_text(str(os.getpid()))\ntime.sleep(60)\n")
+    code = ("import json,sys,pathlib\nfrom snow_statistics import real_offline_small as s\n"
+            "s.driver_cleanup=lambda *a:pathlib.Path(sys.argv[1],'cleaned').write_text('exact cleanup')\n"
+            "s.node_execute(json.loads(sys.argv[2]),'runtime/real/config/test.json',"
+            "pathlib.Path(sys.argv[1]),'land',None,'a'*32)\n")
+    parent = subprocess.Popen([sys.executable, "-c", code, str(tmp_path), json.dumps(config())],
+                              stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                              start_new_session=True)
+    child = None
+    try:
+        parent.stdin.write(b"ping\n")
+        parent.stdin.flush()
+        deadline = time.monotonic() + 10
+        while not child_file.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        child = int(child_file.read_text())
+        parent.stdin.close()
+        parent.wait(timeout=15)
+        stderr = parent.stderr.read()
+        assert parent.returncode != 0 and b"Controller heartbeat was lost" in stderr
+        assert b"Fatal Python error" not in stderr
+        assert (tmp_path / "cleaned").read_text() == "exact cleanup"
+        assert small.process_identity(child) is None
+    finally:
+        small.stop_tree(parent)
+        parent.stdin.close()
+        parent.stderr.close()
         if child and small.process_identity(child) is not None:
             os.killpg(child, signal.SIGKILL)
 
@@ -635,10 +711,64 @@ def test_node_heartbeat_loss_stops_frozen_process_group(tmp_path, monkeypatch):
     monkeypatch.setattr(small.subprocess, "Popen", Process)
     monkeypatch.setattr(small, "process_identity", lambda pid: dict(pid=pid, start_ticks="1", argv_sha256="a" * 64))
     monkeypatch.setattr(small, "stop_tree", lambda process: stopped.append(process.pid))
+    monkeypatch.setattr(small.select, "select", lambda *a: ([123], [], []))
+    monkeypatch.setattr(small.os, "read", lambda fd, size: b"")
     with pytest.raises(RuntimeError, match="heartbeat"):
-        small.node_execute(config(), "runtime/real/config/test.json", tmp_path, "land", None, "a" * 32, io.BytesIO(b""))
+        small.node_execute(config(), "runtime/real/config/test.json", tmp_path, "land", None, "a" * 32,
+                           SimpleNamespace(fileno=lambda: 123))
     assert stopped == [1234]
     assert (tmp_path / "runtime/real/offline-small" / ("a" * 32) / "worker.json").exists()
+
+
+def test_heartbeat_uses_only_ready_bounded_raw_reads_and_complete_frames(monkeypatch):
+    clock, ready, calls = [0], [False], []
+    chunks = iter([b"pi", b"ng\nping\np", b"ing\n"])
+    monkeypatch.setattr(small.time, "monotonic", lambda: clock[0])
+    def selected(readers, writers, errors, timeout):
+        assert (readers, writers, errors, timeout) == ([123], [], [], 0)
+        return ([123] if ready[0] else [], [], [])
+    def raw_read(fd, size):
+        calls.append((fd, size))
+        return next(chunks)
+    monkeypatch.setattr(small.select, "select", selected)
+    monkeypatch.setattr(small.os, "read", raw_read)
+    stream = SimpleNamespace(fileno=lambda: 123, readline=lambda *a: pytest.fail("No buffered reads"))
+    heartbeat = small.ControllerHeartbeat(stream)
+    heartbeat.check()
+    assert calls == []
+    ready[0] = True
+    clock[0] = 2
+    heartbeat.check()
+    assert heartbeat.last_ping == 0 and heartbeat.pending == b"pi"
+    clock[0] = 3
+    heartbeat.check()
+    assert heartbeat.last_ping == 3 and heartbeat.pending == b"p"
+    clock[0] = 4
+    heartbeat.check()
+    assert heartbeat.last_ping == 4 and heartbeat.pending == b""
+    assert calls == [(123, 64)] * 3
+
+
+@pytest.mark.parametrize("payload", [b"", b"PING\n", b"ping\r\n", b"other", b"ping\nextra", b"p" * 64])
+def test_heartbeat_eof_and_invalid_frames_reject(monkeypatch, payload):
+    monkeypatch.setattr(small.select, "select", lambda *a: ([123], [], []))
+    monkeypatch.setattr(small.os, "read", lambda *a: payload)
+    heartbeat = small.ControllerHeartbeat(SimpleNamespace(fileno=lambda: 123))
+    with pytest.raises(RuntimeError, match="heartbeat"):
+        heartbeat.check()
+
+
+@pytest.mark.parametrize("payload", [None, b"p", b"ping\n"])
+def test_heartbeat_partial_missing_or_late_input_cannot_extend_deadline(monkeypatch, payload):
+    clock = [0]
+    monkeypatch.setattr(small.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(small.select, "select", lambda *a: ([123] if payload is not None else [], [], []))
+    monkeypatch.setattr(small.os, "read", lambda *a: payload)
+    heartbeat = small.ControllerHeartbeat(SimpleNamespace(fileno=lambda: 123))
+    clock[0] = 20.01
+    with pytest.raises(RuntimeError, match="heartbeat"):
+        heartbeat.check()
+    assert heartbeat.last_ping == 0
 
 
 def test_node_cancellation_before_launch_prevents_late_worker(tmp_path, monkeypatch):
@@ -708,6 +838,119 @@ def test_background_monitor_interrupts_running_local_command(tmp_path):
     with pytest.raises(RuntimeError, match="threshold"):
         runner.run([sys.executable, "-c", "import time; time.sleep(60)"], timeout=65)
     assert time.monotonic() - began < 25
+
+
+@pytest.mark.parametrize("exit_code", [0, 7])
+def test_actual_closed_controller_pipe_still_requires_child_exit(tmp_path, exit_code):
+    runner = FixtureRunner(tmp_path)
+    runner.run = small.SmallRunner.run.__get__(runner)
+    command = [sys.executable, "-c", "import os,sys,time; os.close(0); "
+               "print('{\"phase\":\"synthetic\"}',flush=True); time.sleep(0.9); "
+               f"sys.exit({exit_code})"]
+    if exit_code == 0:
+        assert json.loads(runner.run(command, capture=True, heartbeat=True, timeout=5)) == {"phase": "synthetic"}
+    else:
+        with pytest.raises(small.NodeCommandFailure) as caught:
+            runner.run(command, capture=True, heartbeat=True, timeout=5)
+        assert caught.value.returncode == 7
+
+
+def test_actual_closed_controller_pipe_does_not_remove_timeout(tmp_path, monkeypatch):
+    runner = FixtureRunner(tmp_path)
+    runner.run = small.SmallRunner.run.__get__(runner)
+    original, processes = small.subprocess.Popen, []
+    def launch(*args, **kwargs):
+        process = original(*args, **kwargs)
+        processes.append(process)
+        return process
+    monkeypatch.setattr(small.subprocess, "Popen", launch)
+    began = time.monotonic()
+    with pytest.raises(RuntimeError, match="timed out"):
+        runner.run([sys.executable, "-c", "import os,time; os.close(0); time.sleep(30)"],
+                   capture=True, heartbeat=True, timeout=1.2)
+    assert time.monotonic() - began < 10
+    assert processes[0].poll() is not None
+
+
+def test_actual_closed_controller_pipe_keeps_resource_monitor_active(tmp_path):
+    runner = FixtureRunner(tmp_path)
+    runner.run = small.SmallRunner.run.__get__(runner)
+    samples = []
+    def check():
+        samples.append(True)
+        if len(samples) >= 2:
+            raise RuntimeError("synthetic resource stop after pipe closed")
+    runner.monitor = SimpleNamespace(check=check)
+    with pytest.raises(RuntimeError, match="resource stop after pipe"):
+        runner.run([sys.executable, "-c", "import os,time; os.close(0); time.sleep(30)"],
+                   capture=True, heartbeat=True, timeout=5)
+    assert len(samples) == 2
+
+
+@pytest.mark.parametrize("failed_operation", ["write", "flush"])
+def test_closed_pipe_before_collector_finished_waits_for_actual_result(tmp_path, monkeypatch, failed_operation):
+    runner = FixtureRunner(tmp_path)
+    runner.run = small.SmallRunner.run.__get__(runner)
+    pipe_failed, writes = threading.Event(), []
+    class Input:
+        def write(self, value):
+            writes.append(value)
+            if failed_operation == "write":
+                pipe_failed.set()
+                raise BrokenPipeError(errno.EPIPE, "synthetic closed pipe")
+        def flush(self):
+            pipe_failed.set()
+            raise BrokenPipeError(errno.EPIPE, "synthetic closed pipe")
+        def close(self):
+            raise BrokenPipeError(errno.EPIPE, "synthetic closed pipe")
+    class Process:
+        pid, returncode = 1234, None
+        def __init__(self, *args, **kwargs):
+            self.stdin, self.stdout, self.stderr = Input(), io.BytesIO(b'{"phase":"synthetic"}'), io.BytesIO(b"")
+        def wait(self, timeout):
+            assert pipe_failed.wait(3), "Controller must reach the exact write/flush race"
+            self.returncode = 0
+            return 0
+        def poll(self):
+            return self.returncode
+    monkeypatch.setattr(small.subprocess, "Popen", Process)
+    assert json.loads(runner.run(["synthetic"], capture=True, heartbeat=True, timeout=5)) == {"phase": "synthetic"}
+    assert writes == [b"ping\n"]
+
+
+@pytest.mark.parametrize("platform,number,expected", [("nt", errno.EINVAL, True), ("posix", errno.EINVAL, False),
+                                                     ("nt", errno.EIO, False), ("posix", errno.EIO, False),
+                                                     ("nt", errno.EPIPE, True), ("posix", errno.EPIPE, True)])
+def test_only_actual_platform_pipe_errors_are_completion_candidates(monkeypatch, platform, number, expected):
+    monkeypatch.setattr(small.os, "name", platform)
+    assert small.heartbeat_pipe_closed(OSError(number, "synthetic pipe error")) is expected
+
+
+def test_unknown_heartbeat_io_error_is_not_swallowed(tmp_path, monkeypatch):
+    runner = FixtureRunner(tmp_path)
+    runner.run = small.SmallRunner.run.__get__(runner)
+    wrote = threading.Event()
+    class Input:
+        def write(self, value):
+            wrote.set()
+            raise OSError(errno.EIO, "synthetic unexpected heartbeat I/O")
+        def close(self):
+            pass
+    class Process:
+        pid, returncode = 1234, None
+        def __init__(self, *args, **kwargs):
+            self.stdin, self.stdout, self.stderr = Input(), io.BytesIO(b"{}"), io.BytesIO(b"")
+        def wait(self, timeout):
+            assert wrote.wait(3)
+            self.returncode = 0
+            return 0
+        def poll(self):
+            return self.returncode
+    monkeypatch.setattr(small.subprocess, "Popen", Process)
+    monkeypatch.setattr(small, "stop_tree", lambda p: p.wait(timeout=3))
+    with pytest.raises(OSError, match="unexpected heartbeat") as caught:
+        runner.run(["synthetic"], capture=True, heartbeat=True, timeout=5)
+    assert caught.value.errno == errno.EIO
 
 
 def test_ssh_prepared_body_is_never_arbitrary_config_command():

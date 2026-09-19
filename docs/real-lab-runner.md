@@ -95,7 +95,7 @@ start-* 对运行中的 VM 不强制改内存。切换阶段前须显式停止�
 
 ### 正常暂停和同代恢复
 
-以下是 Windows 控制入口。全部源码和 JAR 必须与首次登记时完全一致，且 epoch 原始 7 天截止尚未到达。先让当前 sync 命令正常结束，然后执行：
+以下是 Windows 控制入口。首次登记所绑定的 writer 文件、配置和 JAR 必须完全一致，且 epoch 原始 7 天截止尚未到达；具体源码范围由 `real_quiescent.WRITER_FILES` 定义。新增独立协调入口不等于可以修改这份冻结范围或重新登记 epoch。下方 `run.json` 是通用示例配置名，当前正式环境使用 `runtime/real/config/production.json`，执行前须替换并核对。先让当前 sync 命令正常结束，然后执行：
 
     uv run python tools/real_lab.py --config runtime/real/config/run.json pause-writer
     uv run python tools/real_lab.py --config runtime/real/config/run.json stop-epoch --power-off

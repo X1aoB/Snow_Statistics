@@ -4,10 +4,12 @@ This module does not replace writer admission, lifecycle permits or job validati
 Its Linux entry points are fixed probes and supervised calls to the frozen runner.
 """
 import argparse
+import errno
 import importlib.util
 import json
 import os
 import re
+import select
 import shlex
 import shutil
 import signal
@@ -54,6 +56,12 @@ class NodeCommandFailure(RuntimeError):
     def __init__(self, code):
         self.returncode = code
         super().__init__("Owned local/SSH command failed")
+
+
+def heartbeat_pipe_closed(error):
+    """Windows CRT reports EINVAL when flushing an already closed child pipe."""
+    return (isinstance(error, BrokenPipeError) or error.errno == errno.EPIPE
+            or (os.name == "nt" and error.errno == errno.EINVAL))
 
 
 def checked_config(value):
@@ -426,6 +434,37 @@ def cleanup_local_copies(root):
     return cleanup_copies(root)
 
 
+class ControllerHeartbeat:
+    """Poll the owned POSIX pipe without acquiring a buffered stdin lock."""
+    def __init__(self, stream):
+        self.fd = stream.fileno()
+        if type(self.fd) is not int or self.fd < 0:
+            raise ValueError("Controller heartbeat requires an exact pipe descriptor")
+        self.pending = b""
+        self.last_ping = time.monotonic()
+
+    def check(self):
+        # The Linux node has one stdin reader. A readiness check followed by a
+        # bounded raw read never leaves a daemon thread holding BufferedReader
+        # during interpreter shutdown while the SSH controller keeps stdin open.
+        if time.monotonic() - self.last_ping > 20:
+            raise RuntimeError("Controller heartbeat was lost")
+        if select.select([self.fd], [], [], 0)[0]:
+            chunk = os.read(self.fd, 64)
+            if not chunk:
+                raise RuntimeError("Controller heartbeat was lost")
+            self.pending += chunk
+            while b"\n" in self.pending:
+                line, self.pending = self.pending.split(b"\n", 1)
+                if line != b"ping":
+                    raise RuntimeError("Controller heartbeat was lost")
+                self.last_ping = time.monotonic()
+            if not b"ping\n".startswith(self.pending):
+                raise RuntimeError("Controller heartbeat was lost")
+        if time.monotonic() - self.last_ping > 20:
+            raise RuntimeError("Controller heartbeat was lost")
+
+
 def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
     """Pipe loss or heartbeat loss stops the whole owned Linux process group."""
     if phase not in REMOTE_PHASES:
@@ -443,16 +482,6 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
             raise ValueError("This exact node attempt cannot be reused")
         write_json(directory / "worker.json", dict(config_sha256=digest(canonical(config)), phase=phase,
                    run_id=run_id, process=process_identity(os.getpid())))
-    closed, last_ping = threading.Event(), [time.monotonic()]
-    def heartbeat():
-        stream = stdin or sys.stdin.buffer
-        while True:
-            line = stream.readline(64)
-            if line != b"ping\n":
-                closed.set()
-                return
-            last_ping[0] = time.monotonic()
-    threading.Thread(target=heartbeat, daemon=True).start()
     def interrupted(*_):
         raise InterruptedError("Offline worker was cancelled")
     previous = {sig: signal.signal(sig, interrupted) for sig in
@@ -461,6 +490,7 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
     log = directory / "private.log"
     drain_thread, log_failed = None, threading.Event()
     try:
+        heartbeat = ControllerHeartbeat(stdin if stdin is not None else sys.stdin.buffer)
         command = [sys.executable, "tools/real_lab.py", "--config", config_file, phase]
         if run_id:
             command += ["--run-id", run_id]
@@ -481,8 +511,7 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
             drain_thread.start()
             deadline = time.monotonic() + 1200
             while process.poll() is None:
-                if closed.is_set() or time.monotonic() - last_ping[0] > 20:
-                    raise RuntimeError("Controller heartbeat was lost")
+                heartbeat.check()
                 if time.monotonic() >= deadline or log_failed.is_set():
                     raise RuntimeError("Offline phase exceeded its time or retained log bound")
                 time.sleep(0.25)
@@ -618,13 +647,22 @@ class SmallRunner(Runner):
                     finished.set()
         worker = threading.Thread(target=collect)
         worker.start()
+        heartbeat_open = heartbeat
         try:
             while not finished.wait(0.5):
                 if monitored and self.monitor:
                     self.monitor.check()
-                if heartbeat:
-                    process.stdin.write(b"ping\n")
-                    process.stdin.flush()
+                if heartbeat_open:
+                    try:
+                        process.stdin.write(b"ping\n")
+                        process.stdin.flush()
+                    except OSError as error:
+                        if not heartbeat_pipe_closed(error):
+                            raise
+                        # A node may close stdin just before its actual exit is
+                        # collected. Continue monitoring and await that exit;
+                        # a closed pipe is never a successful phase receipt.
+                        heartbeat_open = False
             if not result or isinstance(result[0], BaseException):
                 raise RuntimeError("Owned local/SSH process timed out or failed") from (result[0] if result else None)
             if process.returncode:
@@ -640,8 +678,9 @@ class SmallRunner(Runner):
                 if heartbeat and process.stdin:
                     try:
                         process.stdin.close()
-                    except BrokenPipeError:
-                        pass
+                    except OSError as error:
+                        if not heartbeat_pipe_closed(error):
+                            raise
                 worker.join(timeout=20)
                 if worker.is_alive():
                     raise RuntimeError("Owned subprocess reader did not stop")

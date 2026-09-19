@@ -2,9 +2,11 @@
 
 本入口将既有 `real_lab` 的固定离线阶段串起来，使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。它是显式的按阶段命令，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
 
-**验收状态：**46efeceb已通过Linux CI35438865825（含实际`SIGHUP`进程组测试），Windows精确进程树终止也已在本地测试。首次实际VM入口尝试已通过正式paused/stopped准入并启动三台VM，但在analysis DataNode的额外`/data`匿名父卷检查处失败；原失败回执保留，不能记为完整启动成功。操作者只读核对实际容器归属后，精确停止该DataNode并软关三台VM，没有删除卷，也没有继续执行后续计算。下述最小兼容修复已有合成回归，须经过新CI与实际VM重试。此前同资源配置的手工编排、合成golden及正式ODS落地结果属于已有独立证据，不能替代本入口验收。
+**验收状态：**46efeceb已通过Linux CI35438865825（含实际`SIGHUP`进程组测试），Windows精确进程树终止也已在本地测试。首次实际VM入口尝试已通过正式paused/stopped准入并启动三台VM，但在analysis DataNode的额外`/data`匿名父卷检查处失败；原失败回执保留，不能记为完整启动成功。操作者只读核对实际容器归属后，精确停止该DataNode并软关三台VM，没有删除卷，也没有继续执行后续计算。最小兼容修复`22ef47ae`的完整本地745项测试和Linux CI35439860162、35439858210已通过，实际VM重试另记。此前同资源配置的手工编排、合成golden及正式ODS落地结果属于已有独立证据，不能替代本入口验收。
 
 对应实现：[Windows/节点模块](../src/snow_statistics/real_offline_small.py)、[CLI](../tools/real_offline_small.py)、[合成故障测试](../tests/test_real_offline_small.py)。冻结的 `real_lab.py`、writer、恢复账本、生命周期及模型代码均继续使用原实现。
+
+第二轮 `22ef47ae` 已通过实际匿名卷归属校验，但节点子任务成功后，心跳守护线程在解释器退出时占用标准输入，导致 `_enter_buffered_busy` 和非零 SSH 退出。本轮仍是失败；已精确停止所属服务并软关全部 VM，未提交计算。新修复使用主循环有界管道读取，并处理控制端正常退出时的断管竞态；关闭管道不代表任务成功，仍要求实际零退出及结构化结果。Linux 原生管道回归与下一轮实际入口验收另记。
 
 ## 执行环境和前置条件
 
