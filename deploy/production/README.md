@@ -15,6 +15,24 @@
 
 新配置的 collector 上限 256 MiB/0.25 CPU；gateway 64 MiB/0.10 CPU；Tunnel 128 MiB/0.10 CPU；两个日志进程各 64 MiB/0.10 CPU。总上限约 576 MiB/0.65 CPU。collector quota 512 MiB，日志 spool 最多 4096 条且数据库 16 MiB（DELETE journal 短暂额外占用，最多约数据库大小）；各 Docker 日志另有轮转限制。不得把这些配置值当成真实峰值测量。
 
+## 当前正式入口：远程管理 Tunnel（2026-09-19）
+
+本次在 Cloudflare 后台创建的是远程管理的 `snow-statistics-prod`，采用官方支持的 [Tunnel token](https://developers.cloudflare.com/tunnel/reference/tunnel-tokens/) 方式；上面的 `configure-tunnel` 仍保留给新的本地管理部署，不能把两种凭据混用。用户通过忽略目录的私有文件交接令牌，安装程序仅解析数据、验证账户及 Tunnel ID，不执行复制来的安装命令。
+
+在正式服务器 root 控制的 `/opt/snow-statistics` 下执行：
+
+```sh
+python3 tools/production_install.py configure-token \
+  --tunnel-id '<新建 Tunnel ID>' --account-id '<所属账户 ID>' \
+  --token-file '<root 0600 私有令牌文件路径>'
+```
+
+该命令不启动或启用服务、不修改 DNS。它拒绝覆盖已有两种模式的配置；从现有固定镜像 Compose 渲染并冻结网关及资源限制，仅替换 Tunnel 认证方式。结果为 `/etc/snow-statistics/tunnel.token`、`compose.edge-token.json` 和 `/etc/systemd/system/snow-statistics-edge.service.d/20-remote-tunnel.conf`。凭据仅容器 UID 10002 可读、只读挂载；进程参数使用 `--token-file`，不携带令牌值。生成的 Compose 也是需登记和审核的部署配置，后续升级不能只改源 YAML 而忽略此冻结副本。
+
+Cloudflare 的唯一已发布应用路由为 `stats.xiaob.dev → http://gateway:8080`。网关继续执行精确路径/方法白名单；Tunnel 仅连接 `snow-statistics-edge` 网络。新入口通过检查后，以 `systemctl enable --now snow-statistics-edge.service` 启用常驻运行。不要运行页面示例中的未锁定 `latest` 镜像命令。
+
+2026-09-19 实测：公网 v1/v2 为 200、归档状态及 `Cache-Control: no-store`；private events/status、health、docs、openapi 和根路径均 404；两站精确 Origin 的预检 200，其他来源 400。collector 仍 off，两个日志服务 inactive，业务容器身份未变。这是入口验收，不能替代产品晋级和采集启用后的端到端验收。
+
 ## 私有读取通路
 
 `tools/private_access.py plan --public-key-file <独立公钥文件>` 输出精确计划；核对后在正式服务器 root 控制的 `/opt/snow-statistics` 下执行 `install --public-key-file <同一公钥文件> --expected-plan-sha256 <计划哈希>`。只接受全新的 `snow_stats_reader` 系统账户及本项目专属路径，已有配置不覆盖。不要把业务 root 私钥复制进虚拟机。

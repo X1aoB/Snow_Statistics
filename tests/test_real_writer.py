@@ -84,6 +84,7 @@ def test_probe_reads_engine_values_and_rejects_hidden_partitions(tmp_path, monke
     writer.identity = lambda: COLLECTOR
     writer.check_namespaces = lambda topics, databases: None
     writer.flink = lambda path: {"jobs": []}
+    writer.read_tables = lambda: {name: "BASE TABLE" for name in TABLES}
     writer.sql = lambda query: [(name, "BASE TABLE") for name in TABLES] + [("daily_realtime", "VIEW")] if query.startswith("SHOW") else [(0,)]
     value = writer.read_initial_state(MANIFEST, COLLECTOR)
     assert validate_initial(value, MANIFEST) == value
@@ -129,3 +130,32 @@ def test_initialization_rejects_other_lanes_and_unregistered_namespaces():
                                    (["__unrecognized"], []), (topics[:-1], ["snow_real_real_fixture"])):
         with pytest.raises(ValueError):
             module.validate_namespaces(other_topics, databases, topics, ["snow_real_real_fixture"])
+
+
+def test_account_sql_formats_percent_host_without_driver_format_conflict():
+    statements = module.account_statements("snow_real_real_fixture", dict(user="sr_real_fixture", password="fixture"))
+    rendered = [sql % tuple(repr(value) for value in parameters) for sql, parameters in statements]
+    assert rendered[0] == "CREATE ROLE `sr_real_fixture_role`"
+    assert "@'%' IDENTIFIED BY 'fixture' DEFAULT ROLE 'sr_real_fixture_role'" in rendered[2]
+    with pytest.raises(ValueError, match="outside"):
+        module.account_statements("snow_real_real_fixture", dict(user="other_user", password="fixture"))
+
+
+def test_locked_doris_full_table_shape_rejects_schema_drift_and_extra_views():
+    database = "snow_real_real_fixture"
+    columns = ["Tables_in_" + database, "Table_type", "Storage_format", "Inverted_index_storage_format"]
+    rows = [(name, "BASE TABLE", "V2", "V2") for name in TABLES] + [
+        (name, "VIEW", "NONE", "NONE") for name in ("daily_realtime", "daily_published", "report_published")]
+    calls = []
+    cursor = SimpleNamespace(execute=calls.append, description=[(name,) for name in columns], fetchall=lambda: rows)
+    assert module.read_owned_tables(cursor, database)["events_realtime"] == "BASE TABLE"
+    assert calls == ["SHOW FULL TABLES FROM " + database]
+    cursor.description = [(name,) for name in columns[:2]]
+    with pytest.raises(ValueError, match="metadata columns"):
+        module.read_owned_tables(cursor, database)
+    cursor.description = [(name,) for name in columns]
+    for bad in (rows + [("extra", "VIEW", "NONE", "NONE")], [row[:2] for row in rows],
+                [*rows[:-1], rows[0]], [(rows[0][0], "BASE TABLE", "V1", "V2"), *rows[1:]]):
+        cursor.fetchall = lambda: bad
+        with pytest.raises(ValueError):
+            module.read_owned_tables(cursor, database)

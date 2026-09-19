@@ -1,3 +1,5 @@
+import base64
+import copy
 import importlib.util
 import json
 from datetime import UTC, datetime, timedelta
@@ -121,3 +123,39 @@ def test_candidate_plan_is_exact_and_never_enables_or_formats():
     assert "path /analytics/public/v1/summary.json /analytics/public/v2/summary.json" in gateway
     assert "header_up -Authorization" in gateway and "respond 404" in gateway
     assert "/analytics/private/" not in gateway
+
+
+def test_remote_tunnel_token_is_bound_and_never_treated_as_command():
+    tunnel = "12345678-1234-4234-8234-123456789abc"
+    data = dict(a="a" * 32, t=tunnel, s=base64.b64encode(b"synthetic secret bytes only" * 2).decode())
+    token = base64.b64encode(json.dumps(data).encode())
+    assert installer.validate_tunnel_token(token + b"\n", tunnel, "a" * 32) == token
+    for body, ident, account in ((token, tunnel, "b" * 32), (token, "22345678-1234-4234-8234-123456789abc", "a" * 32),
+                                  (b"docker run --token " + token, tunnel, "a" * 32),
+                                  (base64.b64encode(json.dumps(data | {"s": ""}).encode()), tunnel, "a" * 32)):
+        with pytest.raises(ValueError):
+            installer.validate_tunnel_token(body, ident, account)
+
+
+def test_remote_tunnel_spec_preserves_gateway_and_limits_without_secret_in_argv():
+    original = dict(name="snow-statistics-edge", services=dict(
+        gateway={"image": "gateway@sha256:" + "b" * 64, "networks": {"tunnel": {}, "collector": {}}},
+        tunnel=dict(image="cloudflared@sha256:" + "c" * 64, user="10002:10002", networks={"tunnel": {}},
+                    mem_limit="134217728", cpus=0.1, read_only=True, pids_limit=64,
+                    cap_drop=["ALL"], security_opt=["no-new-privileges:true"],
+                    command=["tunnel", "run"], volumes=[{"source": "old-auth"}])))
+    unchanged = copy.deepcopy(original)
+    configured = installer.remote_tunnel_spec(original)
+    assert original == unchanged and configured["services"]["gateway"] == original["services"]["gateway"]
+    actual = configured["services"]["tunnel"]
+    assert actual["command"][-2:] == ["--token-file", "/run/secrets/tunnel.token"]
+    assert "--token" not in actual["command"] and len(actual["volumes"]) == 1
+    assert actual["volumes"][0]["read_only"] and not actual["volumes"][0]["bind"]["create_host_path"]
+    assert {k: v for k, v in actual.items() if k not in {"command", "volumes"}} == {
+        k: v for k, v in original["services"]["tunnel"].items() if k not in {"command", "volumes"}}
+    for changed in ({"networks": {"collector": {}}}, {"ports": [8100]}, {"environment": {"TUNNEL_TOKEN": "fixture"}},
+                    {"image": "cloudflared:latest"}, {"read_only": False}, {"mem_limit": 268435456}):
+        bad = copy.deepcopy(original)
+        bad["services"]["tunnel"].update(changed)
+        with pytest.raises(ValueError):
+            installer.remote_tunnel_spec(bad)

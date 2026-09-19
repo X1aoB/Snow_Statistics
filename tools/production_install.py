@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION = Path("/opt/snow-statistics")
 SYSTEMD = PurePosixPath("/etc/systemd/system")
 CONFIG = Path("/etc/snow-statistics")
+TOKEN_DROPIN = Path("/etc/systemd/system/snow-statistics-edge.service.d/20-remote-tunnel.conf")
 FILES = {
     "deploy/production/state.mount.in": SYSTEMD / r"var-lib-snow\x2dstatistics-state.mount",
     "deploy/snow-statistics-lite.service": SYSTEMD / "snow-statistics-lite.service",
@@ -56,7 +57,9 @@ def require_root():
 
 
 def safe_destination(path):
-    if str(path) not in {str(p) for p in FILES.values()} and path not in (CONFIG / "tunnel.yaml", CONFIG / "tunnel.json"):
+    if str(path) not in {str(p) for p in FILES.values()} and path not in (
+            CONFIG / "tunnel.yaml", CONFIG / "tunnel.json", CONFIG / "tunnel.token",
+            CONFIG / "compose.edge-token.json", TOKEN_DROPIN):
         raise ValueError("Destination is not owned by this installer")
     for parent in (path.parent, *path.parent.parents):
         if parent.exists():
@@ -143,6 +146,77 @@ def configure_tunnel(tunnel_id, credential):
     print(json.dumps(dict(tunnel_id=ident, configured=True, started=False, dns_changed=False)))
 
 
+def validate_tunnel_token(content, tunnel_id, account_id):
+    """Parse data only; never execute the copied vendor installation command."""
+    ident = str(uuid.UUID(tunnel_id))
+    token = content.strip()
+    if len(token) > 8192 or not token or len(account_id) != 32 or any(c not in "0123456789abcdef" for c in account_id):
+        raise ValueError("Invalid bounded tunnel token/account")
+    data = json.loads(base64.b64decode(token, validate=True))
+    if (set(data) != {"a", "t", "s"} or data["a"] != account_id or data["t"] != ident or
+            not 32 <= len(base64.b64decode(data["s"], validate=True)) <= 128):
+        raise ValueError("Token does not belong to the reviewed account and tunnel")
+    return token
+
+
+def remote_tunnel_spec(spec):
+    """Freeze the rendered existing gateway and bounds; change only Tunnel auth."""
+    spec = json.loads(json.dumps(spec))
+    if spec.get("name") != "snow-statistics-edge" or set(spec["services"]) != {"gateway", "tunnel"}:
+        raise ValueError("Unexpected public edge project")
+    tunnel = spec["services"]["tunnel"]
+    if (set(tunnel["networks"]) != {"tunnel"} or tunnel.get("user") != "10002:10002" or
+            str(tunnel.get("mem_limit")) != str(128 * 1024**2) or float(tunnel.get("cpus", 0)) != 0.1 or
+            not tunnel.get("read_only") or "@sha256:" not in tunnel["image"] or
+            tunnel.get("environment") or tunnel.get("ports")):
+        raise ValueError("Tunnel isolation or locked resource bounds changed")
+    tunnel["command"] = ["tunnel", "--no-autoupdate", "--loglevel", "error", "run", "--token-file", "/run/secrets/tunnel.token"]
+    tunnel["volumes"] = [dict(type="bind", source=str(CONFIG / "tunnel.token"),
+                              target="/run/secrets/tunnel.token", read_only=True,
+                              bind={"create_host_path": False})]
+    return spec
+
+
+def token_dropin():
+    command = "/usr/bin/docker compose -f /etc/snow-statistics/compose.edge-token.json"
+    return ("[Service]\nExecStart=\nExecStart=" + command + " up -d\nExecStop=\nExecStop=" + command + " stop\n").encode()
+
+
+def configure_token(tunnel_id, account_id, credential):
+    require_root()
+    info = credential.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o077 or info.st_size > 8192:
+        raise ValueError("Tunnel token must be a small root-private regular file")
+    token = validate_tunnel_token(credential.read_bytes(), tunnel_id, account_id)
+    targets = [CONFIG / "tunnel.token", CONFIG / "compose.edge-token.json", TOKEN_DROPIN]
+    # No mode switch, credential rotation or partial-install overwrite is implicit.
+    for target in [*targets, CONFIG / "tunnel.json", CONFIG / "tunnel.yaml"]:
+        safe_destination(target)
+        if target.exists():
+            raise ValueError("Existing tunnel configuration retained; review explicit recovery/rotation")
+    rendered = subprocess.check_output([
+        "/usr/bin/docker", "compose", "--env-file", str(ROOT / "deploy/production/images.env"),
+        "-f", str(ROOT / "deploy/production/compose.edge.yaml"), "config", "--format", "json"], timeout=30)
+    spec = remote_tunnel_spec(json.loads(rendered))
+    files = {targets[0]: token + b"\n", targets[1]: json.dumps(spec, sort_keys=True, indent=2).encode(),
+             TOKEN_DROPIN: token_dropin()}
+    CONFIG.mkdir(mode=0o700, exist_ok=True)
+    TOKEN_DROPIN.parent.mkdir(mode=0o755, exist_ok=True)
+    for target, value in files.items():
+        safe_destination(target)
+        with target.open("xb") as stream:
+            stream.write(value)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(target, 0o400 if target == targets[0] else 0o600 if target.parent == CONFIG else 0o644)
+        if target == targets[0]:
+            os.chown(target, 10002, 10002)
+    subprocess.run(["/usr/bin/systemctl", "daemon-reload"], check=True, timeout=30)
+    print(json.dumps(dict(tunnel_id=str(uuid.UUID(tunnel_id)), configured=True, mode="remotely_managed",
+                          compose_sha256=checksum(files[targets[1]]), started=False, enabled=False,
+                          dns_changed=False, credential_values_reported=False)))
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="action", required=True)
@@ -152,13 +226,19 @@ def main():
     tunnel = sub.add_parser("configure-tunnel")
     tunnel.add_argument("--tunnel-id", required=True)
     tunnel.add_argument("--credential-file", required=True, type=Path)
+    token = sub.add_parser("configure-token")
+    token.add_argument("--tunnel-id", required=True)
+    token.add_argument("--account-id", required=True)
+    token.add_argument("--token-file", required=True, type=Path)
     args = parser.parse_args()
     if args.action == "plan":
         print(json.dumps(plan(), indent=2))
     elif args.action == "install":
         install(args.expected_plan_sha256)
-    else:
+    elif args.action == "configure-tunnel":
         configure_tunnel(args.tunnel_id, args.credential_file)
+    else:
+        configure_token(args.tunnel_id, args.account_id, args.token_file)
 
 
 if __name__ == "__main__":

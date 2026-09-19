@@ -90,6 +90,35 @@ def validate_namespaces(topics, databases, expected_topics=(), expected_database
         raise ValueError("Unexpected user topics or databases in the isolated epoch")
 
 
+def read_owned_tables(cursor, database):
+    """Doris 3.0.6.2 returns four FULL TABLES columns, unlike MySQL's two."""
+    if not re.fullmatch(r"snow_real_[a-z][a-z0-9_]{2,23}", database):
+        raise ValueError("Invalid owned real database")
+    cursor.execute(f"SHOW FULL TABLES FROM {database}")
+    expected_columns = ["Tables_in_" + database, "Table_type", "Storage_format", "Inverted_index_storage_format"]
+    if [column[0] for column in cursor.description] != expected_columns:
+        raise ValueError("Unexpected locked Doris table metadata columns")
+    rows = cursor.fetchall()
+    expected = {name: "BASE TABLE" for name in TABLES} | {
+        name: "VIEW" for name in ("daily_realtime", "daily_published", "report_published")}
+    if (len(rows) != len(expected) or any(len(row) != 4 for row in rows) or
+            {row[0]: row[1] for row in rows} != expected):
+        raise ValueError("Unexpected table/view set in the owned real database")
+    if any(tuple(row[2:]) != (("V2", "V2") if row[1] == "BASE TABLE" else ("NONE", "NONE")) for row in rows):
+        raise ValueError("Unexpected locked Doris table storage format")
+    return expected
+
+
+def account_statements(database, account):
+    if (not re.fullmatch(r"snow_real_[a-z][a-z0-9_]{2,23}", database)
+            or account["user"] != "sr_" + database.removeprefix("snow_real_")):
+        raise ValueError("Account is outside the owned real database")
+    user, role = account["user"], account["user"] + "_role"
+    return [(f"CREATE ROLE `{role}`", ()),
+            (f"GRANT SELECT_PRIV,LOAD_PRIV ON {database}.* TO ROLE '{role}'", ()),
+            (f"CREATE USER '{user}'@%s IDENTIFIED BY %s DEFAULT ROLE '{role}'", ("%", account["password"]))]
+
+
 class ActualWriter:
     def __init__(self, root, epoch_id, url, token_file):
         self.root = private_epoch_root(root)
@@ -135,7 +164,11 @@ class ActualWriter:
             response = client.get(path)
             if response.status_code != 200 or len(response.content) > 2097152:
                 raise ValueError("Owned Flink metadata is unavailable")
-            return response.json()
+        return response.json()
+
+    def read_tables(self):
+        with self.connect() as connection, connection.cursor() as cursor:
+            return read_owned_tables(cursor, self.database)
 
     def read_initial_state(self, manifest, collector):
         if manifest != frozen(self.epoch) or self.identity() != collector:
@@ -149,7 +182,7 @@ class ActualWriter:
             broker.close()
         if len(bounds) != len(names) or any(partition != 0 for _, partition in bounds):
             raise ValueError("Only one partition per registered real topic is allowed")
-        physical = [name for name, kind in self.sql(f"SHOW FULL TABLES FROM {self.database}") if kind == "BASE TABLE"]
+        physical = [name for name, kind in self.read_tables().items() if kind == "BASE TABLE"]
         if set(physical) != set(TABLES):
             raise ValueError("Unexpected physical tables in the owned real database")
         counts = {name: int(self.sql(f"SELECT COUNT(*) FROM {self.database}.{name}")[0][0]) for name in physical}
@@ -195,10 +228,8 @@ class ActualWriter:
                     for name in ("schema.sql", "publication.sql"):
                         for statement in sql_statements((ROOT / "warehouse/doris" / name).read_text(), self.database):
                             cursor.execute(statement)
-                    role = account["user"] + "_role"
-                    cursor.execute(f"CREATE ROLE '{role}'")
-                    cursor.execute(f"GRANT SELECT_PRIV,LOAD_PRIV ON {self.database}.* TO ROLE '{role}'")
-                    cursor.execute(f"CREATE USER '{account['user']}'@'%' IDENTIFIED BY %s DEFAULT ROLE '{role}'", (account["password"],))
+                    for statement, parameters in account_statements(self.database, account):
+                        cursor.execute(statement, parameters)
                 admin.create_topics([NewTopic(name, 1, 1, topic_configs={"retention.ms": "604800000",
                     "segment.ms": "60000", "segment.bytes": "16777216", "file.delete.delay.ms": "1000",
                     "cleanup.policy": "delete", "message.timestamp.type": "CreateTime"}) for name in names])

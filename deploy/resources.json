@@ -319,6 +319,9 @@
       "service": "snow-statistics-edge.service",
       "hostname": "stats.xiaob.dev",
       "name": "snow-statistics-prod",
+      "credential": "/etc/snow-statistics/tunnel.token; container UID 10002 read-only; token-file authentication, never token in command arguments",
+      "frozen_compose": "/etc/snow-statistics/compose.edge-token.json",
+      "unit_dropin": "/etc/systemd/system/snow-statistics-edge.service.d/20-remote-tunnel.conf",
       "memory_bytes": 134217728,
       "cpus": 0.1,
       "policy": "Independent credentials and edge network; only statistics gateway ingress plus 404 fallback; existing business Tunnel unchanged"
