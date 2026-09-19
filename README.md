@@ -4,7 +4,7 @@
 
 **公开统计由轻量服务独立维护；关闭完整数仓不会中断统计页。**
 
-2026-09-19：两站的可选采集、隐私设置与独立轻量统计已正式上线，公网技术回归通过；[公开统计页](https://xiaob.dev/statistics/)按延迟和样本规则展示。实际版本及未完成的真实链路验收见[实施状态](docs/status.md)和[发布证据](docs/evidence/production-release-20260919.json)。本地克隆仍默认关闭采集，不会自动连接正式服务。
+2026-09-19：两站的可选采集、隐私设置与独立轻量统计已正式上线，公网技术回归通过；小吉的访问统计入口位于“设置 → 隐私”。[公开统计页](https://xiaob.dev/statistics/)按延迟和样本规则展示。真实同步、实时整数对账、整机恢复及 HDFS 两副本至 Kafka 确认已实际验证。实际版本与尚待验证的闭日报表、Hive/Iceberg 等范围见[实施状态](docs/status.md)、[最新设置发布证据](docs/evidence/production-settings-release-20260919.json)和[真实闭环证据](docs/evidence/real-production-loop-20260919.md)。本地克隆仍默认关闭采集，不会自动连接正式服务。
 
 ```text
 可选浏览器适配器 / 脱敏完成日志

@@ -260,7 +260,7 @@
         "prior_measurement": "2026-09-11 2048 MiB compute VM during the million-row run had an observed 347 MiB available; subtracting 128 MiB is only a sizing estimate, not acceptance of this candidate",
         "scope": "First verify the unchanged 56-row synthetic golden input while retaining both DataNodes; no million-row claim, no change to 64/35/4 hard gates",
         "entry": "Explicit vmware_lab configure/start, then frozen Linux real_lab node-start-offline phases; existing Windows real_lab start-offline does not accept this profile",
-        "acceptance": "Candidate; actual bounded golden, resource margin, double replica and subsequent real ODS checks pending. Creating the compute Python environment consumes the same project budget."
+        "acceptance": "2026-09-19 actual 56-row synthetic YARN golden passed, followed by real ODS hash/two-DataNode readback and original Kafka ACK. Peak project 63.62 GiB; minimum guest available 641/669/202 MiB. Hive/Iceberg and the new unified small-profile wrapper remain pending; no million-row or concurrent-stack claim. See docs/evidence/real-production-loop-20260919.md."
       },
       "identity": "Collector instance_id and generation, Kafka cluster/topic IDs, one partition and explicit offsets; new generations require an explicit new lane",
       "coordinator_host": "snow-analysis; stage verified immutable ODS metadata to snow-control for offline computation",

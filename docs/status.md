@@ -30,7 +30,7 @@ formal `real-prod-01` 的首次空状态检查拒绝 Flink JVM 自动生成的�
 
 新增Hive双SSH元数据协调与Iceberg analysis权威交接：读取前进行实际清理，独立control执行，阶段切换只操作原容器，断连/超时仍精确取消，临时聚合副本继承原期限。612项本地Python通过、3项Linux专属测试在Windows跳过，23项浏览器适配、Ruff及v1/v2契约通过。冻结writer文件保持不变；这些新入口仍是待实际VM联调的候选，没有声称真实Hive/Iceberg或闭日模型已通过。
 
-`c003f8e` 的 Linux CI 首次失败仅因新增测试的私有配置夹具未设 0600；生产权限规则没有放宽，夹具已修正。后续修复同时让精确 driver 取消在 PID 消失或 `/proc` 读取失败时继续执行清理，并按校验后的节点私网地址探测 YARN/HDFS/Hive。远端复验结果待实际完成后登记。
+`c003f8e` 的 Linux CI 首次失败仅因新增测试的私有配置夹具未设 0600；生产权限规则没有放宽，夹具已修正。后续修复同时让精确 driver 取消在 PID 消失或 `/proc` 读取失败时继续执行清理，并按校验后的节点私网地址探测 YARN/HDFS/Hive。本地相关 107 项通过、2 项 Linux 专属测试跳过；签名提交 `d4b638f21eedc658c6fc2c979ec577186d38e4ea` 的 [Linux CI 35437869195](https://github.com/X1aoB/Snow_Statistics/actions/runs/35437869195) 和对应 push CI `35437867378` 均成功，包含 Python、浏览器、Java 和依赖锁检查。新入口的实际三节点验收仍需另记。
 
 ## 恢复实施（2026-09-19）
 
