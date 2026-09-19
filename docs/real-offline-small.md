@@ -2,6 +2,8 @@
 
 本入口将既有 `real_lab` 的固定离线阶段串起来，默认使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。另有显式的 `real-small-1792` 候选，只把 compute 改为 **1792 MiB**，合计 **4608 MiB**；它尚未通过实际引擎验收。入口按阶段执行，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
 
+**当前本机操作状态（2026-09-19）：**宿主在新一轮1792启动时发生 `0xF7` 蓝屏，转储分析未锁定责任驱动。当前暂停下面的三机启动与计算操作，VM保持关闭；下一次恢复须按具体审阅窗口执行。原始started回执及历史正常停机成绩分别保留，见[最新状态](status.md)与[中断证据](evidence/host-interruption-20260919.json)。
+
 **验收状态：**46efeceb已通过Linux CI35438865825（含实际`SIGHUP`进程组测试），Windows精确进程树终止也已在本地测试。首次实际VM入口尝试已通过正式paused/stopped准入并启动三台VM，但在analysis DataNode的额外`/data`匿名父卷检查处失败；原失败回执保留，不能记为完整启动成功。操作者只读核对实际容器归属后，精确停止该DataNode并软关三台VM，没有删除卷，也没有继续执行后续计算。最小兼容修复`22ef47ae`的完整本地745项测试和Linux CI35439860162、35439858210已通过，实际VM重试另记。此前同资源配置的手工编排、合成golden及正式ODS落地结果属于已有独立证据，不能替代本入口验收。
 
 对应实现：[Windows/节点模块](../src/snow_statistics/real_offline_small.py)、[CLI](../tools/real_offline_small.py)、[合成故障测试](../tests/test_real_offline_small.py)。冻结的 `real_lab.py`、writer、恢复账本、生命周期及模型代码均继续使用原实现。
@@ -118,6 +120,8 @@ $runId = 'accepted_closed_day_run'
 回执同时记录本次 `profile` 和三节点 `memory_mib`。停止不删数据；所选profile不一致时不接管另一组运行配置。
 
 各节点保存同 namespace 的 worker 元数据和最多 1 MiB 的私有命令诊断日志。外层 `completed` 只表示冻结 CLI 正常退出；实际引擎、生命周期与发布回执仍在原受管理路径，不能用它代替后端读回。冻结 CLI 返回 `no_computable_input` 时会原样保留这一状态。数据行仍由既有 real 生命周期管理；这些诊断不作为模型/指标验收证据。不会打印 reader token，也不会读取聊天/业务数据库。
+
+Linux节点另外登记固定子任务的PID、启动时刻、进程组和会话，使用绑定同一attempt/worker的`child.json`与`done.json`记录实际收尾。父进程退出后仍检查该组的存活成员，先TERM，必要时KILL，再核验没有存活成员；原非零退出不会因此变成成功。取消可从已登记的子会话恢复，复用PID、失配元数据或无法证明范围的旧记录会拒绝推测性清理。已完成的取消不会再停止后来任务的驱动容器。这项改动处理Linux作业收尾，未修改Windows启动器或冻结writer，也不是宿主蓝屏修复；Linux CI与VM部署成绩分别记录在实施状态中。
 
 | 现象 | 处理 |
 |---|---|

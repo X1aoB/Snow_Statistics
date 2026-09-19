@@ -770,7 +770,11 @@ def test_node_heartbeat_loss_stops_frozen_process_group(tmp_path, monkeypatch):
             return self.returncode
     monkeypatch.setattr(small.subprocess, "Popen", Process)
     monkeypatch.setattr(small, "process_identity", lambda pid: dict(pid=pid, start_ticks="1", argv_sha256="a" * 64))
-    monkeypatch.setattr(small, "stop_tree", lambda process: stopped.append(process.pid))
+    monkeypatch.setattr(small, "child_session", lambda pid: dict(pid=pid, pgid=pid, sid=pid, start_ticks="1"))
+    def stop(identity, process=None):
+        stopped.append(identity["pid"])
+        return dict(active_members_after_cleanup=0, kill_escalated=False)
+    monkeypatch.setattr(small, "stop_session", stop)
     monkeypatch.setattr(small.select, "select", lambda *a: ([123], [], []))
     monkeypatch.setattr(small.os, "read", lambda fd, size: b"")
     with pytest.raises(RuntimeError, match="heartbeat"):

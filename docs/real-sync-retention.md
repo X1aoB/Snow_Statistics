@@ -13,8 +13,9 @@
 在 analysis VM 中，既有命令自动经过同一入口，无需增加新服务：
 
 ```sh
-python tools/real_epoch.py --root "$PWD/runtime/real/epochs" cleanup
-python tools/real_epoch.py --root "$PWD/runtime/real/epochs" start --epoch real-prod-01 --stage storage
+cd /home/snow/Snow_Statistics
+.venv/bin/python tools/real_epoch.py --root "$PWD/runtime/real/epochs" cleanup
+.venv/bin/python tools/real_epoch.py --root "$PWD/runtime/real/epochs" start --epoch real-prod-01 --stage storage
 ```
 
 第二条命令仍须满足原启动授权、资源和到期门禁；这里只说明接线，不建议为测试清理而启动引擎。watch 正常轮询的等待上限为 30 秒，不包含锁重试或实际清理耗时；关机期间不能执行删除，下次启动先处理到期数据。停止不删除未过期数据，删除也不代表 VMDK/SSD 取证级擦除。

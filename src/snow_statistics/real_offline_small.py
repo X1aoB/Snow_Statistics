@@ -378,6 +378,123 @@ def stop_tree(process):
         process.wait(timeout=10)
 
 
+def session_stat(pid):
+    """Stable kernel identity, including a zombie leader before it is reaped."""
+    if type(pid) is not int or pid < 1:
+        raise ValueError("Expected a positive session PID")
+    try:
+        fields = (Path("/proc") / str(pid) / "stat").read_text().rsplit(")", 1)[1].split()
+    except FileNotFoundError:
+        return None
+    if len(fields) < 20 or not fields[19].isdigit():
+        raise ValueError("Invalid POSIX process metadata")
+    return dict(pid=pid, state=fields[0], pgid=int(fields[2]), sid=int(fields[3]), start_ticks=fields[19])
+
+
+def checked_session(identity):
+    if (not isinstance(identity, dict) or set(identity) != {"pid", "start_ticks", "pgid", "sid"}
+            or any(type(identity[key]) is not int or identity[key] < 1 for key in ("pid", "pgid", "sid"))
+            or identity["pgid"] != identity["pid"] or identity["sid"] != identity["pid"]
+            or not isinstance(identity["start_ticks"], str) or not re.fullmatch(r"[0-9]+", identity["start_ticks"])):
+        raise ValueError("Invalid registered POSIX session")
+    return identity
+
+
+def child_session(pid):
+    value = session_stat(pid)
+    if value is None:
+        raise RuntimeError("New child session identity is unavailable")
+    return checked_session({key: value[key] for key in ("pid", "start_ticks", "pgid", "sid")})
+
+
+def session_members(identity):
+    """Never infer absence from the leader's exit, or signal a reused PID."""
+    identity = checked_session(identity)
+    leader = session_stat(identity["pid"])
+    if leader is not None and any(leader[key] != identity[key] for key in identity):
+        raise ValueError("Registered session leader identity changed")
+    active = []
+    for path in Path("/proc").iterdir():
+        if not path.name.isascii() or not path.name.isdigit():
+            continue
+        value = session_stat(int(path.name))
+        if value is None or value["pgid"] != identity["pgid"]:
+            continue
+        if value["sid"] != identity["sid"] or int(value["start_ticks"]) < int(identity["start_ticks"]):
+            raise ValueError("Unexpected member in registered child session")
+        if value["state"] != "Z":
+            active.append(value["pid"])
+    return sorted(active)
+
+
+def stop_session(identity, process=None):
+    """Bounded TERM/KILL and actual absence for one registered Linux session."""
+    identity = checked_session(identity)
+    escalated = False
+    for sig, grace in ((signal.SIGTERM, 15), (signal.SIGKILL, 5)):
+        if not session_members(identity):
+            break
+        try:
+            os.killpg(identity["pgid"], sig)
+        except ProcessLookupError:
+            pass
+        escalated = escalated or sig == signal.SIGKILL
+        until = time.monotonic() + grace
+        while session_members(identity) and time.monotonic() < until:
+            time.sleep(0.1)
+    if session_members(identity):
+        raise RuntimeError("Registered child session still has active members")
+    if process is not None:
+        process.wait(timeout=5)
+    return dict(active_members_after_cleanup=0, kill_escalated=escalated)
+
+
+def checked_child(directory, worker, attempt):
+    path = directory / "child.json"
+    if path.resolve() != path.absolute():
+        raise ValueError("Child session metadata cannot traverse links")
+    if not path.exists():
+        return None
+    child = read_json(path)
+    if (set(child) != {"schema_version", "attempt", "worker_sha256", "command_sha256", "session"}
+            or type(child["schema_version"]) is not int or child["schema_version"] != 1 or child["attempt"] != attempt
+            or child["worker_sha256"] != digest(canonical(worker))
+            or not isinstance(child["command_sha256"], str)
+            or not re.fullmatch(r"[a-f0-9]{64}", child["command_sha256"])):
+        raise ValueError("Child session belongs to another worker attempt")
+    checked_session(child["session"])
+    return child
+
+
+def checked_done(directory, worker, child, attempt):
+    path = directory / "done.json"
+    if path.resolve() != path.absolute():
+        raise ValueError("Completion metadata cannot traverse links")
+    if not path.exists():
+        return None
+    done = read_json(path)
+    if (set(done) != {"schema_version", "attempt", "worker_sha256", "child_sha256", "launch_attempted",
+                     "phase_complete", "child_group_stopped", "driver_stopped", "session_cleanup"}
+            or type(done["schema_version"]) is not int or done["schema_version"] != 1 or done["attempt"] != attempt
+            or done["worker_sha256"] != digest(canonical(worker))
+            or done["child_sha256"] != (digest(canonical(child)) if child else None)
+            or any(type(done[key]) is not bool for key in
+                   ("launch_attempted", "phase_complete", "child_group_stopped", "driver_stopped"))
+            or child is not None and not done["launch_attempted"]
+            or done["phase_complete"] and child is None):
+        raise ValueError("Completion receipt belongs to another worker attempt")
+    if done["child_group_stopped"]:
+        if child is not None:
+            cleanup = done["session_cleanup"]
+            if (not isinstance(cleanup, dict) or set(cleanup) != {"active_members_after_cleanup", "kill_escalated"}
+                    or type(cleanup["active_members_after_cleanup"]) is not int
+                    or cleanup["active_members_after_cleanup"] != 0 or type(cleanup["kill_escalated"]) is not bool):
+                raise ValueError("Invalid child session absence receipt")
+        elif done["launch_attempted"] or done["session_cleanup"] is not None:
+            raise ValueError("Unregistered child launch cannot certify absence")
+    return done
+
+
 def driver_cleanup(root, phase, run_id):
     if phase not in {"daily", "behavior"}:
         return
@@ -422,16 +539,53 @@ def node_cancel(root, config, attempt):
             raise ValueError("Invalid cancellation process identity")
         if worker["run_id"] is not None:
             metadata_paths(config, worker["run_id"])
+        child = checked_child(directory, worker, attempt)
+        done = checked_done(directory, worker, child, attempt)
+        if done and done["child_group_stopped"] and done["driver_stopped"]:
+            # A later attempt may now own a different driver. Never re-stop it
+            # merely because an already finished cancellation was retried.
+            return dict(status="cancelled", already_cleaned=True, data_deleted=False)
+    group_stopped, driver_stopped, cleanup = False, False, None
     try:
-        if process_identity(identity["pid"]) == identity:
-            os.kill(identity["pid"], signal.SIGTERM)
+        actual = process_identity(identity["pid"])
+        if actual is not None and actual != identity:
+            raise ValueError("Refuse a reused offline worker PID")
+        if actual == identity:
+            try:
+                os.kill(identity["pid"], signal.SIGTERM)
+            except ProcessLookupError:
+                # Natural exit after the identity read does not imply that
+                # its separately registered child session has also stopped.
+                pass
             until = time.monotonic() + 55
             while process_identity(identity["pid"]) == identity and time.monotonic() < until:
                 time.sleep(0.25)
             if process_identity(identity["pid"]) == identity:
                 raise RuntimeError("Remote worker cancellation has not completed")
+        # Read after the worker's finally: it may have registered the child
+        # while the first cancellation snapshot was being taken.
+        child = checked_child(directory, worker, attempt)
+        done = checked_done(directory, worker, child, attempt)
+        if done and done["child_group_stopped"] and done["driver_stopped"]:
+            return dict(status="cancelled", already_cleaned=True, data_deleted=False)
+        if child is None:
+            if not done or done["launch_attempted"] or not done["child_group_stopped"]:
+                raise RuntimeError("Legacy or interrupted worker has no proven child-session scope")
+            group_stopped = True
+        else:
+            cleanup = stop_session(child["session"])
+            group_stopped = True
     finally:
-        driver_cleanup(root, worker["phase"], worker["run_id"])
+        if not (done and done["child_group_stopped"] and done["driver_stopped"]):
+            driver_cleanup(root, worker["phase"], worker["run_id"])
+            driver_stopped = True
+        else:
+            driver_stopped = True
+    if group_stopped and driver_stopped:
+        write_json(directory / "done.json", dict(schema_version=1, attempt=attempt, worker_sha256=digest(canonical(worker)),
+                   child_sha256=digest(canonical(child)) if child else None, launch_attempted=child is not None,
+                   phase_complete=bool(done and done["phase_complete"]), child_group_stopped=True,
+                   driver_stopped=True, session_cleanup=cleanup))
     return dict(status="cancelled", data_deleted=False)
 
 
@@ -501,13 +655,20 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
     with publication_lock(directory / "admission"):
         if (directory / "worker.json").exists() or (directory / "cancelled.json").exists():
             raise ValueError("This exact node attempt cannot be reused")
-        write_json(directory / "worker.json", dict(config_sha256=digest(canonical(config)), phase=phase,
-                   run_id=run_id, process=process_identity(os.getpid())))
+        worker = dict(config_sha256=digest(canonical(config)), phase=phase,
+                      run_id=run_id, process=process_identity(os.getpid()))
+        write_json(directory / "worker.json", worker)
+    cancelled = threading.Event()
     def interrupted(*_):
-        raise InterruptedError("Offline worker was cancelled")
+        # Defer until the new detached child has a durable identity.
+        cancelled.set()
+    def check_cancelled():
+        if cancelled.is_set() or (directory / "cancelled.json").exists():
+            raise InterruptedError("Offline worker was cancelled")
     previous = {sig: signal.signal(sig, interrupted) for sig in
                 ([signal.SIGTERM, signal.SIGHUP] if hasattr(signal, "SIGHUP") else [signal.SIGTERM])}
-    process = None
+    process, session, child, stream = None, None, None, None
+    launch_attempted, complete, cleanup = False, False, None
     log = directory / "private.log"
     drain_thread, log_failed = None, threading.Event()
     try:
@@ -515,45 +676,85 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
         command = [sys.executable, "tools/real_lab.py", "--config", config_file, phase]
         if run_id:
             command += ["--run-id", run_id]
-        with log.open("wb") as stream:
+        stream = log.open("xb")
+        with publication_lock(directory / "admission"):
+            check_cancelled()
+            launch_attempted = True
             process = subprocess.Popen(command, cwd=root, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT, start_new_session=True)
-            def drain():
-                remaining = LOG_LIMIT
-                try:
-                    while chunk := process.stdout.read(16384):
-                        stream.write(chunk[:remaining])
-                        if len(chunk) > remaining:
-                            log_failed.set()
-                        remaining = max(0, remaining - len(chunk))
-                except Exception:
-                    log_failed.set()
-            drain_thread = threading.Thread(target=drain, daemon=True)
-            drain_thread.start()
-            deadline = time.monotonic() + 1200
-            while process.poll() is None:
-                heartbeat.check()
-                if time.monotonic() >= deadline or log_failed.is_set():
-                    raise RuntimeError("Offline phase exceeded its time or retained log bound")
-                time.sleep(0.25)
-            if process.returncode:
-                raise RuntimeError("Frozen offline phase failed; inspect its private bounded log")
-            drain_thread.join(timeout=5)
-            if drain_thread.is_alive() or log_failed.is_set():
-                raise RuntimeError("Frozen offline output exceeded its bounded metadata log")
-        return phase_result(log, phase)
+            session = child_session(process.pid)
+            child = dict(schema_version=1, attempt=attempt, worker_sha256=digest(canonical(worker)),
+                         command_sha256=digest(canonical(command)), session=session)
+            write_json(directory / "child.json", child)
+        check_cancelled()
+        def drain():
+            remaining = LOG_LIMIT
+            try:
+                while chunk := process.stdout.read(16384):
+                    stream.write(chunk[:remaining])
+                    if len(chunk) > remaining:
+                        log_failed.set()
+                    remaining = max(0, remaining - len(chunk))
+            except Exception:
+                log_failed.set()
+        drain_thread = threading.Thread(target=drain, daemon=True)
+        drain_thread.start()
+        deadline = time.monotonic() + 1200
+        while process.poll() is None:
+            check_cancelled()
+            heartbeat.check()
+            if time.monotonic() >= deadline or log_failed.is_set():
+                raise RuntimeError("Offline phase exceeded its time or retained log bound")
+            time.sleep(0.25)
+        check_cancelled()
+        if process.returncode:
+            raise RuntimeError("Frozen offline phase failed; inspect its private bounded log")
+        # The leader can exit while a descendant still holds its stdout pipe.
+        cleanup = stop_session(session, process)
+        drain_thread.join(timeout=5)
+        if drain_thread.is_alive() or log_failed.is_set():
+            raise RuntimeError("Frozen offline output exceeded its bounded metadata log")
+        stream.flush()
+        result = phase_result(log, phase)
+        complete = True
+        return result
     finally:
+        group_stopped, driver_stopped = False, False
         try:
             if process is not None:
-                stop_tree(process)
+                if session is None:
+                    # No poll/wait has reaped this child yet. Never substitute
+                    # its worker parent's PID for this exact session scope.
+                    session = child_session(process.pid)
+                final = stop_session(session, process)
+                cleanup = dict(active_members_after_cleanup=0,
+                               kill_escalated=final["kill_escalated"] or bool(cleanup and cleanup["kill_escalated"]))
+                group_stopped = child is not None
+            elif not launch_attempted:
+                group_stopped = True
         finally:
             try:
                 driver_cleanup(root, phase, run_id)
+                driver_stopped = True
             finally:
                 if drain_thread:
                     drain_thread.join(timeout=10)
+                drain_stopped = drain_thread is None or not drain_thread.is_alive()
+                # Closing a BufferedReader still owned by a blocked drain
+                # thread can itself wait without a bound. Retain the failure.
+                if drain_stopped:
+                    if stream:
+                        stream.close()
+                    if process is not None and process.stdout is not None:
+                        process.stdout.close()
                 for sig, handler in previous.items():
                     signal.signal(sig, handler)
+                write_json(directory / "done.json", dict(schema_version=1, attempt=attempt,
+                           worker_sha256=digest(canonical(worker)), child_sha256=digest(canonical(child)) if child else None,
+                           launch_attempted=launch_attempted, phase_complete=complete,
+                           child_group_stopped=group_stopped, driver_stopped=driver_stopped, session_cleanup=cleanup))
+                if not drain_stopped:
+                    raise RuntimeError("Owned frozen output reader did not stop")
 
 
 class Monitor:
