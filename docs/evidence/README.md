@@ -1,4 +1,15 @@
-# 本地合成验收收据
+# 验收证据索引
+
+## 2026-09-19宿主故障与单机检查
+
+| 证据 | 实际范围与边界 |
+|---|---|
+| [宿主中断与诊断](host-interruption-20260919.json) | 0xF7后精确临时残留处理及WinDbg离线诊断；根因未定，不证明来宾恢复 |
+| [第一次单analysis窗口](postcrash-single-vm-20260919.json) | 768 MiB检查超时、无guest sample，随后软关读回通过；失败历史保留 |
+| [V2单analysis窗口](postcrash-single-vm-v2-20260919.json) | 同授权范围的基础元数据检查和软关通过；不证明HDFS/数据库/Checkpoint恢复或长期稳定，三机及引擎暂停仍保持 |
+| [POSIX作业收尾](offline-session-cleanup-20260919.json) | 功能196c的Linux合成测试与CI；VM仍安装de406，不能当作蓝屏修复 |
+
+## 历史合成验收收据
 
 2026-09-11。这里保存实际工具输出的汇总 JSON；无用户数据、凭据或原始事件。首轮引擎及服务代码为 `98f217e`；轻量镜像 ID 记录在其收据内。适配器最新浏览器验收为 Project_Snow `cf13565`。
 

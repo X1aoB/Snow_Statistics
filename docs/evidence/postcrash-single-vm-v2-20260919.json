@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-19T14:13:23.1223805Z",
+  "scope": "Sanitized basic metadata and shutdown checks from a controlled retry of the same authorized single-analysis 768 MiB window",
+  "authorization": {
+    "single_node": "snow-analysis",
+    "memory_mib": 768,
+    "additional_nodes_or_engines_in_scope": false,
+    "source_deployment_in_scope": false
+  },
+  "attempt": {
+    "started_at": "2026-09-19T14:10:25.521067+00:00",
+    "metadata_window_finished_at": "2026-09-19T14:11:30.026721+00:00",
+    "finished_at": "2026-09-19T14:12:27.068969+00:00",
+    "status": "metadata_window_complete",
+    "guest_metadata_sample_received": true,
+    "ssh_readiness_attempts": 2,
+    "first_ssh_readiness_timed_out": true,
+    "first_ssh_timeout_seconds": 8,
+    "first_ssh_process_cleanup_succeeded": true,
+    "second_ssh_readiness_exit_code": 0,
+    "second_ssh_readiness_elapsed_seconds": 1.656,
+    "guest_probe_exit_code": 0,
+    "guest_probe_elapsed_seconds": 0.938
+  },
+  "basic_guest_metadata": {
+    "root_filesystem_type": "ext4",
+    "root_filesystem_rw": true,
+    "available_ram_mib": 338,
+    "disk_free_mib": 2116,
+    "running_containers_empty": true,
+    "installed_source_matches": true,
+    "frozen_writer_files_match": true,
+    "frozen_writer_file_count": 12,
+    "reviewed_immutable_metadata_hashes_match": true,
+    "reviewed_immutable_metadata_file_count": 4,
+    "lifecycle_gate_open": true,
+    "original_retention_deadline_unchanged": true,
+    "startup_cleanup_service_active": true,
+    "startup_cleanup_service_running": true,
+    "startup_cleanup_service_restart_count": 0,
+    "event_database_checkpoint_payload_read": false,
+    "filesystem_written_by_probe": false,
+    "lifecycle_cleanup_invoked_by_probe": false,
+    "warehouse_engines_started_by_probe": false,
+    "existing_boot_services_may_write": true
+  },
+  "closure": {
+    "soft_stop_attempted": true,
+    "soft_stop_succeeded": true,
+    "soft_stop_exit_code": 0,
+    "soft_stop_elapsed_seconds": 45.687,
+    "vmrun_zero": true,
+    "vmx_count": 0,
+    "analysis_temporary_residue_names_empty": true,
+    "independent_checked_at": "2026-09-19T14:13:23.1223805Z",
+    "independent_running_vm_count": 0,
+    "independent_vmx_process_count": 0
+  },
+  "host_readback": {
+    "latest_boot_utc": "2026-09-19T12:58:19.5000000Z",
+    "additional_reboot_observed": false,
+    "boot_timestamp_is_not_exact_crash_timestamp": true
+  },
+  "versions": {
+    "functional_source_commit": "196c09c8e2c482f9e2dddcbf9a99151d6c5148a2",
+    "vm_installed_source_commit": "de406cbfe0eff069f56a3b04420d280175966d95",
+    "new_functional_source_deployed": false
+  },
+  "boundaries": {
+    "full_guest_recovery_verified": false,
+    "hdfs_database_or_checkpoint_recovery_verified": false,
+    "host_crash_root_cause_verified": false,
+    "long_term_stability_claimed": false,
+    "three_node_or_warehouse_engine_hold_released": false,
+    "prior_failed_receipt_rewritten": false,
+    "private_controller_v2_claimed_as_host_crash_fix": false,
+    "raw_payload_identifiers_or_lifecycle_file_details_exported": false
+  },
+  "private_metadata_receipts_sha256": {
+    "finished": "2508b16c286eafa5410c9702be2f8d6157cf5ad812aefda8719972d6c10ae147",
+    "independent_readback": "7ed84527fa2b3d8c3c6c0e8407deb1bef7b6787dac4537fc2c18d6b2a61c70d6"
+  }
+}
