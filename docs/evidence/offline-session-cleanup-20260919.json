@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "source_git_commit": "196c09c8e2c482f9e2dddcbf9a99151d6c5148a2",
+  "signature_verified": true,
+  "scope": "Synthetic POSIX offline worker session ownership and cancellation recovery",
+  "linux_ci": {
+    "run_ids": [35446594687, 35446593212],
+    "conclusions": ["success", "success"],
+    "python_job_id": 105906473457,
+    "runner_image": "ubuntu-24.04",
+    "python_result_at": "2026-09-19T13:44:11.2128650Z",
+    "python_passed": 846,
+    "python_skipped": 1,
+    "actual_orphan_group_cleanup_executed": true,
+    "actual_term_ignoring_child_and_bystander_isolation_executed": true,
+    "actual_exited_leader_with_inherited_stdout_executed": true,
+    "actual_dead_worker_registered_session_recovery_executed": true,
+    "browser_tests_passed": 23,
+    "ruff_and_contract_checks_passed": true,
+    "java_build_and_dependency_lock_passed": true,
+    "lineage_interruption_and_retirement_smokes_passed": true,
+    "url": "https://github.com/X1aoB/Snow_Statistics/actions/runs/35446594687"
+  },
+  "local_checks": {
+    "initial_full_suite_before_final_exit_race_fix_passed": 830,
+    "initial_full_suite_platform_skips": 16,
+    "final_targeted_suite_passed": 140,
+    "final_targeted_posix_skips_on_windows": 9,
+    "independent_review_completed": true,
+    "natural_parent_exit_during_signal_race_fixed": true
+  },
+  "boundaries": {
+    "windows_stop_tree_and_smallrunner_unchanged": true,
+    "frozen_writer_files_unchanged": 12,
+    "registered_group_and_session_only": true,
+    "arbitrary_session_escape_containment_claimed": false,
+    "docker_driver_ownership_check_separate": true,
+    "legacy_unknown_scope_fails_closed": true,
+    "deployed_to_vm": false,
+    "vm_installed_source_git_commit": "de406cbfe0eff069f56a3b04420d280175966d95",
+    "host_bugcheck_root_cause_fixed_claimed": false,
+    "vm_restart_hold_released": false,
+    "real_event_payload_used": false,
+    "production_modified": false
+  }
+}
