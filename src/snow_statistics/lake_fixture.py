@@ -14,11 +14,6 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-import httpx
-import uvicorn
-
-from .api import create_app
-from .config import Settings
 from .contracts import Event
 from .io import digest, write_json
 from .landing import acknowledge, capture, checked_receipt, collector_identity, land
@@ -151,6 +146,14 @@ class FixtureSource:
 
 
 def initialize(root, lane, nodes):
+    # The 768 MiB analysis node also hosts a DataNode during later phases.
+    # Pure metadata/landing reads must not initialize the HTTP server stack.
+    import httpx
+    import uvicorn
+
+    from .api import create_app
+    from .config import Settings
+
     paths = locations(root, lane)
     if any(path.exists() for path in paths.values()):
         raise ValueError("Fixture initialization requires entirely fresh owned paths")

@@ -29,7 +29,7 @@
 
 以下 Linux 命令通过受信任的 `lab_remote.py` 和外层资源监测执行；它们不代替 Windows 启停及失败收尾。工具拒绝在其他 checkout 或错误节点运行。
 
-1. analysis 执行 `.venv/bin/python tools/lake_fixture.py initialize --lane fixture-lake-01`。初始化要求所有本次路径为空；失败保留现场，使用新的 lane 重新验收，不能改旧时钟后重试。
+1. analysis 使用 768 MiB 配置、尚未运行任何容器时，执行 `.venv/bin/python tools/lake_fixture.py initialize --lane fixture-lake-01`。持续确认可用内存不低于 128 MiB，记录实际接收时刻。初始化要求所有本次路径为空；失败保留现场，使用新的 lane 重新验收，不能改旧时钟后重试。完成后软关 analysis，再启动受控离线拓扑；采集服务已退出，不与 DataNode 同时争用内存。
 2. 固定离线服务正常、HDFS 两台 DataNode 就绪后，analysis 执行 `.venv/bin/python tools/lake_fixture.py land-permit --lane fixture-lake-01`。实际 HDFS 文件校验和两副本通过后才确认**模拟适配器**的位点；随后真实注册输出并清理，签发最长 15 分钟的读许可。
 3. 只把新 fixture 的配置和 `manifest.json` 元数据复制到 Windows/control，不复制采集库、原始输入、令牌或 authority registry。配置 mode 保持 `0600`。使用原 `real_lab stage-compute --run-id fixture-lake-01-r1` 传递经过验证的 job/coverage/permit/ODS 状态元数据。
 4. 在 control 依次通过冻结的 `real_lab daily`、`behavior`、`validate`、`publish-private` 执行实际模型；参数均绑定 `runtime/real/config/fixture-lake-01.json` 与 run `fixture-lake-01-r1`。每个计算阶段之前在 analysis 重新运行 `land-permit` 并重新传递计算元数据，不能沿用过期 permit。

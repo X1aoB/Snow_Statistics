@@ -2,6 +2,8 @@
 
 本入口是**候选实现**：有合成协议、目录范围、恢复和超时测试；尚未在 VMware 上完成本入口的 Spark/Hive 联调。不能把本页当作新的实际引擎回执。既有正式 Flink writer 文件及其冻结哈希不改，analysis 不下载 Spark/Hive 镜像、不接收 control 私钥。
 
+新的三节点验收使用[独立合成夹具](lake-fixture.md)：analysis 拥有新 lane 的清单和受管理聚合包。Hive 按权威节点选择读取目录，analysis 无论真实来源还是明确标注的合成夹具，都读取指定 lane/run 的受管传递结果；缺失或不匹配就失败，不退回旧通用聚合目录。旧 control 合成实验保留原目录兼容。测试适配器未运行 Kafka，不能把这轮 Hive/Iceberg 验收当作新的 Kafka 引擎成绩。
+
 ## 为什么需要 Windows 协调会话
 
 analysis 保存真实数据资源清单、原始期限、ODS 位点、已发布聚合和 writer 身份。control 已有锁定的 Spark 镜像与 334 个 Hive 客户端 JAR。现有 `SparkCatalog` 默认在调用节点执行，所以裸 `real_lab cleanup/permit` 和裸私有看板遇到已登记 Hive 后，仍会因 analysis 缺客户端而拒绝读取。
