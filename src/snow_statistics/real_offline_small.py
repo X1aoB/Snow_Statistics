@@ -254,6 +254,9 @@ def container_ownership(root, node, name, value, *, driver_id=None, parent_probe
     if actual != mounts or len(actual) != len(value["mounts"]):
         raise ValueError("Owned container mount identity changed")
     identity = {k: v for k, v in value.items() if k != "pid"}
+    # Docker may reorder Mounts between inspect calls; retain every field while
+    # making the ownership fingerprint independent of list presentation order.
+    identity["mounts"] = sorted(value["mounts"], key=canonical)
     if parent_identity:
         identity["image_parent_volume"] = parent_identity
     return digest(canonical(identity))

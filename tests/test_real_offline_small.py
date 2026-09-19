@@ -10,6 +10,7 @@ import threading
 import time
 from contextlib import nullcontext
 from datetime import UTC, datetime, timedelta
+from itertools import permutations
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -545,6 +546,64 @@ def hadoop_parent_fixture(tmp_path):
                                 mountpoint=parent["Source"], scope="local", options=None),
                     consumers=[value["id"]])
     return value, parent, evidence
+
+
+def full_mount_projection(tmp_path, service):
+    """Synthetic identifiers with the full Docker Mounts shapes observed in the lab."""
+    if service == "datanode":
+        value, _, evidence = hadoop_parent_fixture(tmp_path)
+        return "snow-analysis", value, evidence
+    value = container(tmp_path)
+    value.update(name="/snow-lab-compute-nodemanager-1", project="snow-lab-compute", service="nodemanager",
+                 image="snow-yarn-spark:0.1.0",
+                 config_files=",".join(str(tmp_path / "lab" / n) for n in ("compose.compute.yaml", "compose.compute-scale.yaml")))
+    value["mounts"] = [
+        dict(Type="bind", Source=str(tmp_path / "lab/nodemanager-entrypoint.sh"), Destination="/snow/nodemanager-entrypoint.sh",
+             Mode="ro", RW=False, Propagation="rprivate"),
+        dict(Type="bind", Source=str(tmp_path / "lab/locks/spark-jars.sha256"), Destination="/snow/spark-jars.sha256",
+             Mode="ro", RW=False, Propagation="rprivate"),
+        dict(Type="volume", Name="snow-lab-compute_yarn", Source="/var/lib/docker/volumes/snow-lab-compute_yarn/_data",
+             Destination="/data/yarn", Driver="local", Mode="rw", RW=True, Propagation=""),
+        dict(Type="bind", Source=str(tmp_path / "lab/generated/hadoop"), Destination="/etc/hadoop",
+             Mode="ro", RW=False, Propagation="rprivate")]
+    return "snow-compute", value, None
+
+
+@pytest.mark.parametrize("service", ["datanode", "nodemanager"])
+def test_full_docker_mount_permutations_keep_same_owned_container(tmp_path, service):
+    node, value, evidence = full_mount_projection(tmp_path, service)
+    original = copy.deepcopy(value)
+    name = value["name"].removeprefix("/")
+    runner = FixtureRunner(tmp_path)
+    hashes = set()
+    for mounts in permutations(original["mounts"]):
+        observed = original | {"mounts": list(mounts)}
+        before = copy.deepcopy(observed)
+        ownership = small.container_ownership(tmp_path, node, name, observed, parent_probe=lambda *_: evidence)
+        hashes.add(ownership)
+        runner.remember_objects(node, guest(node, {name: item() | {"id": value["id"], "ownership_sha256": ownership}}))
+        assert observed == before  # Fingerprinting never rewrites the actual inspect projection.
+    assert len(hashes) == 1 and not runner.foreign_nodes and value == original
+
+
+@pytest.mark.parametrize("field,changed", [("Mode", "ro"), ("Propagation", "rprivate"),
+                                           ("Source", "/var/lib/docker/volumes/replaced/_data"),
+                                           ("Driver", "another-driver"), ("ExtraMetadata", "changed")])
+def test_sorting_mounts_preserves_all_fields_in_ownership_hash(tmp_path, field, changed):
+    node, value, _ = full_mount_projection(tmp_path, "nodemanager")
+    name = value["name"].removeprefix("/")
+    original = small.container_ownership(tmp_path, node, name, value)
+    runner = FixtureRunner(tmp_path)
+    runner.remember_objects(node, guest(node, {name: item() | {"id": value["id"], "ownership_sha256": original}}))
+    altered = copy.deepcopy(value)
+    mount = next(v for v in altered["mounts"] if v["Destination"] == "/data/yarn")
+    mount[field] = changed
+    altered["mounts"].reverse()
+    replacement = small.container_ownership(tmp_path, node, name, altered)
+    assert replacement != original
+    with pytest.raises(ValueError, match="replaced"):
+        runner.remember_objects(node, guest(node, {name: item() | {"id": value["id"], "ownership_sha256": replacement}}))
+    assert node in runner.foreign_nodes
 
 
 def test_actual_hadoop_shape_requires_declared_parent_and_exact_readback(tmp_path):
