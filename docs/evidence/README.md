@@ -8,6 +8,7 @@
 | [第一次单analysis窗口](postcrash-single-vm-20260919.json) | 768 MiB检查超时、无guest sample，随后软关读回通过；失败历史保留 |
 | [V2单analysis窗口](postcrash-single-vm-v2-20260919.json) | 同授权范围的基础元数据检查和软关通过；不证明HDFS/数据库/Checkpoint恢复或长期稳定，三机及引擎暂停仍保持 |
 | [POSIX作业收尾](offline-session-cleanup-20260919.json) | 功能196c的Linux合成测试与CI；VM仍安装de406，不能当作蓝屏修复 |
+| [Windows VM控制与收尾](offline-vm-control-20260919.json) | 签名954451c、直接vmrun控制、严格库存与软关读回；双CI通过，记录时尚未安装VM或恢复引擎 |
 
 ## 历史合成验收收据
 
