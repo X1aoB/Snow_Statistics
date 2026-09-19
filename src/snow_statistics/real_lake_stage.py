@@ -105,12 +105,20 @@ class StageDocker:
             raise ValueError("Both existing HDFS data nodes must remain live")
 
 
+def checked_guest_total(node, total):
+    # MemTotal excludes guest/kernel reservations. The 1792 MiB allocation is
+    # a separate compute-only candidate band, not a lower floor for control.
+    bands = {"snow-control": ((1800, 2048),), "snow-compute": ((1664, 1792), (1800, 2048)),
+             "snow-analysis": ((640, 768),)}
+    if (node not in bands or type(total) is not int
+            or not any(minimum * 1024 <= total <= maximum * 1024 for minimum, maximum in bands[node])):
+        raise ValueError("Use the explicitly selected small offline VM sizes; this tool never reconfigures a VM")
+
+
 def checked_snapshot(node, docker, original=None):
     value = docker.snapshot(node)
     total, available = docker.memory()
-    minimum, maximum = (1800, 2048) if node != "snow-analysis" else (640, 768)
-    if not minimum * 1024 <= total <= maximum * 1024:
-        raise ValueError("Use the explicitly selected real-small or real-small-1920 VM sizes; this tool never reconfigures a VM")
+    checked_guest_total(node, total)
     if available < 128 * 1024:
         raise ValueError("Keep at least 128 MiB actual available guest memory during this bounded phase")
     if original:

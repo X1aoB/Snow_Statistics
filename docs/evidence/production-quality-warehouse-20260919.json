@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-19T11:52:59.122478+00:00",
+  "source": "real",
+  "scope": "Accepted production prefix including a user-confirmed normal conversation completion",
+  "checks": {
+    "local_flink_job_running": true,
+    "quality_metrics_present": true,
+    "doris_matches_independent_oracle": true,
+    "same_collector_identity": true,
+    "same_accepted_and_aggregated_prefix": true,
+    "exact_integer_metrics_equal": true
+  },
+  "all_checks_passed": true,
+  "comparison_scope": "one read-only SQLite transaction at the same current accepted prefix",
+  "writer_frozen_source": "63a0d415a938b077be0dde5c5501e386720392fe",
+  "operator_installed_source": "22ef47ae2eb7a7a3a34282f0060488927d0dbac1",
+  "limitations": {
+    "current_increment_hdfs_landed": false,
+    "natural_closed_day_report": false,
+    "production_p95_claimed": false,
+    "all_business_requests_covered": false
+  },
+  "privacy": {
+    "metric_rows_exported": false,
+    "identifiers_exported": false,
+    "raw_events_exported": false,
+    "chat_content_read": false,
+    "production_modified_by_verifier": false
+  }
+}

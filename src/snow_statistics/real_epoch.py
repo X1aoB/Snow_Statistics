@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 from .io import digest, write_json
 from .lifecycle import timestamp
 from .publication import PublicationLockBusy, canonical, publication_lock
+from .real_sync_retention import cleanup_epoch_sync
 
 OWNER = "Snow_Statistics"
 VOLUMES = ("kafka", "doris-fe", "doris-be", "checkpoints", "flink-state")
@@ -432,6 +433,7 @@ def expire_due(root, docker):
             raise ValueError("Unexpected file in the dedicated epoch registry")
         epoch = Epoch(directory, docker)
         manifest = epoch.read()
+        cleanup_epoch_sync(directory, manifest)
         if timestamp(manifest["expires_at"]) <= datetime.now(UTC):
             results.append(epoch.retire())
     return results

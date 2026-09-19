@@ -148,6 +148,27 @@ def test_explicit_1920_compute_candidate_keeps_original_cgroup_limits(prepared):
     assert docker.actions == []  # The helper does not configure/start a VM.
 
 
+def test_1792_compute_candidate_preserves_guest_floor_and_existing_container_identity(prepared):
+    config, roots, *_ = prepared
+    docker = Docker("snow-compute")
+    docker.total = 1712 * 1024  # Sizing fixture only; actual 1792 MiB guest measurement is pending.
+    docker.available = 128 * 1024
+    stage.reserve_stage(roots["operator"], config, RUN, ATTEMPT, "snow-compute", docker=docker)
+    assert stage.SERVICES["snow-compute"] == {"datanode": 384, "nodemanager": 1536}
+    assert docker.actions == []
+    docker.available = 127 * 1024
+    with pytest.raises(ValueError, match="128 MiB"):
+        stage.checked_snapshot("snow-compute", docker)
+
+
+@pytest.mark.parametrize("node,total", [("snow-control", 1712), ("snow-analysis", 1712),
+                                       ("snow-compute", 1663), ("snow-compute", 1793),
+                                       ("snow-compute", 1799), ("snow-compute", 2049)])
+def test_compute_candidate_does_not_lower_other_guests_or_accept_unknown_bands(node, total):
+    with pytest.raises(ValueError, match="explicitly selected"):
+        stage.checked_guest_total(node, total * 1024)
+
+
 def test_failed_yarn_start_can_restore_only_original_hive_and_preserves_journal(prepared):
     config, roots, *_ = prepared
     root, node = roots["operator"], "snow-control"

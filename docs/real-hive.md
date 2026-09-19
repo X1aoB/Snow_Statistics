@@ -168,6 +168,10 @@ Hive登记之后，后续cleanup/permit也需要实际catalog检查。现有Spar
 
 ## 检查与失败行为
 
+显式 `real-small-1792` 候选使用2048/1792/768 MiB，不改变Hive目录、表、原期限、Compose身份或control的768 MiB实际可用内存要求；客户端仍使用control已有镜像/JAR，analysis不复制或拉取镜像。Lake/Hive元数据检查只给compute新增1664–1792 MiB候选 `MemTotal` 带，原1800–2048带保留；control仍1800–2048，analysis仍640–768，所有guest的128 MiB实际可用余量保持。
+
+这只是首次受控启动的准入范围，1792分配后的准确MemTotal及Hive/Iceberg峰值仍待实测。Windows统一入口和私有首次过渡工具必须显式选择同一profile，收尾也保持一致；不能只改VMX后用默认1920入口。冷启动须留足三台后备文件及128 MiB写入预算，见[小内存入口](real-offline-small.md)。已有1920 golden不能证明新候选通过，且不能扩大同时运行的服务。
+
 `register` 先持久化元数据登记意图，再登记 Hive 生命周期资源；即使中断，重试也不会丢失待清理范围。未实际创建的预登记表可以暂时不存在；已经验证的存活表消失则报错。`verify` 不创建缺失表。
 
 完整清理要求实际执行 HDFS/ODS 处理和所有已初始化后端检查。Hive adapter 验证外表类型、Parquet provider、固定原始列、source、所有者属性、表位置、每个分区的位置及日期。分区详情的两条 `Location` 分别解析，不能用整表位置掩盖分区外逃。查询结果与原发布物按规范 ASCII JSON 排序哈希比较，同时检查精确行数；null 留存和空聚合组保留原语义。

@@ -29,6 +29,7 @@ PROFILES = {"batch": {"snow-control": 4096, "snow-compute": 4096, "snow-analysis
             "scale": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 1024},
             "real-small": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 768},
             "real-small-1920": {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768},
+            "real-small-1792": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768},
             "hive-only": {"snow-control": 2048, "snow-compute": 1024, "snow-analysis": 1536},
             "ods": {"snow-control": 3584, "snow-compute": 4096, "snow-analysis": 1024},
             "ods-compact": {"snow-control": 3584, "snow-compute": 3072, "snow-analysis": 1024},

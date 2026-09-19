@@ -1,6 +1,6 @@
 # 小内存离线操作入口
 
-本入口将既有 `real_lab` 的固定离线阶段串起来，使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。它是显式的按阶段命令，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
+本入口将既有 `real_lab` 的固定离线阶段串起来，默认使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。另有显式的 `real-small-1792` 候选，只把 compute 改为 **1792 MiB**，合计 **4608 MiB**；它尚未通过实际引擎验收。入口按阶段执行，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
 
 **验收状态：**46efeceb已通过Linux CI35438865825（含实际`SIGHUP`进程组测试），Windows精确进程树终止也已在本地测试。首次实际VM入口尝试已通过正式paused/stopped准入并启动三台VM，但在analysis DataNode的额外`/data`匿名父卷检查处失败；原失败回执保留，不能记为完整启动成功。操作者只读核对实际容器归属后，精确停止该DataNode并软关三台VM，没有删除卷，也没有继续执行后续计算。最小兼容修复`22ef47ae`的完整本地745项测试和Linux CI35439860162、35439858210已通过，实际VM重试另记。此前同资源配置的手工编排、合成golden及正式ODS落地结果属于已有独立证据，不能替代本入口验收。
 
@@ -9,6 +9,12 @@
 第二轮 `22ef47ae` 已通过实际匿名卷归属校验，但节点子任务成功后，心跳守护线程在解释器退出时占用标准输入，导致 `_enter_buffered_busy` 和非零 SSH 退出。本轮仍是失败；已精确停止所属服务并软关全部 VM，未提交计算。新修复使用主循环有界管道读取，并处理控制端正常退出时的断管竞态；关闭管道不代表任务成功，仍要求实际零退出及结构化结果。Linux 原生管道回归与下一轮实际入口验收另记。
 
 ## 执行环境和前置条件
+
+1792候选的容量依据：按一次冷态项目 **59.07 GiB** 的舍入读数估算，三台内存后备文件使项目约 **63.57 GiB**，距63.75停线约184 MiB；再预留128 MiB作业写入仍约有56 MiB余量。这是估算，实际安装、启动日志和薄置备磁盘增长仍可能使门禁拒绝。
+
+1920 golden的compute最低可用内存669 MiB，简单减128得到约541 MiB，不能代替1792实测。原DataNode384 MiB、NodeManager1536 MiB容器限额、单作业、堆大小和JAR均不改变；限额总和不是来宾已保证可用的内存。先用新候选验小合成golden，再记录实际最低余量、OOM及文件增长。Hive/Iceberg各阶段另验；1920历史回执保留原配置。
+
+默认仍是1920；若明确选择1792，后续每个阶段和停止都必须写 `--profile real-small-1792`。所选配置贯穿describe、VMX核对、启动、接管及收尾，两个profile共用同一跨lane锁。不从运行状态猜选项，也不自动降配。冻结 `tools/real_lab.py` 的 `--offline-profile` 不增加这个名称。
 
 所有公开命令在 **Windows PowerShell** 的 `C:/Users/25685/Desktop/Myprojects/Snow_Statistics` 执行。配置文件为已准备的 `runtime/real/config/production.json`。它必须使用 `source=real`、`input_origin=real`、`transport_node=snow-analysis` 和实际登记的 epoch；此入口拒绝合成来源配置。
 
@@ -21,7 +27,7 @@ VM 的 Python 环境须已安装本仓库，而不是只安装依赖。由环境
 ```mermaid
 flowchart LR
     A[真实 writer 完成暂停并停止所有五个引擎] --> B[三台项目 VM 全部软关机]
-    B --> C[固定 2048/1920/768 配置并仅启动 analysis]
+    B --> C[核对所选配置和冷启动总预算，仅启动 analysis]
     C --> D[核验 source/冻结 JAR/paused 账本/全部停止卷和容器身份]
     D --> E{有 capture 或 ODS 输入}
     E -->|无| F[返回暂无输入并软关 analysis]
@@ -37,10 +43,13 @@ flowchart LR
 Set-Location 'C:/Users/25685/Desktop/Myprojects/Snow_Statistics'
 & ./.venv/Scripts/python.exe tools/real_offline_small.py --help
 & ./.venv/Scripts/python.exe tools/real_offline_small.py --config runtime/real/config/production.json start-offline --describe
+& ./.venv/Scripts/python.exe tools/real_offline_small.py --config runtime/real/config/production.json --profile real-small-1792 start-offline --describe
 & ./.venv/Scripts/python.exe tools/real_offline_small.py --config runtime/real/config/production.json status
 ```
 
 `--describe` 只验证参数和配置，列出固定内存、门槛和路由，不连接 VM。`status` 读取 VM 状态；已停止的 VM 不会被启动。某个运行节点读取失败时，状态命令报错，不自动停止其他阶段。状态输出是资源/容器元数据，不是数据完整性回执，也不授予读取许可。
+
+1792的说明应输出 `cold_vm_backing_mib=4608`、`cold_write_budget_mib=128`、`executes=false`，其余硬门槛与1920相同。这里保留 `--describe`；说明成功不表示候选VM或作业已经验收。
 
 ## 启动与 ODS 落地
 
@@ -51,6 +60,8 @@ Set-Location 'C:/Users/25685/Desktop/Myprojects/Snow_Statistics'
 
 `start-offline` 要求三台项目 VM **全部停止**，不接管混合运行状态。先配置三台，再启动 analysis，读取真实注册、完整 `paused` 账本与停止的五个引擎/卷身份。Checkpoint 的不可变元数据在这里校验；对 Checkpoint 文件逐字节重新哈希仍由既有恢复流程完成，这一步不宣称读取了停机卷文件。
 
+配置前按实际字节预检：`当前项目文件 + 所选三台VM内存后备预算 + 128 MiB写入预算 <= 63.75 GiB`。1792后备预算是4608 MiB，1920是4736 MiB。失败时不会先配置或启动VM；128 MiB是有限作业余量，不是允许突破停线的配额。每次启动原256 MiB额外预留及64/35/4硬门禁不变。
+
 若 analysis 没有待落地批次或 ODS 窗口，返回 `no_input`，不会启动 NameNode/YARN/DataNode，并软关刚启动的 analysis。因为输入元数据只归 analysis 持有，这个检查需要短暂启动 analysis；不把无输入说成计算得到了零指标。
 
 `land` 仅处理已捕获的批次。没有 pending 批次时返回 `no_input`。它不自动同步、不捕获 Kafka、不确认 ACK；ACK 仍需后续按既有流程切回真实 storage 阶段后执行。不要复制或手改 ODS head/offset 文件。
@@ -58,6 +69,8 @@ Set-Location 'C:/Users/25685/Desktop/Myprojects/Snow_Statistics'
 ## 显式计算与发布
 
 以下例子中的 `accepted_closed_day_run` 必须替换为**已经过审核、已在 analysis 登记**的实际 run ID；示例不会创建作业。作业输入、闭合香港日期、统一截止时间、coverage 和输出 scope 都由既有真实作业校验器约束。当天尚未闭日时，不得把日期改成昨天或未来截止时间制造结果。
+
+以下省略 `--profile` 的命令均为默认1920。若已明确选用1792，逐条加上 `--profile real-small-1792`，包括下文的 `stop-offline`；所选配置不符时会拒绝接管运行VM。
 
 ```powershell
 $runId = 'accepted_closed_day_run'
@@ -101,6 +114,8 @@ $runId = 'accepted_closed_day_run'
 ## 回执与排障
 
 本地回执：`runtime/real/offline-small/<attempt>/controller.json`。字段包括阶段、时间、采样次数、最后主机资源样本、确认归属节点、错误类型与 `cleanup_complete`。`cleanup_scope=none_admitted` 表示未获得任何资源所有权，不能读成“已停完原有服务”。
+
+回执同时记录本次 `profile` 和三节点 `memory_mib`。停止不删数据；所选profile不一致时不接管另一组运行配置。
 
 各节点保存同 namespace 的 worker 元数据和最多 1 MiB 的私有命令诊断日志。外层 `completed` 只表示冻结 CLI 正常退出；实际引擎、生命周期与发布回执仍在原受管理路径，不能用它代替后端读回。冻结 CLI 返回 `no_computable_input` 时会原样保留这一状态。数据行仍由既有 real 生命周期管理；这些诊断不作为模型/指标验收证据。不会打印 reader token，也不会读取聊天/业务数据库。
 

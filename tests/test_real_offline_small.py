@@ -27,7 +27,7 @@ def config():
 
 
 def host():
-    return dict(project_bytes=60 * small.GIB, host_free_bytes=40 * small.GIB, host_available_mib=12000)
+    return dict(project_bytes=59 * small.GIB, host_free_bytes=40 * small.GIB, host_available_mib=12000)
 
 
 def guest(node, containers=None):
@@ -39,15 +39,16 @@ def item():
 
 
 class FixtureRunner(small.SmallRunner):
-    def __init__(self, tmp_path):
+    def __init__(self, tmp_path, *, profile=small.PROFILE):
         self.config, self.config_file, self.root = config(), "runtime/real/config/test.json", tmp_path
+        self.profile, self.memory = profile, small.profile_memory(profile)
         self.monitor, self.ready_nodes, self.owned_nodes, self.started_nodes = None, set(), set(), set()
         self.foreign_nodes = set()
         self.identities = {}
         self.inflight, self.attempt, self.calls = set(), "a" * 32, []
         self.state = dict.fromkeys(small.NODES, False)
         self.input = dict(has_pending=True, has_landed=False, has_input=True)
-        self.vm = SimpleNamespace(RUNTIME=tmp_path / "runtime/vmware", configured_memory=lambda p: small.MEMORY[p.stem])
+        self.vm = SimpleNamespace(RUNTIME=tmp_path / "runtime/vmware", configured_memory=lambda p: self.memory[p.stem])
         self.failure = None
 
     def vm_state(self):
@@ -89,6 +90,65 @@ def test_description_is_explicit_and_non_executing(phase):
     assert value["project_stop_bytes"] == 63.75 * small.GIB
     assert value["project_hard_bytes"] == 64 * small.GIB
     assert value["start_reserve_mib"] == 256
+
+
+def test_1792_profile_is_explicit_and_does_not_change_default_or_hard_gates():
+    default = small.description("start-offline")
+    value = small.description("start-offline", profile="real-small-1792")
+    assert default["profile"] == "real-small-1920" and default["memory_mib"]["snow-compute"] == 1920
+    assert value["memory_mib"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768}
+    assert value["cold_vm_backing_mib"] == 4608 and value["cold_write_budget_mib"] == 128
+    for key in ("start_reserve_mib", "project_stop_bytes", "project_hard_bytes", "host_disk_min_bytes",
+                "host_ram_min_mib", "guest_ram_min_mib", "guest_disk_min_mib", "new_permit_implied"):
+        assert value[key] == default[key]
+    with pytest.raises(ValueError, match="explicit"):
+        small.description("start-offline", profile="automatic")
+
+
+def test_cold_backing_and_write_budget_is_checked_before_configure_or_boot(tmp_path):
+    runner = FixtureRunner(tmp_path, profile="real-small-1792")
+    last_accepted = small.STOP_BYTES - (4608 + 128) * small.MIB
+    runner.host = lambda: host() | {"project_bytes": last_accepted + 1}
+    with pytest.raises(RuntimeError, match="128 MiB write budget"):
+        runner.start()
+    assert runner.calls == [] and not runner.owned_nodes
+    allowed = small.check_cold_start(host() | {"project_bytes": last_accepted}, runner.profile)
+    assert allowed["projected_bytes"] == small.STOP_BYTES
+    with pytest.raises(RuntimeError, match="128 MiB write budget"):
+        small.check_cold_start(host() | {"project_bytes": last_accepted}, "real-small-1920")
+
+
+def test_candidate_vm_commands_use_selected_memory_and_original_start_reserve(tmp_path, monkeypatch):
+    runner = FixtureRunner(tmp_path, profile="real-small-1792")
+    reservations = []
+    monkeypatch.setattr(small, "check_host", lambda sample, reserve=0: reservations.append(reserve))
+    small.SmallRunner.vm_command(runner, "configure", "snow-compute")
+    small.SmallRunner.vm_command(runner, "start", "snow-compute")
+    assert runner.calls[0][1][-2:] == ["--profile", "real-small-1792"]
+    assert runner.calls[1][1][-2:] == ["--reserve-mib", "256"]
+    assert reservations == [1792 + 256]
+    assert "--profile real-small-1792" in runner.ssh("snow-compute", "probe")[-1]
+
+
+@pytest.mark.parametrize("phase", ["land", "stop-offline"])
+def test_wrong_selected_profile_does_not_adopt_running_candidate(tmp_path, phase):
+    runner = FixtureRunner(tmp_path)
+    runner.state = dict.fromkeys(small.NODES, True)
+    runner.vm.configured_memory = lambda p: small.PROFILES["real-small-1792"][p.stem]
+    with pytest.raises(ValueError, match="memory differs"):
+        runner.perform(phase)
+    assert not runner.owned_nodes and all(runner.state.values())
+    assert not any(call[0] == "stop" for call in runner.calls)
+
+
+def test_candidate_failure_cleanup_retains_selected_profile(tmp_path):
+    runner = FixtureRunner(tmp_path, profile="real-small-1792")
+    runner.failure = ("node-start-offline", "snow-compute")
+    with pytest.raises(RuntimeError):
+        runner.perform("start-offline")
+    receipt = small.read_json(tmp_path / "runtime/real/offline-small" / runner.attempt / "controller.json")
+    assert receipt["profile"] == "real-small-1792" and receipt["memory_mib"]["snow-compute"] == 1792
+    assert receipt["cleanup_complete"] and not any(runner.state.values())
 
 
 @pytest.mark.parametrize("value", ["all", "sync", "publish-doris", "arbitrary-script", "start-realtime"])
@@ -228,7 +288,7 @@ def test_controller_lock_failure_cannot_claim_or_stop_another_attempt(tmp_path, 
 def test_different_lanes_share_the_same_physical_topology_lock(tmp_path, monkeypatch):
     paths = []
     monkeypatch.setattr(small, "publication_lock", lambda path: paths.append(path) or nullcontext())
-    first, second = FixtureRunner(tmp_path), FixtureRunner(tmp_path)
+    first, second = FixtureRunner(tmp_path), FixtureRunner(tmp_path, profile="real-small-1792")
     first._perform = second._perform = lambda *args: None
     second.config["lane"] = "another-real-epoch"
     first.perform("start-offline")

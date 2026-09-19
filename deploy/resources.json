@@ -262,6 +262,22 @@
         "entry": "Explicit vmware_lab configure/start, then frozen Linux real_lab node-start-offline phases; existing Windows real_lab start-offline does not accept this profile",
         "acceptance": "2026-09-19 actual 56-row synthetic YARN golden passed, followed by real ODS hash/two-DataNode readback and original Kafka ACK. Peak project 63.62 GiB; minimum guest available 641/669/202 MiB. Hive/Iceberg and the new unified small-profile wrapper remain pending; no million-row or concurrent-stack claim. See docs/evidence/real-production-loop-20260919.md."
       },
+      "small_batch_1792_candidate": {
+        "name": "real-small-1792",
+        "vm_memory_mib": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768},
+        "additional_start_reserve_mib": 256,
+        "cold_vm_backing_mib": 4608,
+        "cold_write_budget_mib": 128,
+        "cold_admission": "All project VMs fully stopped; actual project bytes + 4608 MiB VM backing + 128 MiB job-write budget must be <= 63.75 GiB before configure/start. Existing 64 GiB project, 35 GiB host free, 4 GiB host RAM and per-start 256 MiB reserve remain unchanged.",
+        "project_stop_gib": 63.75,
+        "guest_min_available_mib": 128,
+        "guest_min_disk_free_mib": 384,
+        "compute_memtotal_candidate_bands_mib": [[1664, 1792], [1800, 2048]],
+        "sizing_estimate": "Using rounded cold files 59.07 GiB gives projected running files 63.57 GiB, about 184 MiB below stop; subtracting 128 MiB from prior 1920 golden compute minimum 669 MiB gives about 541 MiB available. Both are estimates only, not observations of this candidate.",
+        "unchanged_limits": "Compute DataNode 384 MiB / NodeManager 1536 MiB, one bounded YARN job, same heaps/JARs/Compose identities. Container limits are upper bounds, not guaranteed available guest memory. Control catalog still requires 768 MiB actual available; analysis runs no catalog or realtime engines.",
+        "entry": "tools/real_offline_small.py --profile real-small-1792; explicitly repeat the selected profile on later phases and stop. Default remains real-small-1920; shared physical-resource lock is unchanged.",
+        "acceptance": "Implementation and synthetic fault tests only. Actual 1792 guest memory, fresh bounded golden, wrapper start/stop, Hive and Iceberg resource peaks all remain pending. Historical 1920 evidence is retained under its original profile."
+      },
       "identity": "Collector instance_id and generation, Kafka cluster/topic IDs, one partition and explicit offsets; new generations require an explicit new lane",
       "coordinator_host": "snow-analysis; stage verified immutable ODS metadata to snow-control for offline computation",
       "local_registry": "runtime/real/**/.snow-real-owner.json and registered lifecycle manifests; private ignored directories only",

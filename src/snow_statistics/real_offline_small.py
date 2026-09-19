@@ -1,4 +1,4 @@
-"""Finite Windows orchestration for the reviewed 2048/1920/768 MiB offline stage.
+"""Finite Windows orchestration for explicitly selected small offline profiles.
 
 This module does not replace writer admission, lifecycle permits or job validation.
 Its Linux entry points are fixed probes and supervised calls to the frozen runner.
@@ -40,7 +40,11 @@ from .real_lab import (
 )
 
 PROFILE = "real-small-1920"
-MEMORY = {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768}
+PROFILES = {
+    PROFILE: {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768},
+    "real-small-1792": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768},
+}
+MEMORY = PROFILES[PROFILE]
 PHASES = ("status", "start-offline", "stop-offline", "land", "prepare", "cleanup", "permit",
           "stage-compute", "daily", "behavior", "validate", "publish-private", "stage-release")
 REMOTE_PHASES = set(PHASES) - {"status", "start-offline", "stop-offline", "stage-compute", "stage-release"}
@@ -50,6 +54,7 @@ MIB, GIB = 1024**2, 1024**3
 STOP_BYTES = 255 * GIB // 4
 LIMIT_BYTES = 64 * GIB
 LOG_LIMIT = MIB
+COLD_WRITE_BUDGET_MIB = 128
 
 
 class NodeCommandFailure(RuntimeError):
@@ -80,11 +85,19 @@ def attempt_path(root, attempt):
     return result
 
 
-def description(phase, run_id=None):
+def profile_memory(profile):
+    if profile not in PROFILES:
+        raise ValueError("Select an explicit reviewed small offline profile")
+    return dict(PROFILES[profile])
+
+
+def description(phase, run_id=None, profile=PROFILE):
     if phase not in PHASES:
         raise ValueError("Unknown explicit offline phase")
-    return dict(phase=phase, run_id=run_id, profile=PROFILE, memory_mib=MEMORY,
+    memory = profile_memory(profile)
+    return dict(phase=phase, run_id=run_id, profile=profile, memory_mib=memory,
                 start_reserve_mib=256, project_stop_bytes=STOP_BYTES, project_hard_bytes=LIMIT_BYTES,
+                cold_vm_backing_mib=sum(memory.values()), cold_write_budget_mib=COLD_WRITE_BUDGET_MIB,
                 host_disk_min_bytes=35 * GIB, host_ram_min_mib=4096,
                 guest_ram_min_mib=128, guest_disk_min_mib=384,
                 executes=False, new_permit_implied=False, data_deleted_by_stop=False)
@@ -98,6 +111,14 @@ def check_host(value, reserve_mib=0):
             or value["host_free_bytes"] < 35 * GIB or value["host_available_mib"] < 4096 + reserve_mib):
         raise RuntimeError("Host resource gate failed; retain data and stop owned offline work")
     return value
+
+
+def check_cold_start(value, profile):
+    check_host(value)
+    projected = value["project_bytes"] + (sum(profile_memory(profile).values()) + COLD_WRITE_BUDGET_MIB) * MIB
+    if projected > STOP_BYTES:
+        raise RuntimeError("Cold VM backing plus 128 MiB write budget exceeds the 63.75 GiB stop line")
+    return dict(projected_bytes=projected, write_budget_mib=COLD_WRITE_BUDGET_MIB)
 
 
 def host_sample(root):
@@ -575,8 +596,9 @@ class Monitor:
 
 
 class SmallRunner(Runner):
-    def __init__(self, config, config_file, root=ROOT):
+    def __init__(self, config, config_file, root=ROOT, *, profile=PROFILE):
         super().__init__(checked_config(config), config_file, root)
+        self.profile, self.memory = profile, profile_memory(profile)
         self.monitor = None
         self.ready_nodes = set()
         self.owned_nodes = set()
@@ -604,7 +626,8 @@ class SmallRunner(Runner):
                    "-o", "HostKeyAlias=" + node, "-o", "UserKnownHostsFile=" + str(self.vm.RUNTIME / "known_hosts"),
                    "-i", str(self.vm.RUNTIME / "id_ed25519")]
         args = [".venv/bin/python", "tools/real_offline_small.py", "--config", self.config_file,
-                "--config-sha256", digest(canonical(self.config)), "--node-operation", operation, "status"]
+                "--config-sha256", digest(canonical(self.config)), "--profile", self.profile,
+                "--node-operation", operation, "status"]
         if phase:
             args += ["--node-phase", phase]
         if operation == "probe" and node == "snow-control" and attempt is None:
@@ -744,9 +767,9 @@ class SmallRunner(Runner):
     def vm_command(self, action, node):
         command = [sys.executable, "tools/vmware_lab.py", action, "--node", node]
         if action == "configure":
-            command += ["--profile", PROFILE]
+            command += ["--profile", self.profile]
         if action == "start":
-            check_host(self.host(), MEMORY[node] + 256)
+            check_host(self.host(), self.memory[node] + 256)
             command += ["--reserve-mib", "256"]
         self.run(command, timeout=90, monitored=action != "stop")
 
@@ -776,6 +799,7 @@ class SmallRunner(Runner):
     def start(self):
         if any(self.vm_state().values()):
             raise ValueError("All three owned VMs must be fully stopped before configuring this profile")
+        check_cold_start(self.host(), self.profile)
         for node in NODES:
             self.vm_command("configure", node)
         # Record intended ownership before a start command whose result can be unknown.
@@ -797,7 +821,7 @@ class SmallRunner(Runner):
             self.wait_node(node)
         for node in ("snow-analysis", "snow-control", "snow-compute"):
             self.remote(node, "node-start-offline")
-        return dict(status="offline_started", profile=PROFILE, lifecycle_permit=False)
+        return dict(status="offline_started", profile=self.profile, lifecycle_permit=False)
 
     def adopt_running(self):
         if not all(self.vm_state().values()):
@@ -808,7 +832,7 @@ class SmallRunner(Runner):
             check_guest(value, node, enforce_resources=False)
             self.remember_objects(node, value)
             observed[node] = value
-            if self.vm.configured_memory(self.vm.RUNTIME / node / (node + ".vmx")) != MEMORY[node]:
+            if self.vm.configured_memory(self.vm.RUNTIME / node / (node + ".vmx")) != self.memory[node]:
                 raise ValueError("Running VM memory differs from the explicit small profile")
         self.probe("snow-analysis", "guard")
         self.ready_nodes.update(NODES)
@@ -885,11 +909,12 @@ class SmallRunner(Runner):
             metadata_paths(self.config, run_id)
         if phase == "status":
             state = self.vm_state()
-            return dict(status="observed", vms=state, resources=self.host(),
+            return dict(status="observed", profile=self.profile, memory_mib=self.memory, vms=state, resources=self.host(),
                         guests={node: self.probe(node) for node, running in state.items() if running},
                         modifies_services=False)
         receipt = attempt_path(self.root, self.attempt) / "controller.json"
         report = dict(schema_version=1, source="real", phase=phase, run_id=run_id,
+                      profile=self.profile, memory_mib=self.memory,
                       started_at=datetime.now(UTC).isoformat(), status="started", cleanup_complete=False)
         write_json(receipt, report)
         try:
@@ -901,6 +926,8 @@ class SmallRunner(Runner):
                         value = self.probe(node)
                         check_guest(value, node, enforce_resources=False)
                         self.remember_objects(node, value)
+                        if self.vm.configured_memory(self.vm.RUNTIME / node / (node + ".vmx")) != self.memory[node]:
+                            raise ValueError("Running VM memory differs from the explicit small profile")
                         accepted.add(node)
                 self.owned_nodes.update(accepted)
                 result = self.stop()
@@ -957,6 +984,8 @@ def main():
     parser.add_argument("phase", choices=PHASES)
     parser.add_argument("--run-id")
     parser.add_argument("--describe", action="store_true")
+    parser.add_argument("--profile", choices=tuple(PROFILES), default=PROFILE,
+                        help="Explicit profile, also required for later phases and stopping; default stays 1920")
     parser.add_argument("--node-operation", choices=("probe", "guard", "input", "execute", "cancel"), help=argparse.SUPPRESS)
     parser.add_argument("--node-phase", choices=sorted(REMOTE_PHASES), help=argparse.SUPPRESS)
     parser.add_argument("--attempt", help=argparse.SUPPRESS)
@@ -969,7 +998,7 @@ def main():
     if args.describe:
         if args.node_operation:
             parser.error("Internal node operations are not controller descriptions")
-        result = description(args.phase, args.run_id)
+        result = description(args.phase, args.run_id, args.profile)
     elif args.node_operation:
         if args.config_sha256 != digest(canonical(config)):
             raise ValueError("Node configuration differs from the controller's exact real scope")
@@ -994,7 +1023,7 @@ def main():
     else:
         if os.name != "nt":
             raise ValueError("Use the Windows controller for offline orchestration")
-        result = SmallRunner(config, args.config).perform(args.phase, args.run_id)
+        result = SmallRunner(config, args.config, profile=args.profile).perform(args.phase, args.run_id)
     print(json.dumps(result, ensure_ascii=False))
 
 
