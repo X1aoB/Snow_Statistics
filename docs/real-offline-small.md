@@ -2,7 +2,7 @@
 
 本入口将既有 `real_lab` 的固定离线阶段串起来，使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。它是显式的按阶段命令，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
 
-**验收状态：**新增入口已有本地合成单测；Windows 精确进程树终止已在本地测试。Linux `SIGHUP` 的原生进程组测试在 Windows 明确跳过，并已在源码 `46efeceb` 的 Linux CI `35438865825` 中通过。此前同资源配置的手工编排、合成 golden 和正式 ODS 落地结果属于已有独立证据，不能替代本入口的实际 VM 验收。本文件不声明新入口已实际启动 VM。
+**验收状态：**46efeceb已通过Linux CI35438865825（含实际`SIGHUP`进程组测试），Windows精确进程树终止也已在本地测试。首次实际VM入口尝试已通过正式paused/stopped准入并启动三台VM，但在analysis DataNode的额外`/data`匿名父卷检查处失败；原失败回执保留，不能记为完整启动成功。操作者只读核对实际容器归属后，精确停止该DataNode并软关三台VM，没有删除卷，也没有继续执行后续计算。下述最小兼容修复已有合成回归，须经过新CI与实际VM重试。此前同资源配置的手工编排、合成golden及正式ODS落地结果属于已有独立证据，不能替代本入口验收。
 
 对应实现：[Windows/节点模块](../src/snow_statistics/real_offline_small.py)、[CLI](../tools/real_offline_small.py)、[合成故障测试](../tests/test_real_offline_small.py)。冻结的 `real_lab.py`、writer、恢复账本、生命周期及模型代码均继续使用原实现。
 
@@ -93,6 +93,8 @@ $runId = 'accepted_closed_day_run'
 停止不受新增容量准入阻止，也不删卷、目录或历史。失败时先取消本次精确远端 worker/driver，再停固定项目服务并软关已确认归属的 VM。SSH 心跳丢失、SIGTERM/SIGHUP 会触发远端进程组收尾；Windows 用精确 PID 处理自身进程树，metadata/aggregate 传输直接使用固定 host key 的 SCP。
 
 所有非 `status` 操作共用固定跨 lane 锁，因为三台 VM、Compose 项目和 Spark driver 名称是共享的。发现外来运行工作、同名异 owner、镜像/挂载不符或已观测容器 ID 被替换时，拒绝接管/关闭该 VM，保留失败回执。此时需要人工检查，不能以全局 `prune`、删除历史或降低门槛恢复。
+
+首次实际检查中，锁定Hadoop镜像的容器出现了`/data`匿名父卷，数据目录另由明确命名卷挂到`/data/name`、`/data/dn`或`/data/yarn`。本入口不忽略所有匿名卷：只有实际镜像`Config.Volumes`恰好声明`/data`，且具体64位十六进制卷名、创建时间、本地驱动、实际挂载与含停止容器在内的独占引用都核验一致，才将该父卷纳入容器身份摘要。额外挂载、绑定目录冒充、卷复用或已观测卷身份变化仍拒绝。不删除原匿名卷，也不把合成的卷元数据测试当成真实后端读回。
 
 ## 回执与排障
 

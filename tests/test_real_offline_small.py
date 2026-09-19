@@ -307,6 +307,106 @@ def test_actual_container_projection_rejects_same_name_wrong_owner_or_mount(tmp_
         small.container_ownership(tmp_path, "snow-control", "snow-lab-control-namenode-1", value)
 
 
+def hadoop_parent_fixture(tmp_path):
+    """De-identified shape of the 2026-09-19 failed analysis DN inspect.
+
+    Creation time/image declaration below are synthetic backend responses: the
+    first readback did not query those fields and is not proof they passed.
+    """
+    value = container(tmp_path)
+    value.update(name="/snow-lab-analysis-datanode-1", project="snow-lab-analysis", service="datanode",
+                 config_files=str(tmp_path / "lab/compose.analysis.yaml"))
+    parent = dict(Type="volume", Name="e" * 64, Source="/var/lib/docker/volumes/" + "e" * 64 + "/_data",
+                  Destination="/data", Driver="local", Mode="z", RW=True, Propagation="")
+    value["mounts"] = [parent,
+                       dict(Type="volume", Name="snow-lab-analysis_datanode", Source="/var/lib/docker/volumes/snow-lab-analysis_datanode/_data",
+                            Destination="/data/dn", Driver="local", Mode="rw", RW=True, Propagation=""),
+                       dict(Type="bind", Source=str(tmp_path / "lab/generated/hadoop"), Destination="/etc/hadoop", Mode="ro", RW=False, Propagation="rprivate")]
+    evidence = dict(image=dict(image_id=value["image_id"], declared_volumes={"/data": {}}),
+                    volume=dict(name=parent["Name"], created_at="2026-01-01T00:00:00Z", driver="local",
+                                mountpoint=parent["Source"], scope="local", options=None),
+                    consumers=[value["id"]])
+    return value, parent, evidence
+
+
+def test_actual_hadoop_shape_requires_declared_parent_and_exact_readback(tmp_path):
+    value, _, evidence = hadoop_parent_fixture(tmp_path)
+    with pytest.raises(ValueError, match="undeclared"):
+        small.container_ownership(tmp_path, "snow-analysis", "snow-lab-analysis-datanode-1", value)
+    assert len(small.container_ownership(tmp_path, "snow-analysis", "snow-lab-analysis-datanode-1", value,
+                                        parent_probe=lambda *_: evidence)) == 64
+
+
+@pytest.mark.parametrize("mutation", [lambda v: v["image"].update(declared_volumes={"/data": {}, "/other": {}}),
+                                     lambda v: v["image"].update(declared_volumes=None),
+                                     lambda v: v["image"].update(image_id="sha256:" + "f" * 64),
+                                     lambda v: v.update(consumers=["c" * 64, "d" * 64]),
+                                     lambda v: v.update(consumers=[]),
+                                     lambda v: v["volume"].update(name="f" * 64),
+                                     lambda v: v["volume"].update(created_at="2026-01-01T00:00:00"),
+                                     lambda v: v["volume"].update(driver="nfs"),
+                                     lambda v: v["volume"].update(scope="global"),
+                                     lambda v: v["volume"].update(options={"device": "/private"}),
+                                     lambda v: v["volume"].update(mountpoint="/business")])
+def test_parent_volume_declaration_reuse_and_identity_cannot_be_forgiven(tmp_path, mutation):
+    value, _, evidence = hadoop_parent_fixture(tmp_path)
+    mutation(evidence)
+    with pytest.raises(ValueError):
+        small.container_ownership(tmp_path, "snow-analysis", "snow-lab-analysis-datanode-1", value, parent_probe=lambda *_: evidence)
+
+
+@pytest.mark.parametrize("mutation", [lambda v: v.update(Type="bind"), lambda v: v.update(Name="named-business-volume"),
+                                     lambda v: v.update(Driver="nfs"), lambda v: v.update(RW=False),
+                                     lambda v: v.update(Source="/business/private"), lambda v: v.update(Destination="/other")])
+def test_parent_mount_does_not_allow_binds_or_other_volumes(tmp_path, mutation):
+    value, parent, evidence = hadoop_parent_fixture(tmp_path)
+    mutation(parent)
+    with pytest.raises(ValueError):
+        small.container_ownership(tmp_path, "snow-analysis", "snow-lab-analysis-datanode-1", value, parent_probe=lambda *_: evidence)
+
+
+def test_parent_readback_is_actual_projected_io_including_stopped_consumers(tmp_path, monkeypatch):
+    value, parent, evidence = hadoop_parent_fixture(tmp_path)
+    calls = []
+    def read(command, **kwargs):
+        calls.append(command)
+        assert command[:2] == ["sudo", "docker"] and kwargs["timeout"] == 10
+        if command[2:4] == ["image", "inspect"]:
+            assert command[-1] == value["image_id"]
+            assert "Config.Volumes" in command[-2] and "Config.Env" not in command[-2]
+            return json.dumps(evidence["image"]).encode()
+        if command[2:4] == ["volume", "inspect"]:
+            assert command[-1] == parent["Name"]
+            return json.dumps(evidence["volume"]).encode()
+        assert command[2:] == ["ps", "-a", "--no-trunc", "--filter", "volume=" + parent["Name"], "--format", "{{.ID}}"]
+        return (value["id"] + "\n").encode()
+    monkeypatch.setattr(small.subprocess, "check_output", read)
+    assert small.parent_volume_readback(value, parent) == evidence
+    assert len(calls) == 3
+
+
+def test_legitimate_parent_volume_can_stop_but_recreated_volume_is_rejected(tmp_path):
+    value, _, evidence = hadoop_parent_fixture(tmp_path)
+    name, node = "snow-lab-analysis-datanode-1", "snow-analysis"
+    ownership = small.container_ownership(tmp_path, node, name, value, parent_probe=lambda *_: evidence)
+    sample = guest(node, {name: item() | {"id": value["id"], "ownership_sha256": ownership}})
+    runner = FixtureRunner(tmp_path)
+    runner.owned_nodes.add(node)
+    runner.state[node] = True
+    runner.remember_objects(node, sample)
+    runner.probe = lambda *_: sample
+    assert runner.stop()["status"] == "offline_stopped"
+    assert ("stop", node) in runner.calls
+    runner.calls.clear()
+    evidence["volume"]["created_at"] = "2026-01-02T00:00:00Z"
+    replacement = small.container_ownership(tmp_path, node, name, value, parent_probe=lambda *_: evidence)
+    assert replacement != ownership
+    runner.probe = lambda *_: guest(node, {name: item() | {"id": value["id"], "ownership_sha256": replacement}})
+    with pytest.raises(RuntimeError):
+        runner.stop()
+    assert node in runner.foreign_nodes and not any(call[0] == "stop" for call in runner.calls)
+
+
 def test_cleanup_runs_even_when_no_raw_input_remains(tmp_path):
     runner = FixtureRunner(tmp_path)
     runner.state = dict.fromkeys(small.NODES, True)

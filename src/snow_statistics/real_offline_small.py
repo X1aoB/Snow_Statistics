@@ -120,6 +120,8 @@ def check_guest(value, node, *, allow_driver=False, enforce_resources=True):
     if not set(value["containers"]) <= allowed:
         raise ValueError("Unknown running work prevents taking ownership of this VM")
     for name, item in value["containers"].items():
+        if isinstance(item, dict) and item.get("ownership_sha256") is None:
+            raise ValueError("Exact container ownership was rejected; inspect pinned image and mount metadata")
         if (not isinstance(item, dict) or set(item) != {"id", "ownership_sha256", "memory_current", "oom", "oom_kill"}
                 or not isinstance(item["id"], str) or not isinstance(item["ownership_sha256"], str)
                 or not re.fullmatch(r"[a-f0-9]{64}", item["id"])
@@ -133,7 +135,48 @@ def check_guest(value, node, *, allow_driver=False, enforce_resources=True):
     return value
 
 
-def container_ownership(root, node, name, value, *, driver_id=None):
+def parent_volume_readback(value, mount):
+    """Actual image declaration and exact volume metadata; no environment fields."""
+    def query(arguments):
+        raw = subprocess.check_output(["sudo", "docker", *arguments], timeout=10)
+        if len(raw) > 65536:
+            raise ValueError("Parent-volume readback exceeds its metadata bound")
+        return raw
+    image = json.loads(query(["image", "inspect", "--format",
+                             '{"image_id":{{json .Id}},"declared_volumes":{{json .Config.Volumes}}}', value["image_id"]]))
+    volume = json.loads(query(["volume", "inspect", "--format",
+                              '{"name":{{json .Name}},"created_at":{{json .CreatedAt}},"driver":{{json .Driver}},'
+                              '"mountpoint":{{json .Mountpoint}},"scope":{{json .Scope}},"options":{{json .Options}}}', mount["Name"]]))
+    consumers = query(["ps", "-a", "--no-trunc", "--filter", "volume=" + mount["Name"], "--format", "{{.ID}}"])
+    return dict(image=image, volume=volume, consumers=consumers.decode().splitlines())
+
+
+def checked_parent_volume(value, mount, evidence):
+    """One image-declared /data parent, never an arbitrary anonymous volume."""
+    volume_name = mount.get("Name")
+    if (mount.get("Type") != "volume" or not isinstance(volume_name, str)
+            or not re.fullmatch(r"[a-f0-9]{64}", volume_name) or mount.get("Destination") != "/data"
+            or mount.get("Driver") != "local" or mount.get("RW") is not True
+            or mount.get("Source") != "/var/lib/docker/volumes/" + volume_name + "/_data"
+            or mount.get("Propagation") != ""):
+        raise ValueError("Only an exact local anonymous /data volume may come from the locked Hadoop image")
+    if (not isinstance(evidence, dict) or set(evidence) != {"image", "volume", "consumers"}
+            or evidence["image"] != dict(image_id=value["image_id"], declared_volumes={"/data": {}})
+            or evidence["consumers"] != [value["id"]]):
+        raise ValueError("The locked image declaration or exclusive parent-volume references differ")
+    volume = evidence["volume"]
+    if (not isinstance(volume, dict) or set(volume) != {"name", "created_at", "driver", "mountpoint", "scope", "options"}
+            or volume["name"] != volume_name or volume["mountpoint"] != mount["Source"]
+            or volume["driver"] != "local" or volume["scope"] != "local" or volume["options"] not in (None, {})
+            or not isinstance(volume["created_at"], str)):
+        raise ValueError("The exact anonymous parent-volume identity changed")
+    created = datetime.fromisoformat(volume["created_at"].replace("Z", "+00:00"))
+    if created.tzinfo is None or created > datetime.now(UTC):
+        raise ValueError("Parent-volume creation time must be an actual timezone-aware past instant")
+    return evidence
+
+
+def container_ownership(root, node, name, value, *, driver_id=None, parent_probe=None):
     """Projection of Docker identity: do not fetch credentials or health logs."""
     root = Path(root)
     project = "snow-lab-" + node.removeprefix("snow-")
@@ -163,11 +206,28 @@ def container_ownership(root, node, name, value, *, driver_id=None):
             mounts |= {("volume", project + "_yarn", "/data/yarn", True),
                        ("bind", str(root / "lab/locks/spark-jars.sha256"), "/snow/spark-jars.sha256", False),
                        ("bind", str(root / "lab/nodemanager-entrypoint.sh"), "/snow/nodemanager-entrypoint.sh", False)}
-    actual = {(v["Type"], v["Name"] if v["Type"] == "volume" else v["Source"], v["Destination"], v["RW"]) for v in value["mounts"]}
-    if (value["name"] != "/" + name or value["image"] != image or actual != mounts
+    if (value["name"] != "/" + name or value["image"] != image
             or not re.fullmatch(r"sha256:[a-f0-9]{64}", value["image_id"])):
-        raise ValueError("Owned container image, name or mount identity changed")
-    return digest(canonical({k: v for k, v in value.items() if k != "pid"}))
+        raise ValueError("Owned container image or name identity changed")
+    parent = [v for v in value["mounts"] if v["Destination"] == "/data"]
+    parent_identity = None
+    if parent:
+        if len(parent) != 1 or name == "snow-spark-yarn" or parent_probe is None:
+            raise ValueError("An undeclared parent mount cannot be ignored")
+        mount = parent[0]
+        # Validate the exact name before it can become a Docker argument.
+        if (mount.get("Type") != "volume" or not isinstance(mount.get("Name"), str)
+                or not re.fullmatch(r"[a-f0-9]{64}", mount["Name"])):
+            raise ValueError("Parent mount is not a bounded anonymous volume")
+        parent_identity = checked_parent_volume(value, mount, parent_probe(value, mount))
+        mounts.add(("volume", mount["Name"], "/data", True))
+    actual = {(v["Type"], v["Name"] if v["Type"] == "volume" else v["Source"], v["Destination"], v["RW"]) for v in value["mounts"]}
+    if actual != mounts or len(actual) != len(value["mounts"]):
+        raise ValueError("Owned container mount identity changed")
+    identity = {k: v for k, v in value.items() if k != "pid"}
+    if parent_identity:
+        identity["image_parent_volume"] = parent_identity
+    return digest(canonical(identity))
 
 
 def owned_driver(root, config, attempt):
@@ -207,7 +267,8 @@ def guest_sample(root, node, config, attempt=None):
         value = json.loads(raw)
         try:
             ownership = container_ownership(root, node, name, value,
-                                            driver_id=owned_driver(root, config, attempt) if name == "snow-spark-yarn" else None)
+                                            driver_id=owned_driver(root, config, attempt) if name == "snow-spark-yarn" else None,
+                                            parent_probe=parent_volume_readback)
         except (ValueError, KeyError, TypeError, AttributeError):
             # A readable inventory with wrong ownership is different from an
             # SSH connection failure, and must never authorize fallback stop.
