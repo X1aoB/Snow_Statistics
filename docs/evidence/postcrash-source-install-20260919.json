@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "source_git_commit": "954451ceecb510933fd62a778e6fc7ffe781dda0",
+  "source_archive_sha256": "162144b619458495631dfc35d6170fd18950b996951f65caf8e8c1fe4de48365",
+  "scope": "Sequential single-node metadata validation, source installation and soft shutdown",
+  "profile": "real-small-1792",
+  "memory_mib": {
+    "control": 2048,
+    "compute": 1792,
+    "analysis": 768
+  },
+  "simultaneous_vm_start": false,
+  "nodes": [
+    {
+      "node": "snow-control",
+      "started_at": "2026-09-19T14:49:34.131732+00:00",
+      "finished_at": "2026-09-19T14:50:27.385904+00:00",
+      "source_files_sha256": "c566a4f2e581d111eceffd5d1a8e2aaba90ce163d8716d16999bd510a0dd3e85",
+      "frozen_writer_files_verified": 12,
+      "original_retention_unchanged": true,
+      "guest_available_ram_mib": 1604,
+      "guest_free_disk_bytes": 677535744,
+      "running_containers_empty": true,
+      "root_filesystem_rw": true,
+      "soft_stop_and_zero_readback_passed": true,
+      "private_receipt_sha256": "cc8115039ac23652ee1df75f8003fae3c227067f05228e510d03d72d88c5b8c6"
+    },
+    {
+      "node": "snow-compute",
+      "started_at": "2026-09-19T14:51:21.994753+00:00",
+      "finished_at": "2026-09-19T14:52:14.403927+00:00",
+      "source_files_sha256": "c566a4f2e581d111eceffd5d1a8e2aaba90ce163d8716d16999bd510a0dd3e85",
+      "frozen_writer_files_verified": 12,
+      "original_retention_unchanged": true,
+      "guest_available_ram_mib": 1332,
+      "guest_free_disk_bytes": 5330513920,
+      "running_containers_empty": true,
+      "root_filesystem_rw": true,
+      "soft_stop_and_zero_readback_passed": true,
+      "private_receipt_sha256": "735c5e268e3688cc26960834cb1d8fa7894e11128c4c5de320c9b8b6d4b91579"
+    },
+    {
+      "node": "snow-analysis",
+      "started_at": "2026-09-19T14:53:17.215906+00:00",
+      "finished_at": "2026-09-19T14:54:28.039199+00:00",
+      "source_files_sha256": "c566a4f2e581d111eceffd5d1a8e2aaba90ce163d8716d16999bd510a0dd3e85",
+      "frozen_writer_files_verified": 12,
+      "original_retention_unchanged": true,
+      "guest_available_ram_mib": 337,
+      "guest_free_disk_bytes": 2220900352,
+      "running_containers_empty": true,
+      "root_filesystem_rw": true,
+      "soft_stop_and_zero_readback_passed": true,
+      "private_receipt_sha256": "810c8205353614df68aa186501115a6d8c99d42c49de8b3a6fdaf7319b02ccb5"
+    }
+  ],
+  "independent_readback": {
+    "checked_at": "2026-09-19T14:56:30.7106391Z",
+    "all_vms_off": true,
+    "vmx_count": 0,
+    "host_boot_utc": "2026-09-19T12:58:19.5000000Z",
+    "host_restart_observed": false
+  },
+  "boundaries": {
+    "engines_started": false,
+    "three_node_engine_recovery_verified": false,
+    "hdfs_database_or_checkpoint_recovery_verified": false,
+    "host_bugcheck_root_cause_fixed": false,
+    "production_modified": false,
+    "real_event_payload_read": false,
+    "diagnostic_files_modified": false,
+    "source_install_is_atomic_for_entire_checkout": false
+  }
+}

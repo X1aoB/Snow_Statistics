@@ -9,6 +9,7 @@
 | [V2单analysis窗口](postcrash-single-vm-v2-20260919.json) | 同授权范围的基础元数据检查和软关通过；不证明HDFS/数据库/Checkpoint恢复或长期稳定，三机及引擎暂停仍保持 |
 | [POSIX作业收尾](offline-session-cleanup-20260919.json) | 功能196c的Linux合成测试与CI；VM仍安装de406，不能当作蓝屏修复 |
 | [Windows VM控制与收尾](offline-vm-control-20260919.json) | 签名954451c、直接vmrun控制、严格库存与软关读回；双CI通过，记录时尚未安装VM或恢复引擎 |
+| [逐台源码更新](postcrash-source-install-20260919.json) | 三个独立单机窗口实际安装954451ce、冻结文件核验及软关读回；无引擎启动，不证明三机或数据恢复 |
 
 ## 历史合成验收收据
 
