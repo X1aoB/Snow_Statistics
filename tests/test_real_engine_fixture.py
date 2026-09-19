@@ -139,8 +139,9 @@ def test_checkpoint_requires_exact_completed_state_and_accepts_rest_api_restore_
 
 
 def test_session_resume_starts_owned_storage_then_uses_exact_checkpoint_and_no_claim(tmp_path, monkeypatch):
+    import sys
+
     import httpx
-    import kafka
     path = Path(__file__).resolve().parents[1] / "tools/smoke_real_epoch.py"
     spec = importlib.util.spec_from_file_location("smoke_real_epoch_resume", path)
     module = importlib.util.module_from_spec(spec)
@@ -191,7 +192,8 @@ def test_session_resume_starts_owned_storage_then_uses_exact_checkpoint_and_no_c
     def send(topic, **kwargs):
         sent.append(kwargs)
         return SimpleNamespace(get=lambda **_: None)
-    monkeypatch.setattr(kafka, "KafkaProducer", lambda **_: SimpleNamespace(send=send, close=lambda **_: None))
+    monkeypatch.setitem(sys.modules, "kafka", SimpleNamespace(
+        KafkaProducer=lambda **_: SimpleNamespace(send=send, close=lambda **_: None)))
     result = task.resume()
     submission = next(value for value in calls if isinstance(value, list) and "run" in value)
     assert calls[:2] == ["storage", "realtime"] and calls[-1] == "stop"

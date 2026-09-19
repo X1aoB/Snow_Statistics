@@ -182,6 +182,7 @@ def test_actual_writer_phase_is_scoped_and_failure_stops_only_its_epoch(tmp_path
     token = tmp_path / value["reader_token_file"]
     token.parent.mkdir(parents=True)
     token.write_text("fixture-reader-token-not-a-real-secret")
+    token.chmod(0o600)
     monkeypatch.setattr("snow_statistics.real_lab.REMOTE_ROOT", tmp_path.as_posix())
     monkeypatch.setattr("snow_statistics.real_lab.socket.gethostname", lambda: "snow-analysis")
     monkeypatch.setattr("snow_statistics.real_lab.tunnel", lambda *_: nullcontext())
@@ -209,6 +210,7 @@ def test_doris_publish_uses_only_analysis_cli_and_stops_its_epoch_on_failure(tmp
     token = tmp_path / value["reader_token_file"]
     token.parent.mkdir(parents=True)
     token.write_text("synthetic-token-file")
+    token.chmod(0o600)
     calls = []
     monkeypatch.setattr("snow_statistics.real_lab.REMOTE_ROOT", tmp_path.as_posix())
     monkeypatch.setattr("snow_statistics.real_lab.socket.gethostname", lambda: "snow-analysis")
@@ -243,6 +245,7 @@ def test_recovery_lock_contention_is_not_followed_by_runner_double_stop(tmp_path
     token = tmp_path / value["reader_token_file"]
     token.parent.mkdir(parents=True)
     token.write_text("synthetic-token-file")
+    token.chmod(0o600)
     monkeypatch.setattr("snow_statistics.real_lab.REMOTE_ROOT", tmp_path.as_posix())
     monkeypatch.setattr("snow_statistics.real_lab.socket.gethostname", lambda: "snow-analysis")
     monkeypatch.setattr("snow_statistics.real_lab.tunnel", lambda *_: nullcontext())
