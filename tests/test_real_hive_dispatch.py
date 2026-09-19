@@ -133,6 +133,7 @@ def test_registered_copy_cleanup_precedes_new_reads_and_failure_opens_no_transpo
     configuration["nodes"]["snow-control"] = "192.168.216.130"
     private = "runtime/real/config/test.json"
     write_json(root / private, configuration)
+    (root / private).chmod(0o600)
     # Real bounded inventory failure, not a fabricated adapter success/failure.
     unexpected = root / NAMESPACE / "unregistered-payload.json"
     unexpected.parent.mkdir(parents=True)

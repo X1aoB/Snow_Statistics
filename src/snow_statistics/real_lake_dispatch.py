@@ -88,27 +88,50 @@ def cancel_driver(root, config, run_id, attempt):
     """No aggregate read or lifetime renewal; cancellation also works after expiry."""
     directory = location(root, config, run_id, attempt)
     with publication_lock(directory / "worker-admission"):
-        write_json(directory / "cancelled.json", dict(cancelled_at=datetime.now(UTC).isoformat()))
         target = directory / "node-worker.json"
         worker = json.loads(read(target, 65536)) if target.exists() else None
-        if worker and (worker["phase"] not in {"execute", "verify"} or worker["config_sha256"] != digest(canonical(config))):
-            raise ValueError("Cancellation worker ownership changed")
-    if worker and process_identity(worker["process"]["pid"]) == worker["process"]:
-        os.kill(worker["process"]["pid"], signal.SIGTERM)
-        deadline = time.monotonic() + 125
-        while process_identity(worker["process"]["pid"]) == worker["process"]:
-            if time.monotonic() >= deadline:
-                os.kill(worker["process"]["pid"], signal.SIGKILL)
-                break
-            time.sleep(0.25)
-    descriptor_path = directory / "descriptor.json"
-    if descriptor_path.exists():
-        descriptor = json.loads(read(descriptor_path, 65536))
-        # Validate the original issued identity, not a renewed read admission.
-        validate_descriptor(descriptor, config, run_id, attempt, now=timestamp(descriptor["issued_at"]))
-        _clean_driver(root, directory, "snow-real-lake-" + digest(canonical(descriptor))[:20])
-    elif (directory / "data/driver.cid").exists():
-        raise ValueError("Unidentified driver CID requires explicit review")
+        if worker is not None:
+            identity = worker.get("process") if isinstance(worker, dict) else None
+            if (not isinstance(worker, dict) or set(worker) != {"phase", "process", "config_sha256"}
+                    or worker["phase"] not in {"execute", "verify"}
+                    or worker["config_sha256"] != digest(canonical(config))
+                    or not isinstance(identity, dict) or set(identity) != {"pid", "start_ticks", "argv_sha256"}
+                    or type(identity["pid"]) is not int or not 1 <= identity["pid"] <= 2147483647
+                    or not isinstance(identity["start_ticks"], str) or not identity["start_ticks"].isascii()
+                    or not identity["start_ticks"].isdigit()
+                    or not isinstance(identity["argv_sha256"], str) or len(identity["argv_sha256"]) != 64
+                    or any(char not in "0123456789abcdef" for char in identity["argv_sha256"])):
+                raise ValueError("Cancellation worker ownership or identity changed")
+        write_json(directory / "cancelled.json", dict(cancelled_at=datetime.now(UTC).isoformat()))
+    worker_error = None
+    try:
+        if worker and process_identity(worker["process"]["pid"]) == worker["process"]:
+            os.kill(worker["process"]["pid"], signal.SIGTERM)
+            deadline = time.monotonic() + 125
+            while process_identity(worker["process"]["pid"]) == worker["process"]:
+                if time.monotonic() >= deadline:
+                    os.kill(worker["process"]["pid"], signal.SIGKILL)
+                    break
+                time.sleep(0.25)
+    except BaseException as error:
+        worker_error = error
+        raise
+    finally:
+        try:
+            descriptor_path = directory / "descriptor.json"
+            if descriptor_path.exists():
+                descriptor = json.loads(read(descriptor_path, 65536))
+                # Validate original ownership even if /proc or signalling failed;
+                # this grants neither an aggregate read nor renewed admission.
+                validate_descriptor(descriptor, config, run_id, attempt, now=timestamp(descriptor["issued_at"]))
+                _clean_driver(root, directory, "snow-real-lake-" + digest(canonical(descriptor))[:20])
+            elif (directory / "data/driver.cid").exists():
+                raise ValueError("Unidentified driver CID requires explicit review")
+        except Exception as cleanup_error:
+            if worker_error is not None:
+                worker_error.add_note("Exact driver cleanup also failed; cancellation is incomplete.")
+                raise worker_error from cleanup_error
+            raise
     if worker and process_identity(worker["process"]["pid"]) == worker["process"]:
         raise ValueError("Exact node worker remains live after cancellation")
     return dict(status="driver_cancelled", data_deleted=False)

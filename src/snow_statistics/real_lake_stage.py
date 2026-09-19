@@ -9,6 +9,7 @@ from urllib.request import urlopen
 
 from .io import digest, write_json
 from .publication import canonical, publication_lock
+from .real_lab import validate_config
 from .real_lake_authority import location, read
 
 SERVICES = {
@@ -25,8 +26,9 @@ def container_hash(value):
 
 
 class StageDocker:
-    def __init__(self, root):
+    def __init__(self, root, config):
         self.root = Path(root)
+        self.nodes = dict(validate_config(config)["nodes"])
 
     def run(self, *arguments, timeout=20):
         return subprocess.run(["sudo", "docker", *arguments], capture_output=True, check=True, timeout=timeout).stdout
@@ -80,18 +82,23 @@ class StageDocker:
         return values["MemTotal"], values["MemAvailable"]
 
     def ready(self, node, service):
+        if (node, service) not in {("snow-control", "hive"), ("snow-control", "resourcemanager"),
+                                   ("snow-compute", "nodemanager")}:
+            raise ValueError("Readiness is restricted to the fixed node/service endpoints")
+        host = self.nodes[node]
         if service == "hive":
-            with socket.create_connection(("127.0.0.1", 9083), timeout=2):
+            with socket.create_connection((host, 9083), timeout=2):
                 return True
         port = 8088 if service == "resourcemanager" else 8042
         path = "/ws/v1/cluster/info" if service == "resourcemanager" else "/ws/v1/node/info"
-        with urlopen("http://127.0.0.1:" + str(port) + path, timeout=2) as response:
+        with urlopen("http://" + host + ":" + str(port) + path, timeout=2) as response:
             value = json.loads(response.read(65536))
         return (value.get("clusterInfo", {}).get("state") == "STARTED" if service == "resourcemanager" else
                 value.get("nodeInfo", {}).get("nodeHealthy") is True)
 
     def hdfs_ready(self):
-        with urlopen("http://127.0.0.1:9870/jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState", timeout=3) as response:
+        endpoint = "http://" + self.nodes["snow-control"] + ":9870/jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState"
+        with urlopen(endpoint, timeout=3) as response:
             value = json.loads(response.read(65536))
         beans = value.get("beans", [])
         if len(beans) != 1 or beans[0].get("NumLiveDataNodes") != 2 or beans[0].get("NumDeadDataNodes") != 0:
@@ -133,7 +140,7 @@ def _lease(root, config, run_id, attempt, node):
 
 
 def reserve_stage(root, config, run_id, attempt, node, *, docker=None):
-    docker = docker or StageDocker(root)
+    docker = docker or StageDocker(root, config)
     target = _record(root, config, run_id, attempt, node)
     lease, ownership = _lease(root, config, run_id, attempt, node)
     with publication_lock(lease.parent):
@@ -159,7 +166,7 @@ def reserve_stage(root, config, run_id, attempt, node, *, docker=None):
 
 
 def switch_stage(root, config, run_id, attempt, node, *, restore=False, docker=None):
-    docker = docker or StageDocker(root)
+    docker = docker or StageDocker(root, config)
     target = _record(root, config, run_id, attempt, node)
     lease, ownership = _lease(root, config, run_id, attempt, node)
     with publication_lock(lease.parent):

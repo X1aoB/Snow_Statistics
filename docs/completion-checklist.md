@@ -2,7 +2,9 @@
 
 ## 2026-09-19 正式接入进展
 
-两站已发布统计告知、同意/撤销和公开统计页；独立统计入口与轻量采集常驻。实际公网检查、浏览器入库与撤销回归通过，参见[正式发布记录](production-rollout.md)及[版本证据](evidence/production-release-20260919.json)。真实模型完成日志投递、真实本地链路与生产新鲜度各自保留待验证范围，不能由下表的合成成绩代替。宣传录制已按[移交包](promotion-handoff.md)转入原任务。
+两站已发布统计告知、同意/撤销和公开统计页；独立统计入口与轻量采集常驻。小吉最新正式`65fa0d0`已将入口移到“设置 → 隐私”并简化说明，具体人工晋级与公网检查见[设置调整版本证据](evidence/production-settings-release-20260919.json)。首次接入、浏览器入库与撤销回归见[正式发布记录](production-rollout.md)及[原接入证据](evidence/production-release-20260919.json)。
+
+本地真实私有同步→Kafka→Flink→Doris、同截止 SQLite 对账、整台 VM 关机后 Checkpoint 恢复，以及真实 ODS 两副本落地→原 Kafka 确认闭环均已实际通过，见[真实闭环证据](evidence/real-production-loop-20260919.md)。自然闭日离线、Hive 和 Iceberg 仍逐项验收。真实模型完成日志投递与生产新鲜度各自保留待验证范围，不能由下表的合成成绩代替。宣传录制已按[移交包](promotion-handoff.md)转入原任务，新正式设置版本已同步。
 
 ## 2026-09-12 求职实验交付（历史）
 

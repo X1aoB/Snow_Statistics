@@ -1,5 +1,6 @@
 """Synthetic existing-container inventories; no Docker, SSH or VM operations."""
 import copy
+import io
 import json
 
 import pytest
@@ -10,6 +11,49 @@ from snow_statistics import real_lake_dispatch as dispatch
 from snow_statistics import real_lake_stage as stage
 
 prepared = lake_prepared
+
+
+def test_readiness_uses_only_validated_fixed_node_addresses(prepared, monkeypatch):
+    config, roots, *_ = prepared
+    docker = stage.StageDocker(roots["operator"], config)
+    http, tcp = [], []
+    def request(endpoint, timeout):
+        http.append((endpoint, timeout))
+        if ":8088/" in endpoint:
+            payload = {"clusterInfo": {"state": "STARTED"}}
+        elif ":8042/" in endpoint:
+            payload = {"nodeInfo": {"nodeHealthy": True}}
+        else:
+            payload = {"beans": [{"NumLiveDataNodes": 2, "NumDeadDataNodes": 0}]}
+        return io.BytesIO(json.dumps(payload).encode())
+    def connection(address, timeout):
+        tcp.append((address, timeout))
+        return io.BytesIO()
+    monkeypatch.setattr(stage, "urlopen", request)
+    monkeypatch.setattr(stage.socket, "create_connection", connection)
+    assert docker.ready("snow-control", "resourcemanager")
+    assert docker.ready("snow-compute", "nodemanager")
+    assert docker.ready("snow-control", "hive")
+    docker.hdfs_ready()
+    control, compute = config["nodes"]["snow-control"], config["nodes"]["snow-compute"]
+    assert http == [("http://" + control + ":8088/ws/v1/cluster/info", 2),
+                    ("http://" + compute + ":8042/ws/v1/node/info", 2),
+                    ("http://" + control + ":9870/jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState", 3)]
+    assert tcp == [((control, 9083), 2)]
+    with pytest.raises(ValueError, match="fixed node/service"):
+        docker.ready("snow-analysis", "resourcemanager")
+    with pytest.raises(ValueError, match="fixed node/service"):
+        docker.ready("snow-control", "http://outside")
+    assert len(http) == 3 and len(tcp) == 1
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "8.8.8.8", "http://192.168.1.2/path", "192.168.1.2:8088"])
+def test_readiness_rejects_unvalidated_endpoints(prepared, host):
+    config, roots, *_ = prepared
+    wrong = copy.deepcopy(config)
+    wrong["nodes"]["snow-control"] = host
+    with pytest.raises(ValueError):
+        stage.StageDocker(roots["operator"], wrong)
 
 
 class Docker:

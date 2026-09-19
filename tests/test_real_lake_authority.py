@@ -501,11 +501,67 @@ def test_cancel_never_signals_a_reused_pid(prepared, monkeypatch):
     value, roots, _, *_ = prepared
     local = transfer(prepared, "control")
     write_json(local.root.parent / "node-worker.json", dict(phase="verify", config_sha256=digest(canonical(value)),
-               process=dict(pid=4321, start_ticks="old", argv_sha256="a" * 64)))
-    monkeypatch.setattr(dispatch, "process_identity", lambda pid: dict(pid=pid, start_ticks="new", argv_sha256="b" * 64))
+               process=dict(pid=4321, start_ticks="123", argv_sha256="a" * 64)))
+    monkeypatch.setattr(dispatch, "process_identity", lambda pid: dict(pid=pid, start_ticks="456", argv_sha256="b" * 64))
     monkeypatch.setattr(dispatch.os, "kill", lambda *unused: pytest.fail("Do not signal a reused PID"))
     monkeypatch.setattr(dispatch, "_clean_driver", lambda *unused: None)
     assert dispatch.cancel_driver(roots["control"], value, RUN, ATTEMPT)["status"] == "driver_cancelled"
+
+
+@pytest.mark.parametrize("failure", ["signal-race", "initial-proc-read", "waiting-proc-read"])
+@pytest.mark.parametrize("cleanup_fails", [False, True])
+def test_cancel_process_failure_still_cleans_exact_driver_and_preserves_failure(prepared, monkeypatch, failure, cleanup_fails):
+    value, roots, descriptor, *_ = prepared
+    local = transfer(prepared, "control")
+    identity = dict(pid=4321, start_ticks="123456", argv_sha256="a" * 64)
+    write_json(local.root.parent / "node-worker.json", dict(phase="verify", config_sha256=digest(canonical(value)), process=identity))
+    original = ProcessLookupError("synthetic worker exited before signal") if failure == "signal-race" else OSError("synthetic /proc IO failure")
+    cleanup_error = RuntimeError("synthetic exact driver inspect failed")
+    reads, signals, cleaned = [], [], []
+    def identity_read(pid):
+        reads.append(pid)
+        if failure == "initial-proc-read" or failure == "waiting-proc-read" and len(reads) == 2:
+            raise original
+        return identity
+    def kill(pid, sig):
+        signals.append((pid, sig))
+        if failure == "signal-race":
+            raise original
+    def clean(*args):
+        cleaned.append(args)
+        if cleanup_fails:
+            raise cleanup_error
+    monkeypatch.setattr(dispatch, "process_identity", identity_read)
+    monkeypatch.setattr(dispatch.os, "kill", kill)
+    monkeypatch.setattr(dispatch, "_clean_driver", clean)
+    with pytest.raises(type(original)) as caught:
+        dispatch.cancel_driver(roots["control"], value, RUN, ATTEMPT)
+    assert caught.value is original
+    assert cleaned == [(roots["control"], local.root.parent, "snow-real-lake-" + digest(canonical(descriptor))[:20])]
+    assert signals == ([] if failure == "initial-proc-read" else [(4321, dispatch.signal.SIGTERM)])
+    if cleanup_fails:
+        assert caught.value.__cause__ is cleanup_error
+    assert local.path("package.json").exists()
+
+
+@pytest.mark.parametrize("change", [
+    lambda value: value.update(config_sha256="b" * 64),
+    lambda value: value["process"].update(pid=True),
+    lambda value: value["process"].update(start_ticks="unknown"),
+    lambda value: value["process"].update(argv_sha256="invalid"),
+])
+def test_cancel_rejects_untrusted_worker_before_any_process_or_driver_action(prepared, monkeypatch, change):
+    config, roots, *_ = prepared
+    local = transfer(prepared, "control")
+    worker = dict(phase="execute", config_sha256=digest(canonical(config)),
+                  process=dict(pid=4321, start_ticks="123456", argv_sha256="a" * 64))
+    change(worker)
+    write_json(local.root.parent / "node-worker.json", worker)
+    monkeypatch.setattr(dispatch, "process_identity", lambda *a: pytest.fail("Untrusted worker must not be probed"))
+    monkeypatch.setattr(dispatch, "_clean_driver", lambda *a: pytest.fail("Untrusted worker must not mutate a driver"))
+    with pytest.raises(ValueError, match="ownership or identity"):
+        dispatch.cancel_driver(roots["control"], config, RUN, ATTEMPT)
+    assert not (local.root.parent / "cancelled.json").exists()
 
 
 @pytest.mark.parametrize("platform", ["nt", "posix"])
