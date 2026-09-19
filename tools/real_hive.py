@@ -31,6 +31,19 @@ from snow_statistics.real_publication import read_real_release
 from snow_statistics.real_remote_lifecycle import RealRemoteLifecycle
 
 
+def release_directory(config, run_id, root):
+    """Analysis owns managed transfers, including explicitly synthetic fixtures."""
+    if config["transport_node"] == "snow-analysis":
+        from snow_statistics.real_transfer import paths
+        directory = root / paths(config["lane"], run_id)["published"]
+    else:
+        directory = root / "runtime/real/publication"
+    release = read_real_release(directory)
+    if release["run_id"] != run_id:
+        raise ValueError("Managed release is not the explicitly requested run")
+    return directory
+
+
 def execute(config, command, run_id=None, *, root=ROOT):
     if command not in {"register", "verify", "cleanup", "catalog-cleanup", "permit"}:
         raise ValueError("Unknown Hive operation")
@@ -94,14 +107,7 @@ def execute(config, command, run_id=None, *, root=ROOT):
                     result = manager.issue_permit(job, root / paths["coverage"], None, root / paths["permit"],
                                                   hdfs, ods, sink, backend_checks=checks)
                 else:
-                    if config["input_origin"] == "real":
-                        from snow_statistics.real_transfer import paths
-                        directory = root / paths(config["lane"], run_id)["published"]
-                    else:
-                        directory = root / "runtime/real/publication"
-                    release = read_real_release(directory)
-                    if release["run_id"] != run_id:
-                        raise ValueError("Managed release is not the explicitly requested run")
+                    directory = release_directory(config, run_id, root)
                     result = register_release(directory, registry, catalog, cleanup, verify_only=command == "verify")
                 envelope = dict(schema_version=1, source="real", input_origin=config["input_origin"],
                                 command=command, run_id=run_id, result=result)

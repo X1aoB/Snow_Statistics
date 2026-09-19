@@ -401,6 +401,45 @@ def test_cli_reuses_strict_config_and_never_runs_on_windows(tmp_path, monkeypatc
         module.main()
 
 
+@pytest.mark.parametrize("origin,node", [
+    ("real", "snow-analysis"), ("synthetic fixtures", "snow-analysis"),
+    ("synthetic fixtures", "snow-control"),
+])
+def test_hive_reads_the_authority_release_and_ignores_other_valid_old_pair(tmp_path, monkeypatch, origin, node):
+    from snow_statistics.real_publication import read_real_release
+    from snow_statistics.real_transfer import paths
+    spec = importlib.util.spec_from_file_location("real_hive_release_fixture", Path(__file__).parents[1] / "tools/real_hive.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    monkeypatch.setattr(module, "read_real_release", lambda path: read_real_release(path, NOW))
+    config = dict(input_origin=origin, transport_node=node, lane="fixture-lake-test")
+    managed = tmp_path / paths(config["lane"], "test")["published"]
+    legacy = tmp_path / "runtime/real/publication"
+    selected, other = (managed, legacy) if node == "snow-analysis" else (legacy, managed)
+    daily, behavior = packages()
+    release_real(daily, behavior, selected, "test", now=NOW)
+    release_real(daily, behavior, other, "old", now=NOW)
+    assert module.release_directory(config, "test", tmp_path) == selected
+    assert read_real_release(other, NOW)["run_id"] == "old"
+
+
+@pytest.mark.parametrize("managed_exists", [False, True])
+def test_analysis_never_falls_back_to_legacy_pair_when_managed_pair_is_missing_or_wrong(tmp_path, monkeypatch, managed_exists):
+    from snow_statistics.real_publication import read_real_release
+    from snow_statistics.real_transfer import paths
+    spec = importlib.util.spec_from_file_location("real_hive_release_failure", Path(__file__).parents[1] / "tools/real_hive.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    monkeypatch.setattr(module, "read_real_release", lambda path: read_real_release(path, NOW))
+    config = dict(input_origin="synthetic fixtures", transport_node="snow-analysis", lane="fixture-lake-test")
+    daily, behavior = packages()
+    release_real(daily, behavior, tmp_path / "runtime/real/publication", "test", now=NOW)
+    if managed_exists:
+        release_real(daily, behavior, tmp_path / paths(config["lane"], "test")["published"], "old", now=NOW)
+    with pytest.raises((FileNotFoundError, ValueError)):
+        module.release_directory(config, "test", tmp_path)
+
+
 def test_catalog_timeout_signals_owned_process_group_before_return(monkeypatch):
     from snow_statistics import real_hive
     calls = []
