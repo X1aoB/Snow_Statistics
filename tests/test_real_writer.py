@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from uuid import UUID, uuid5
 
 import pytest
+from test_real_writer_bootstrap import BootstrapDocker
 
 from snow_statistics import real_writer as module
 from snow_statistics.real_quiescent import TABLES, topic_names, validate_initial
@@ -64,7 +65,7 @@ def test_sql_and_environment_cannot_escape_epoch():
 def test_probe_reads_engine_values_and_rejects_hidden_partitions(tmp_path, monkeypatch):
     names = set(topic_names(MANIFEST))
     partitions = {name: 0 for name in names}
-    files = []
+    docker = BootstrapDocker(MANIFEST["containers"]["jobmanager"])
     class Broker:
         def __init__(self, *args):
             pass
@@ -79,7 +80,7 @@ def test_probe_reads_engine_values_and_rejects_hidden_partitions(tmp_path, monke
     monkeypatch.setattr(module, "KafkaClient", Broker)
     monkeypatch.setattr(module, "frozen", lambda epoch: MANIFEST)
     writer = object.__new__(module.ActualWriter)
-    writer.epoch = SimpleNamespace(docker=SimpleNamespace(command=lambda *a, **k: "\n".join(files).encode()))
+    writer.epoch = SimpleNamespace(docker=docker)
     writer.host, writer.database = "192.168.216.133", "snow_real_real_fixture"
     writer.identity = lambda: COLLECTOR
     writer.check_namespaces = lambda topics, databases: None
@@ -88,7 +89,7 @@ def test_probe_reads_engine_values_and_rejects_hidden_partitions(tmp_path, monke
     writer.sql = lambda query: [(name, "BASE TABLE") for name in TABLES] + [("daily_realtime", "VIEW")] if query.startswith("SHOW") else [(0,)]
     value = writer.read_initial_state(MANIFEST, COLLECTOR)
     assert validate_initial(value, MANIFEST) == value
-    files.append("/checkpoints/unregistered-payload")
+    docker.add("/checkpoints/unregistered-payload")
     with pytest.raises(ValueError):
         validate_initial(writer.read_initial_state(MANIFEST, COLLECTOR), MANIFEST)
     partitions[next(iter(names))] = 1

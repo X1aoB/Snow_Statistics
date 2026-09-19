@@ -16,6 +16,7 @@ from .landing import collector_identity
 from .lifecycle import RETENTION_DAYS, timestamp
 from .publication import canonical, publication_lock
 from .real_epoch import LABEL_PREFIX, DockerEpoch, expire_due
+from .real_writer_bootstrap import validate_bootstrap
 
 ROOT = Path(__file__).resolve().parents[2]
 TABLES = ("events_realtime", "daily_offline", "daily_snapshots", "offline_releases")
@@ -24,6 +25,7 @@ STATES = ("/checkpoints", "/flink-state")
 WRITER_FILES = ("src/snow_statistics/sync.py", "src/snow_statistics/real_quiescent.py",
                 "src/snow_statistics/real_lab.py", "src/snow_statistics/publication.py",
                 "src/snow_statistics/real_writer.py", "tools/real_writer.py",
+                "src/snow_statistics/real_writer_bootstrap.py",
                 "src/snow_statistics/real_transfer.py",
                 "src/snow_statistics/real_writer_recovery.py", "tools/real_writer_recovery.py",
                 "warehouse/doris/schema.sql", "warehouse/doris/publication.sql")
@@ -151,7 +153,13 @@ def expected_parameters(manifest, kafka):
 
 
 def validate_initial(value, manifest):
-    same_keys(value, ("kafka", "doris", "flink", "state"), "initial engine readback")
+    # Older synthetic probes contain literally empty roots. The production
+    # adapter always supplies a separately verified fixed-image bootstrap.
+    keys = ("kafka", "doris", "flink", "state")
+    if isinstance(value, dict) and "bootstrap" in value:
+        keys += ("bootstrap",)
+        validate_bootstrap(value["bootstrap"])
+    same_keys(value, keys, "initial engine readback")
     kafka = value["kafka"]
     same_keys(kafka, ("identity", "bounds"), "Kafka readback")
     same_keys(kafka["identity"], ("cluster_id", "topic_ids"), "Kafka identity")

@@ -15,7 +15,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .io import digest, write_json
-from .publication import publication_lock
+from .lifecycle import timestamp
+from .publication import canonical, publication_lock
 from .real_backend_lifecycle import KafkaClient
 from .real_epoch import Epoch, expire_due, private_epoch_root
 from .real_quiescent import (
@@ -24,12 +25,16 @@ from .real_quiescent import (
     TABLES,
     DockerStorage,
     WriterRegistry,
+    bounded_json,
     expected_parameters,
     frozen,
     storage,
     topic_names,
     validate_doris_write,
+    validate_initial,
+    writer_hashes,
 )
+from .real_writer_bootstrap import verify_bootstrap
 from .source_cursor import validate_status
 
 
@@ -187,14 +192,12 @@ class ActualWriter:
             raise ValueError("Unexpected physical tables in the owned real database")
         counts = {name: int(self.sql(f"SELECT COUNT(*) FROM {self.database}.{name}")[0][0]) for name in physical}
         jobs = self.flink("/jobs/overview")["jobs"]
-        state = {}
-        for path in STATES:
-            raw = self.epoch.docker.command(["exec", manifest["containers"]["jobmanager"],
-                                             "find", path, "-mindepth", "1", "!", "-type", "d", "-print"], timeout=10)
-            state[path] = raw.decode().splitlines()
+        bootstrap = verify_bootstrap(self.epoch.docker.command, manifest["containers"]["jobmanager"])
+        state = {path: [] for path in STATES}
         return dict(kafka=dict(identity=identity, bounds={topic: dict(partition=0, start=start, end=end)
                                                         for (topic, _), (start, end) in bounds.items()}),
-                    doris=dict(database=self.database, tables=counts), flink=dict(jobs=jobs), state=state)
+                    doris=dict(database=self.database, tables=counts), flink=dict(jobs=jobs), state=state,
+                    bootstrap=bootstrap)
 
     def check_namespaces(self, topics=(), databases=()):
         from kafka.admin import KafkaAdminClient
@@ -236,6 +239,79 @@ class ActualWriter:
             finally:
                 admin.close()
             return self.registry.initialize(identity, self)
+
+    def finalize_initialization(self):
+        """Finish an interrupted *empty* bootstrap by live readback, never DDL.
+
+        The first attempt marker/account and original epoch remain untouched.
+        A persisted intent binds this recovery to the actual empty storage,
+        collector, original files and current reviewed executable hashes.
+        """
+        expire_due(self.root, self.epoch.docker)
+        with publication_lock(self.directory):
+            current = datetime.now(UTC)
+            manifest = frozen(self.epoch)
+            marker_file = self.directory / "initializing.json"
+            marker = bounded_json(marker_file)
+            if (set(marker) != {"source", "started_at"} or marker["source"] != "real"
+                    or not timestamp(manifest["original_min_accepted_at"]) <= timestamp(marker["started_at"]) <= current
+                    or current >= timestamp(manifest["expires_at"])):
+                raise ValueError("Only a still-live interrupted initialization may be finalized")
+            if any((self.directory / name).exists() for name in ("submission.json", "job.env")) or self.registry.job_path.exists():
+                raise ValueError("An epoch with a submission attempt cannot be finalized as empty")
+            self.account()  # Validate the original exact account; never create/reset it.
+            account_file = private_file(self.directory / "account.json")
+            identity = self.identity()
+            before = storage(self.epoch, running=True)
+            bindings = dict(schema_version=1, source="real", epoch_id=manifest["epoch_id"],
+                            owner_manifest_sha256=digest(canonical(manifest)), collector=identity,
+                            initializing_sha256=digest(marker_file.read_bytes()),
+                            account_sha256=digest(account_file.read_bytes()), storage=before,
+                            writers=writer_hashes(), expires_at=manifest["expires_at"])
+            intent_path = self.directory / "initialization-finalization-intent.json"
+            completed = self.directory / "initialization-finalization.json"
+            if completed.exists():
+                raise ValueError("Initialization finalization already completed; use status")
+            initial = validate_initial(self.read_initial_state(manifest, identity), manifest)
+            if storage(self.epoch, running=True) != before:
+                raise ValueError("Storage changed during empty initialization recovery")
+            if intent_path.exists():
+                intent = bounded_json(private_file(intent_path))
+                if (set(intent) != set(bindings) | {"started_at"}
+                        or any(intent[key] != value for key, value in bindings.items())
+                        or not timestamp(marker["started_at"]) <= timestamp(intent["started_at"]) <= current):
+                    raise ValueError("Interrupted finalization no longer matches its immutable intent")
+            else:
+                if self.registry.path.exists():
+                    raise ValueError("Cannot adopt an existing registration without a prior finalization intent")
+                intent = bindings | {"started_at": current.isoformat()}
+                write_json(intent_path, intent)
+                os.chmod(intent_path, 0o600)
+            if self.registry.path.exists():
+                result = self.registry.read(identity)
+            else:
+                result = self.registry.initialize(identity, self)
+            # A normal JVM restart can change only the names of fixed-byte
+            # bootstrap files. Both readbacks independently validate those
+            # exact resources; payload/state/topic identities must remain equal.
+            registered_initial = validate_initial(result["initial"], manifest)
+            if (result["storage"] != before or
+                    {k: v for k, v in registered_initial.items() if k != "bootstrap"} !=
+                    {k: v for k, v in initial.items() if k != "bootstrap"}):
+                raise ValueError("Empty engine readback changed during registration")
+            # Preserve the original marker and credential bytes, even on retry.
+            if (digest(marker_file.read_bytes()) != bindings["initializing_sha256"]
+                    or digest(account_file.read_bytes()) != bindings["account_sha256"]
+                    or storage(self.epoch, running=True) != before or self.identity() != identity):
+                raise ValueError("Initialization bindings changed during finalization")
+            write_json(completed, dict(schema_version=1, source="real", completed_at=datetime.now(UTC).isoformat(),
+                                       intent_sha256=digest(intent_path.read_bytes()),
+                                       registration_sha256=digest(self.registry.path.read_bytes()),
+                                       live_readback_sha256=digest(canonical(initial)),
+                                       original_files_preserved=True, ddl_executed=False,
+                                       original_expires_at=manifest["expires_at"]))
+            os.chmod(completed, 0o600)
+            return result
 
     def read_job(self, job_id):
         # A state fetched from Flink alone cannot attest arbitrary parameters.

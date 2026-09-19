@@ -10,13 +10,15 @@ parser.add_argument("--epoch", required=True)
 parser.add_argument("--collector-url", required=True)
 parser.add_argument("--reader-token-file", required=True)
 parser.add_argument("--release-directory", help="Managed aggregate-only pair, required for publish")
-parser.add_argument("action", choices=("initialize", "submit", "publish", "status"))
+parser.add_argument("action", choices=("initialize", "finalize-initialization", "submit", "publish", "status"))
 args = parser.parse_args()
 writer = None
 try:
     writer = ActualWriter(args.root, args.epoch, args.collector_url, args.reader_token_file)
     if args.action == "initialize":
         result = writer.initialize()
+    elif args.action == "finalize-initialization":
+        result = writer.finalize_initialization()
     elif args.action == "submit":
         result = writer.submit()
     elif args.action == "publish":

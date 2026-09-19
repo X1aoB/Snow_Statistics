@@ -15,6 +15,24 @@
 5. 真实 epoch 必须已通过 tools/real_epoch.py prepare 创建并部署到期监督程序。统一入口复用已有 epoch 的启动和停止，不自动创建 Topic、Doris 账号/表、证书、Tunnel 或正式服务器路由。
 6. 首次真实同步前须完成实际生产初始化及作业读回登记。writer-registration.json 绑定空 Topic/数据库/状态目录的实际检查、collector 代际、Docker 对象、冻结 JAR 和源码；writer-job.json 绑定实际运行的 Flink JobID、完整原始时间窗口及输入身份。文件由独立的生产初始化代码调用 WriterRegistry 产生，不能手写一个成功标志。synthetic_engine_test 的引擎证据不能代替此登记。
 
+### 初始化中断后的空状态恢复
+
+`initialize-writer` 已写出 `initializing.json` 后失败时，保留原 marker、账号、Topic、卷和原到期时间，不能删除它们后重跑初始化。先检查失败原因。确认为尚未提交作业、四个 Topic 位点全部为零、四张物理表为空，且原 Docker 对象没有替换时，才可使用独立恢复入口。
+
+锁定的 Flink 1.20.3 镜像会在空 JVM 启动时产生两份默认 JAAS 配置及两份 RPC JAR。生产探针核对整个分发 JAR 与四个临时文件的固定尺寸、SHA256、类型、链接数、所属用户，以及两次完整目录清单。只有这些经过核验的启动文件可以存在；Checkpoint、额外文件、符号链接、内容变化或其他作业仍会拒绝登记。核验记录只含元数据，不导出文件正文，也不是清理用户状态的许可。
+
+```sh
+# 本地 analysis Linux VM；工作目录 /home/snow/Snow_Statistics。
+# 前置条件：原 epoch 五个引擎已按门禁启动，受控 collector 回环隧道已建立；
+# 使用本机已核验的配置替换所有占位符，不把 token 本身放入命令行。
+.venv/bin/python tools/real_writer.py \
+  --root <原epoch根目录> --epoch <原epoch-id> \
+  --collector-url http://127.0.0.1:<受控转发端口> \
+  --reader-token-file <本机reader-token文件> finalize-initialization
+```
+
+该命令只实际读回并完成不可变登记，不创建或重置账号、不执行 DDL、不改原数据窗口。恢复意图绑定原 marker、账号哈希、collector 代际、Docker 对象及执行代码；中途失败只能在绑定完全相同时继续。成功记录 `initialization-finalization.json`，随后仍须正常执行 `submit-writer` 和同步验收。初始化完成不等于作业已启动，更不等于真实数据已接入。
+
 在 Windows 复制配置，替换节点占位符：
 
     uv run python tools/lab_remote.py --node <节点> --upload runtime/real/config/run.json --remote /home/snow/Snow_Statistics/runtime/real/config/run.json
