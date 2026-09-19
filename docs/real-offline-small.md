@@ -2,7 +2,7 @@
 
 本入口将既有 `real_lab` 的固定离线阶段串起来，使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。它是显式的按阶段命令，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
 
-**验收状态：**新增入口已有本地合成单测；Windows 精确进程树终止已在本地测试。Linux `SIGHUP` 的原生进程组测试在 Windows 明确跳过，需由 Linux CI 执行。此前同资源配置的手工编排、合成 golden 和正式 ODS 落地结果属于已有独立证据，不能替代本入口的实际 VM 验收。本文件不声明新入口已实际启动 VM。
+**验收状态：**新增入口已有本地合成单测；Windows 精确进程树终止已在本地测试。Linux `SIGHUP` 的原生进程组测试在 Windows 明确跳过，并已在源码 `46efeceb` 的 Linux CI `35438865825` 中通过。此前同资源配置的手工编排、合成 golden 和正式 ODS 落地结果属于已有独立证据，不能替代本入口的实际 VM 验收。本文件不声明新入口已实际启动 VM。
 
 对应实现：[Windows/节点模块](../src/snow_statistics/real_offline_small.py)、[CLI](../tools/real_offline_small.py)、[合成故障测试](../tests/test_real_offline_small.py)。冻结的 `real_lab.py`、writer、恢复账本、生命周期及模型代码均继续使用原实现。
 

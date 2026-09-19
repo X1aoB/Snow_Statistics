@@ -34,7 +34,7 @@ formal `real-prod-01` 的首次空状态检查拒绝 Flink JVM 自动生成的�
 
 新的 analysis 权威[合成验收夹具](lake-fixture.md)已实现，使用独立 loopback collector 的实际接收时钟、新 lane、原保留期限和严格生成器校验；Kafka 仅为显式测试适配器，相关后端保持未初始化、不认证。Hive 读取同一权威节点的受管聚合包，禁止缺失时退回旧包。74 项相关本地测试、Ruff，以及签名 `d31e9ab4b5cb5ada452775cde1f3bbdef56c7840` 的 [Linux CI 35438323361](https://github.com/X1aoB/Snow_Statistics/actions/runs/35438323361) 和 push CI `35438320829` 通过。这是新引擎实测的准备，不能提前写为 HDFS/Hive/Iceberg 新联调已通过。
 
-新增[小内存统一操作入口](real-offline-small.md)，固定 2048/1920/768 MiB；实际暂停账本和容器身份核验、跨 lane 互斥、低资源收尾、SSH 心跳及本机湖仓副本到期清理已经过合成/进程测试。状态读取不启停服务，停止不删除数据。当前完整本地 Python 为 725 项通过、4 项平台专属跳过，Ruff 和 v1/v2 契约通过；新入口的 Linux CI 与实际 VM 验收随后单独记录，不挪用之前手工编排的成绩。
+新增[小内存统一操作入口](real-offline-small.md)，固定 2048/1920/768 MiB；实际暂停账本和容器身份核验、跨 lane 互斥、低资源收尾、SSH 心跳及本机湖仓副本到期清理已经过合成/进程测试。状态读取不启停服务，停止不删除数据。当前完整本地 Python 为 725 项通过、4 项平台专属跳过，Ruff 和 v1/v2 契约通过；签名 `46efeceb1f27f16433f57ccdc4b3f1d6d365c296` 的 [Linux CI 35438865825](https://github.com/X1aoB/Snow_Statistics/actions/runs/35438865825) 与 push CI `35438863008` 均成功，包含实际 POSIX SIGHUP 收尾检查。新入口的实际 VM 验收随后单独记录，不挪用之前手工编排的成绩。
 
 ## 恢复实施（2026-09-19）
 
