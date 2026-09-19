@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
+from .docker_absence import inspect_missing
 from .io import atomic_write, digest, write_json
 from .lifecycle import timestamp
 from .publication import canonical, publication_lock
@@ -44,10 +45,10 @@ def _clean_driver(root, directory, name):
             raise ValueError("Lake driver ownership changed; refusing container mutation")
         subprocess.run(["sudo", "docker", "rm", "-f", value["Id"]], cwd=root,
                        stdout=subprocess.DEVNULL, check=True, timeout=40)
-    elif b"No such" not in result.stderr:
+    elif not inspect_missing(result, name, formatted=False):
         raise RuntimeError("Cannot verify absence of the exact lake driver")
     after = subprocess.run(["sudo", "docker", "inspect", name], cwd=root, capture_output=True, timeout=20)
-    if after.returncode == 0 or b"No such" not in after.stderr:
+    if not inspect_missing(after, name, formatted=False):
         raise RuntimeError("Exact lake driver absence was not confirmed; retain its CID")
     (directory / "data/driver.cid").unlink(missing_ok=True)
 
@@ -159,7 +160,7 @@ def run_spark(root, directory, descriptor, mode):
     # The node operation first requires no unfinished execution marker. A
     # pre-existing exact name is never presumed to belong to this invocation.
     exists = subprocess.run(["sudo", "docker", "inspect", name], cwd=root, capture_output=True, timeout=20)
-    if exists.returncode == 0 or b"No such" not in exists.stderr:
+    if not inspect_missing(exists, name, formatted=False):
         raise ValueError("Existing or unknown driver state blocks a new launch")
     counts, log_errors = {"bytes": 0, "retained_bytes": 0}, []
     with log.open("wb") as output:

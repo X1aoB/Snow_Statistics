@@ -21,6 +21,7 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from .docker_absence import inspect_missing
 from .io import atomic_write, digest, write_json
 from .lifecycle import timestamp
 from .publication import canonical, publication_lock
@@ -36,6 +37,7 @@ OPERATIONS = {"register", "verify", "cleanup", "catalog-cleanup", "permit", "vie
 ENGINE_FILES = (
     "src/snow_statistics/real_hive.py", "src/snow_statistics/real_hive_contract.py",
     "src/snow_statistics/real_hive_spark.py", "src/snow_statistics/real_hive_dispatch.py",
+    "src/snow_statistics/docker_absence.py",
     "tools/real_hive_dispatch.py", "tools/spark_hive_catalog.sh",
     "warehouse/spark/real_hive_catalog.py", "lab/spark-submit-locked.sh",
     "lab/locks/images.env", "lab/locks/hive-client.sha256", "lab/locks/spark-jars.sha256",
@@ -275,7 +277,7 @@ def stop_worker(root, envelope, *, run=subprocess.run):
              '{{.Id}}|{{.Name}}|{{.State.Running}}|{{index .Config.Labels "snow.hive.request"}}', name]
     result = run(query, capture_output=True, timeout=15, cwd=root)
     if result.returncode:
-        if b"No such" not in result.stderr:
+        if not inspect_missing(result, name, formatted=True):
             raise ValueError("Cannot verify exact Hive worker absence")
         return
     if not cidfile.is_file() or cidfile.stat().st_size > 66:
@@ -291,7 +293,8 @@ def stop_worker(root, envelope, *, run=subprocess.run):
         run(["sudo", "docker", "stop", "-t", "10", cid], check=True, stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL, timeout=25, cwd=root)
     final = run(query, capture_output=True, timeout=15, cwd=root)
-    if final.returncode == 0 and final.stdout != stopped or final.returncode != 0 and b"No such" not in final.stderr:
+    if ((final.returncode == 0 and final.stdout != stopped)
+            or (final.returncode != 0 and not inspect_missing(final, name, formatted=True))):
         raise ValueError("Owned Hive worker did not stop")
 
 

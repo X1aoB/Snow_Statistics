@@ -22,7 +22,9 @@ YARN = {"snow-control": {"namenode", "resourcemanager"}, "snow-compute": {"datan
 
 
 def container_hash(value):
-    return digest(canonical({key: value[key] for key in ("Id", "Name", "Image", "Config", "HostConfig", "Mounts")}))
+    identity = {key: value[key] for key in ("Id", "Name", "Image", "Config", "HostConfig", "Mounts")}
+    identity["Mounts"] = sorted(value["Mounts"], key=canonical)
+    return digest(canonical(identity))
 
 
 class StageDocker:

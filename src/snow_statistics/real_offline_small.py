@@ -23,6 +23,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from .docker_absence import inspect_missing
 from .io import digest, write_json
 from .publication import canonical, publication_lock
 from .real_lab import (
@@ -522,7 +523,7 @@ def driver_cleanup(root, phase, run_id):
     check = subprocess.run(["sudo", "docker", "inspect", "--format", "{{.Id}} {{.Name}}", identifier],
                            capture_output=True, timeout=10)
     if check.returncode:
-        if b"No such" not in check.stderr:
+        if not inspect_missing(check, identifier, formatted=True):
             raise RuntimeError("Driver absence cannot be confirmed")
         return
     if check.stdout.decode().strip() != identifier + " /snow-spark-yarn":

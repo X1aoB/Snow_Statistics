@@ -350,7 +350,7 @@ def test_fixed_spark_process_caps_logs_and_checks_only_its_exact_container(prepa
     def inspect(command, **kwargs):
         calls.append(command)
         assert command == ["sudo", "docker", "inspect", name]
-        return subprocess.CompletedProcess(command, 1, b"[]", b"Error: No such object")
+        return subprocess.CompletedProcess(command, 1, b"[]\n", b"Error: No such object: " + command[-1].encode() + b"\n")
 
     class Process:
         pid = 4321
@@ -408,7 +408,7 @@ def test_failed_process_group_signal_still_cleans_exact_driver(prepared, monkeyp
         def poll(self):
             return None
     monkeypatch.setattr(dispatch, "engine_identity", lambda *a, **k: descriptor["engine"])
-    monkeypatch.setattr(dispatch.subprocess, "run", lambda command, **k: subprocess.CompletedProcess(command, 1, b"", b"No such"))
+    monkeypatch.setattr(dispatch.subprocess, "run", lambda command, **k: subprocess.CompletedProcess(command, 1, b"[]\n", b"error: no such object: " + command[-1].encode() + b"\n"))
     monkeypatch.setattr(dispatch.subprocess, "Popen", lambda *a, **k: Process())
     def failed_signal(*unused):
         raise ProcessLookupError("synthetic process disappeared")
@@ -465,7 +465,7 @@ def test_log_thread_start_failure_still_cleans_launched_driver(prepared, monkeyp
         def start(self):
             raise RuntimeError("synthetic thread startup failure")
     monkeypatch.setattr(dispatch, "engine_identity", lambda *a, **k: descriptor["engine"])
-    monkeypatch.setattr(dispatch.subprocess, "run", lambda command, **k: subprocess.CompletedProcess(command, 1, b"", b"No such"))
+    monkeypatch.setattr(dispatch.subprocess, "run", lambda command, **k: subprocess.CompletedProcess(command, 1, b"[]\n", b"error: no such object: " + command[-1].encode() + b"\n"))
     monkeypatch.setattr(dispatch.subprocess, "Popen", lambda *a, **k: process)
     monkeypatch.setattr(dispatch.threading, "Thread", Worker)
     monkeypatch.setattr(dispatch, "_clean_driver", lambda *a: cleaned.append(a[-1]))
