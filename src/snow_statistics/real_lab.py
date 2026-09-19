@@ -171,14 +171,18 @@ class Runner:
         atomic_write(filename, script.encode())
         self.run([sys.executable, "tools/lab_remote.py", "--node", node, "--script", str(filename)], timeout=1250)
 
-    def windows_start(self, stage):
+    def windows_start(self, stage, *, offline_profile="scale"):
+        if offline_profile not in {"scale", "real-small"} or stage != "offline" and offline_profile != "scale":
+            raise ValueError("Only an explicit offline stage may select the bounded small profile")
         selected = stage_nodes(self.config, stage)
         started = []
         try:
             for node in selected:
-                profile = "realtime" if node == "snow-analysis" and stage != "offline" else "scale"
+                profile = (offline_profile if stage == "offline" else
+                           "realtime" if node == "snow-analysis" else "scale")
                 self.run([sys.executable, "tools/vmware_lab.py", "configure", "--node", node, "--profile", profile])
-                self.run([sys.executable, "tools/vmware_lab.py", "start", "--node", node])
+                reserve = ["--reserve-mib", "256"] if offline_profile == "real-small" else []
+                self.run([sys.executable, "tools/vmware_lab.py", "start", "--node", node, *reserve])
                 started.append(node)
             for node in selected:
                 deadline = time.monotonic() + 60
@@ -764,7 +768,11 @@ def main():
     parser.add_argument("--run-id", help="Exact registered job ID")
     parser.add_argument("--power-off", action="store_true", help="stop-offline/stop-epoch only: soft-stop owned VMs after services")
     parser.add_argument("--describe", action="store_true", help="Validate routing only; execute nothing")
+    parser.add_argument("--offline-profile", choices=("scale", "real-small"), default="scale",
+                        help="start-offline only: optional 2048/2048/768 MiB small-batch profile")
     args = parser.parse_args()
+    if args.offline_profile != "scale" and args.phase != "start-offline":
+        parser.error("--offline-profile only applies to start-offline")
     private_relative(args.config, "config", ".json")
     config = validate_config(read_json(ROOT / args.config))
     if args.phase in JOB_PHASES or args.phase == "metadata-directories":
@@ -783,8 +791,8 @@ def main():
             runner.run([sys.executable, "tools/vmware_lab.py", "status"])
             result = {"source": "real", "runtime_status": "local VM status only; inspect Linux status for data cutoff"}
         elif args.phase in {"start-offline", "start-storage"}:
-            runner.windows_start("offline" if args.phase == "start-offline" else "storage")
-            result = {"phase": args.phase, "started": True}
+            runner.windows_start("offline" if args.phase == "start-offline" else "storage", offline_profile=args.offline_profile)
+            result = {"phase": args.phase, "started": True, "offline_profile": args.offline_profile if args.phase == "start-offline" else None}
         elif args.phase == "stop-offline":
             errors = []
             for node in reversed(NODES):

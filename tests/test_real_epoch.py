@@ -1,10 +1,14 @@
 import copy
+import errno
 import json
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 
+from snow_statistics import real_epoch
 from snow_statistics.lifecycle import timestamp
+from snow_statistics.publication import PublicationLockBusy, publication_lock
 from snow_statistics.real_epoch import Epoch, compose_spec, labels, make_manifest, prepare
 
 NOW = datetime.now(UTC)
@@ -228,3 +232,107 @@ def test_all_synthetic_engine_containers_running_cannot_grant_production_read_pe
     assert gate["fixture_ready"] is True and gate["open"] is False and gate["serves_real_data"] is False
     with pytest.raises(ValueError, match="not readable"):
         epoch.readable()
+
+
+class RetryClock:
+    def __init__(self):
+        self.elapsed, self.sleeps = 0, []
+
+    def monotonic(self):
+        return self.elapsed
+
+    def sleep(self, delay):
+        self.sleeps.append(delay)
+        self.elapsed += delay
+
+    def time(self):
+        return NOW.timestamp() + self.elapsed
+
+
+def supervisor_clock(monkeypatch):
+    clock = RetryClock()
+    monkeypatch.setattr(real_epoch, "time", clock)
+    monkeypatch.setattr(real_epoch, "signal", SimpleNamespace(signal=lambda *_: None, SIGTERM=15, SIGINT=2))
+    return clock
+
+
+def test_supervisor_recovers_transient_lock_contention_before_resuming_watch(tmp_path, monkeypatch):
+    _, docker, _ = candidate(tmp_path)
+    clock = supervisor_clock(monkeypatch)
+    attempts = []
+
+    def expire(*_):
+        attempts.append(clock.elapsed)
+        assert all(item["running"] for item in docker.c.values())
+        if len(attempts) <= 2:
+            raise PublicationLockBusy(errno.EAGAIN, "synthetic held lock")
+        return [{"retired": True}]
+
+    def sleep(delay):
+        if delay > 1:
+            raise SystemExit(0)  # Stop the otherwise perpetual watch after its first successful cycle.
+        clock.sleep(delay)
+
+    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    monkeypatch.setattr(real_epoch, "time", SimpleNamespace(monotonic=clock.monotonic, time=clock.time, sleep=sleep))
+    with pytest.raises(SystemExit):
+        real_epoch.supervise(tmp_path, docker)
+    assert attempts == [0, 1, 2]
+    assert all(not item["running"] for item in docker.c.values())
+    assert len(docker.v) == 5  # Normal shutdown only stops readers; no data is deleted.
+
+
+def test_continuous_lock_contention_exhausts_budget_and_stops_owned_readers(tmp_path, monkeypatch):
+    _, docker, _ = candidate(tmp_path)
+    clock = supervisor_clock(monkeypatch)
+    attempts = []
+    failure = PublicationLockBusy(errno.EAGAIN, "synthetic persistent held lock")
+
+    def expire(*_):
+        attempts.append(clock.elapsed)
+        raise failure
+
+    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    with pytest.raises(PublicationLockBusy) as caught:
+        real_epoch.supervise(tmp_path, docker)
+    assert caught.value is failure
+    assert clock.elapsed == 60 and len(attempts) == 61 and max(clock.sleeps) == 1
+    assert all(not item["running"] for item in docker.c.values())
+    assert len(docker.v) == 5
+
+
+def test_cleanup_body_blocking_io_error_is_not_retried_and_stops_owned_readers(tmp_path, monkeypatch):
+    _, docker, _ = candidate(tmp_path)
+    clock = supervisor_clock(monkeypatch)
+    failure = BlockingIOError(errno.EAGAIN, "synthetic cleanup body I/O failure")
+    attempts = []
+
+    def expire(*_):
+        attempts.append(clock.elapsed)
+        with publication_lock(tmp_path / "fixture-a"):
+            raise failure
+
+    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    with pytest.raises(BlockingIOError) as caught:
+        real_epoch.supervise(tmp_path, docker)
+    assert caught.value is failure and not isinstance(caught.value, PublicationLockBusy)
+    assert attempts == [0] and clock.sleeps == []
+    assert all(not item["running"] for item in docker.c.values())
+    assert len(docker.v) == 5
+
+
+def test_successful_cleanup_resets_retry_budget_and_returns_actual_receipt(tmp_path, monkeypatch):
+    clock = supervisor_clock(monkeypatch)
+    attempts, receipt = [], {"retired": True, "source": "synthetic fixture"}
+
+    def expire(*_):
+        attempts.append(clock.elapsed)
+        if len(attempts) % 60:
+            raise PublicationLockBusy(errno.EAGAIN, "synthetic held lock")
+        return [receipt]
+
+    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    for _ in range(2):
+        result = real_epoch._expire_due_with_lock_retry(tmp_path, Docker())
+        assert result[0] is receipt
+    assert len(attempts) == 120 and clock.elapsed == 118

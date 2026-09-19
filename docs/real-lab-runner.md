@@ -27,6 +27,20 @@
 
 --describe 只验证 schema 并显示执行节点，不证明连接或后端通过。Windows status 调用实际 VMware 资源检查；Linux status 读取本地位点和 gap 标记，不读取真实事件。
 
+### 低流量离线配置
+
+默认 `start-offline` 保持历史 `scale` 的 2048/2048/1024 MiB。对于当前个位数真实事件的小批次，新增显式选项：
+
+```powershell
+# Windows PowerShell；先完成 writer 暂停和三台 VM 软关，不能修改运行中的 VM。
+# 工作目录 C:/Users/25685/Desktop/Myprojects/Snow_Statistics
+uv run python tools/real_lab.py --config runtime/real/config/production.json start-offline --offline-profile real-small
+```
+
+`real-small` 仅把 analysis 调整为 768 MiB，控制/计算仍各 2048 MiB；每台启动额外保留 256 MiB 作业余量，64 GiB 项目、35 GiB 宿主磁盘和 4 GiB 宿主可用 RAM 门禁不变。任一启动门禁失败，收尾本轮此前已启动的 VM。此选项不适用于实时存储阶段。
+
+容量依据是 2026-09-11 百万条合成实验中 analysis DataNode 峰值 371.6 MiB、1 GiB VM 可用内存 428 MiB。它支持一次受监测的小配置验证，**不是已经完成 768 MiB 配置的证明，也不是承诺更大输入可用**。本轮应先以合成小样例验收同一配置，再接实际输入；每阶段记录余量、实际两副本与失败收尾。768 MiB analysis 不同时运行 Doris、Flink、Hive 客户端或治理。Hive/私有看板需要单独核验自己的内存窗口。
+
 ## 阶段表
 
 | 阶段 | 实际执行位置 | 做什么 |

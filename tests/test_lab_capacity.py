@@ -32,3 +32,19 @@ def test_available_ram_must_cover_reservation_and_host_margin(lab, monkeypatch):
     monkeypatch.setattr(lab, "run", lambda *args: str((1024 + lab.MIN_HOST_AVAILABLE_MIB - 1) * 1024))
     with pytest.raises(RuntimeError, match="Free RAM"):
         lab.capacity(1024)
+
+
+def test_reduced_memory_is_confined_to_explicit_analysis_option(lab):
+    assert lab.validate_memory("snow-analysis", 768) == 768
+    for node, memory in (("snow-control", 768), ("snow-compute", 768), ("snow-analysis", 767),
+                         ("snow-analysis", 900), ("snow-analysis", 10241)):
+        with pytest.raises(RuntimeError, match="reviewed node budget"):
+            lab.validate_memory(node, memory)
+
+
+def test_small_batch_headroom_cannot_be_spent_as_vm_memory(lab, monkeypatch):
+    monkeypatch.setattr(lab, "MAX_PROJECT_BYTES", 1023 * 1024**2)
+    monkeypatch.setattr(lab, "run", lambda *args: str((768 + lab.MIN_HOST_AVAILABLE_MIB + 256) * 1024))
+    lab.capacity(768)
+    with pytest.raises(RuntimeError, match="project gate"):
+        lab.capacity(768 + 256)

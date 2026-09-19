@@ -4,6 +4,8 @@
 
 **公开统计由轻量服务独立维护；关闭完整数仓不会中断统计页。**
 
+2026-09-19：两站的可选采集、隐私设置与独立轻量统计已正式上线，公网技术回归通过；[公开统计页](https://xiaob.dev/statistics/)按延迟和样本规则展示。实际版本及未完成的真实链路验收见[实施状态](docs/status.md)和[发布证据](docs/evidence/production-release-20260919.json)。本地克隆仍默认关闭采集，不会自动连接正式服务。
+
 ```text
 可选浏览器适配器 / 脱敏完成日志
               ↓
@@ -21,7 +23,7 @@ Python 运营状态流转 → MySQL → Debezium
 ```sh
 uv sync --extra dev
 uv run pytest -q
-node --test adapters/browser/analytics.test.mjs
+node --test adapters/browser/*.test.mjs
 uv run snow-stats demo
 ```
 
@@ -69,7 +71,7 @@ uv run snow-stats serve
 | `orchestration`, `governance` | Airflow 调度、版本化指标字典、显式表级血缘 |
 | `deploy`, `tools` | 轻量部署、资源清单、VMware 创建、合成 CDC、退出范围检查 |
 
-HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?after=…`、公开 `GET /analytics/public/v1/summary.json`。公开接口不提供用户标识、原始事件、SQL 或错误诊断。
+HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?after=…`、公开 `GET /analytics/public/v2/summary.json`。v2 分别表达公开、样本不足、等待公开和无数据；旧 v1 保持兼容并应用同样的保护规则。公开接口不提供用户标识、原始事件、SQL 或错误诊断。
 
 浏览器访问是可丢失的匿名行为估计，不代表经过认证的自然人。请求量仅覆盖已有服务端生成完成日志，不宣称覆盖所有入口失败。`request_observed` 只关联漏斗，不影响请求量及成功率。
 
@@ -90,6 +92,10 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 - [Kafka / ZooKeeper 选主、丢多数和会话实验](docs/ha.md)
 - [低流量部署与按需实验资源](docs/resources.md)
 - [接入和发布](docs/integrations.md)
+- [正式接入、上线回归与已知边界](docs/production-rollout.md)
+- [真实数仓按需运行与恢复](docs/real-lab-runner.md)
+- [真实数据生命周期](docs/real-lifecycle.md)
+- [真实聚合 Hive 目录](docs/real-hive.md)
 - [退出与清理](docs/retirement.md)
 - [实施记录及未通过的验收](docs/status.md)
 - [后续实验与性能取证](docs/experiments.md)

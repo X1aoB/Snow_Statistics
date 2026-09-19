@@ -3,6 +3,7 @@
 Only the private lab uses this module. All publishers share one lock directory;
 Airflow additionally limits active runs to one. Snapshot rows are never the UI API.
 """
+import errno
 import hashlib
 import json
 import os
@@ -13,6 +14,10 @@ from pathlib import Path
 
 METRICS = ("pv", "uv", "requests", "successes")
 ROW_FIELDS = {"source", "app", "date", *METRICS}
+
+
+class PublicationLockBusy(BlockingIOError):
+    """Only a failed nonblocking OS lock acquisition, never a publisher body error."""
 
 
 def canonical(value):
@@ -72,7 +77,12 @@ def publication_lock(directory):
             msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
         else:
             import fcntl
-            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            try:
+                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as error:
+                if error.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
+                    raise
+                raise PublicationLockBusy(error.errno, "Publication lock is already held") from error
         try:
             yield
         finally:

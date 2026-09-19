@@ -19,7 +19,7 @@ from uuid import UUID, uuid4
 
 from .io import digest, write_json
 from .lifecycle import timestamp
-from .publication import canonical, publication_lock
+from .publication import PublicationLockBusy, canonical, publication_lock
 
 OWNER = "Snow_Statistics"
 VOLUMES = ("kafka", "doris-fe", "doris-be", "checkpoints", "flink-state")
@@ -441,7 +441,9 @@ def supervise(root, docker):
     """All starts happen separately after this supervisor's cleanup succeeds.
 
     Container PID1 guards also stop readers at expiry; this process removes their
-    volumes and writable layers. Shutdown preserves data but stops owned readers.
+    volumes and writable layers. Concurrent cleanup may hold the retirement lock;
+    retry that acquisition for at most 60 seconds, never other I/O failures.
+    Shutdown preserves data but stops owned readers.
     """
     def stopping(*_):
         raise SystemExit(0)
@@ -449,13 +451,26 @@ def supervise(root, docker):
     signal.signal(signal.SIGINT, stopping)
     try:
         while True:
-            expire_due(root, docker)
+            _expire_due_with_lock_retry(root, docker)
             expiries = [timestamp(Epoch(path, docker).read()["expires_at"]).timestamp()
                         for path in Path(root).iterdir() if not (path / "retirement.json").exists()]
             delay = min(30, max(0.1, min(expiries) - time.time())) if expiries else 30
             time.sleep(delay)
     finally:
         stop_all(root, docker)
+
+
+def _expire_due_with_lock_retry(root, docker):
+    """Bound each cleanup cycle; successful cleanup gives the next cycle a new budget."""
+    deadline = time.monotonic() + 60
+    while True:
+        try:
+            return expire_due(root, docker)
+        except PublicationLockBusy:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            time.sleep(min(1, remaining))
 
 
 def stop_all(root, docker):

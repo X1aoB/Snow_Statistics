@@ -231,6 +231,14 @@
       "yarn_logs": "/snow/yarn-logs in HDFS; existing NodeManager volume log/local directories"
     },
     "real_data": {
+      "small_batch_profile": {
+        "name": "real-small",
+        "vm_memory_mib": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 768},
+        "additional_start_reserve_mib": 256,
+        "purpose": "Explicit low-volume offline acceptance; HDFS replicas stay online, no change to the 64/35/4 host gates",
+        "prior_measurement": "2026-09-11 million-row analysis DataNode peak 389677056 bytes and guest available 428 MiB at 1024 MiB VM; this is sizing evidence, not a completed 768 MiB integration test",
+        "restrictions": "No concurrent Doris, Flink, Hive client or governance on the 768 MiB analysis VM; validate current input/resource bounds and monitor each phase"
+      },
       "identity": "Collector instance_id and generation, Kafka cluster/topic IDs, one partition and explicit offsets; new generations require an explicit new lane",
       "coordinator_host": "snow-analysis; stage verified immutable ODS metadata to snow-control for offline computation",
       "local_registry": "runtime/real/**/.snow-real-owner.json and registered lifecycle manifests; private ignored directories only",

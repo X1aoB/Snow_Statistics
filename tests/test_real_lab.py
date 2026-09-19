@@ -111,6 +111,29 @@ def test_real_storage_boot_uses_one_vm_and_preserves_offline_nodes(tmp_path):
         stage_nodes(config(), "all")
 
 
+def test_small_batch_reserves_headroom_and_cleans_up_on_final_node_rejection(tmp_path):
+    class FixtureRunner(Runner):
+        def __init__(self):
+            super().__init__(config(), "runtime/real/config/test.json", tmp_path)
+            self.calls = []
+
+        def run(self, command, **kwargs):
+            self.calls.append(command)
+            if command[2] == "start":
+                assert command[-2:] == ["--reserve-mib", "256"]
+                if command[4] == "snow-analysis":
+                    raise RuntimeError("synthetic final-node headroom rejection")
+
+    runner = FixtureRunner()
+    with pytest.raises(ValueError, match="offline"):
+        runner.windows_start("storage", offline_profile="real-small")
+    assert runner.calls == []
+    with pytest.raises(RuntimeError, match="headroom"):
+        runner.windows_start("offline", offline_profile="real-small")
+    assert [call[4] for call in runner.calls if call[2] == "stop"] == ["snow-compute", "snow-control"]
+    assert all(call[-1] == "real-small" for call in runner.calls if call[2] == "configure")
+
+
 def test_model_job_rejects_arbitrary_paths_hive_and_unregistered_auxiliary():
     value = config()
     run = "test001"
