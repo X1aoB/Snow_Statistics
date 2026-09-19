@@ -40,6 +40,31 @@ class RealtimeJobTest {
         assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", generation, origin, until, origin, until, "another_lane"));
         assertThrows(IllegalArgumentException.class, () -> RealtimeJob.realEpoch("real-start-01", "0-0-0-0-0", origin, until, origin, until, "real_start_01"));
     }
+    @Test void actualMainAcceptsOffsetEpochTimesBeforeRejectingWrongLane() throws Exception {
+        // Exercise main's environment parsing in a child JVM. The deliberate
+        // lane mismatch stops before any Kafka/Doris/Flink network operation.
+        String javaCommand = java.nio.file.Path.of(System.getProperty("java.home"), "bin",
+            System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java").toString();
+        var builder = new ProcessBuilder(javaCommand, "-cp", System.getProperty("java.class.path"), RealtimeJob.class.getName());
+        var from = java.time.Instant.now().minusSeconds(60);
+        var until = from.plus(java.time.Duration.ofDays(7));
+        var values = builder.environment();
+        values.put("KAFKA_BOOTSTRAP", "127.0.0.1:1"); values.put("SNOW_SOURCE", "real");
+        values.put("SNOW_REPLAY_LANE", "wrong_lane"); values.put("SNOW_REAL_EPOCH_ID", "real-fixture");
+        values.put("SNOW_REAL_EPOCH_GENERATION", "00000000-0000-4000-8000-000000000001");
+        values.put("SNOW_REAL_READABLE_FROM", from.toString().replace("Z", "+00:00"));
+        values.put("SNOW_REAL_RESTORE_NOT_AFTER", until.toString().replace("Z", "+00:00"));
+        values.put("SNOW_REAL_EPOCH_FROM", from.atOffset(java.time.ZoneOffset.ofHours(8)).toString());
+        values.put("SNOW_REAL_EPOCH_UNTIL", until.atOffset(java.time.ZoneOffset.ofHours(8)).toString());
+        var process = builder.redirectErrorStream(true).start();
+        try {
+            assertTrue(process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS));
+            String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            assertNotEquals(0, process.exitValue());
+            assertTrue(output.contains("Real job differs from frozen storage epoch"), output);
+            assertFalse(output.contains("DateTimeParseException"), output);
+        } finally { process.destroyForcibly(); }
+    }
     @Test void realDiagnosticAndKafkaReplayPreserveOriginalExpiryBasis() throws Exception {
         var normalized = RealtimeJob.normalize(fixture.replace("synthetic", "real"), "real");
         var value = RealtimeJob.diagnostic(normalized.toString(), "event_duplicate");

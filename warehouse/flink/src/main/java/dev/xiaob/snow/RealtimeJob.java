@@ -45,7 +45,7 @@ public class RealtimeJob {
     public static ObjectNode normalize(String value, String expectedSource) throws Exception {
         if (value.length() > 65536) throw new IllegalArgumentException("oversized record");
         JsonNode envelope = JSON.readTree(value), event = EventContract.validate(envelope, expectedSource);
-        Instant time = Instant.parse(event.path("occurred_at").asText());
+        Instant time = EventContract.instant(event.path("occurred_at").asText());
         Instant accepted = EventContract.instant(envelope.path("accepted_at").asText());
         String kind = event.path("event_type").asText();
         String identity = event.path(kind.equals("request_complete") ? "request_id" : "event_id").asText();
@@ -182,13 +182,13 @@ public class RealtimeJob {
         String bootstrap = required("KAFKA_BOOTSTRAP"), sourceName = required("SNOW_SOURCE");
         if (!Set.of("real", "synthetic").contains(sourceName)) throw new IllegalArgumentException("source");
         boolean real = sourceName.equals("real");
-        Instant readableFrom = real ? Instant.parse(required("SNOW_REAL_READABLE_FROM")) : null;
-        Instant notAfter = real ? Instant.parse(required("SNOW_REAL_RESTORE_NOT_AFTER")) : null;
+        Instant readableFrom = real ? EventContract.instant(required("SNOW_REAL_READABLE_FROM")) : null;
+        Instant notAfter = real ? EventContract.instant(required("SNOW_REAL_RESTORE_NOT_AFTER")) : null;
         if (real) realWindow(readableFrom, readableFrom, notAfter, Instant.now());
         String lane = System.getenv().getOrDefault("SNOW_REPLAY_LANE", "live");
         if (!lane.matches("[a-z0-9_-]{1,32}")) throw new IllegalArgumentException("lane");
         if (real) realEpoch(required("SNOW_REAL_EPOCH_ID"), required("SNOW_REAL_EPOCH_GENERATION"),
-                            Instant.parse(required("SNOW_REAL_EPOCH_FROM")), Instant.parse(required("SNOW_REAL_EPOCH_UNTIL")),
+                            EventContract.instant(required("SNOW_REAL_EPOCH_FROM")), EventContract.instant(required("SNOW_REAL_EPOCH_UNTIL")),
                             readableFrom, notAfter, lane);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1); env.enableCheckpointing(10_000, CheckpointingMode.EXACTLY_ONCE);
