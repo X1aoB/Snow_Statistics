@@ -19,6 +19,10 @@ def read_managed_aggregate(config, run_id, *, root):
     validate_config(config)
     if os.name != "posix" or socket.gethostname() != config["transport_node"] or str(root) != "/home/snow/Snow_Statistics":
         raise ValueError("Private aggregate admission runs on the configured transport VM")
+    # Clean independently registered lake copies even when the writer/ODS gate
+    # later rejects this read. The import is local to avoid authority cycles.
+    from .real_lake_authority import cleanup_copies
+    cleanup_copies(root)
     from .real_transfer import paths
     relative = paths(config["lane"], run_id)
     directory = root / relative["published"] if config["input_origin"] == "real" else root / "runtime/real/publication"

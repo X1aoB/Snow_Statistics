@@ -10,6 +10,8 @@ import os
 import re
 import signal
 import subprocess
+import threading
+from contextlib import contextmanager
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 
@@ -20,6 +22,35 @@ from .real_behavior import HK, real_path
 from .real_publication import read_real_release, validate_real_pair
 
 GROUPS = ("daily", "session_daily", "retention", "funnel")
+_RUNNER_LOCK = threading.Lock()
+_PROCESS_RUNNER = None
+
+
+@contextmanager
+def catalog_runner_context(runner):
+    """An explicit, finite process context, including Streamlit script threads.
+
+    Only a trusted live coordinator installs this callable. Environment variables,
+    saved receipts and operator JSON never select a backend or grant permission.
+    The ordinary CLI retains its local worker when no context is installed.
+    """
+    global _PROCESS_RUNNER
+    if not callable(runner):
+        raise ValueError("A live catalog execution adapter is required")
+    with _RUNNER_LOCK:
+        if _PROCESS_RUNNER is not None:
+            raise ValueError("A catalog execution session is already active")
+        _PROCESS_RUNNER = runner
+    try:
+        yield
+    finally:
+        with _RUNNER_LOCK:
+            _PROCESS_RUNNER = None
+
+
+def _catalog_runner():
+    with _RUNNER_LOCK:
+        return _PROCESS_RUNNER or run_catalog_worker
 
 
 def run_catalog_worker(command, *, cwd, timeout, **unused):
@@ -199,7 +230,7 @@ def register_release(directory, registry, catalog, cleanup, *, now=None, verify_
 class SparkCatalog:
     """Execute the fixed, hash-bound local[1] driver; not arbitrary SQL or shell."""
     def __init__(self, root, registry, metastore_host, *, runner=None):
-        self.root, self.registry, self.runner = Path(root).absolute(), registry, runner or run_catalog_worker
+        self.root, self.registry, self.runner = Path(root).absolute(), registry, runner or _catalog_runner()
         address = ipaddress.ip_address(metastore_host)
         if address.version != 4 or not address.is_private or address.is_loopback:
             raise ValueError("Use the configured private lab control IP")
