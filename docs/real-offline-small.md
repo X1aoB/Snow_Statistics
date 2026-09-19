@@ -107,7 +107,9 @@ $runId = 'accepted_closed_day_run'
 & ./.venv/Scripts/python.exe tools/real_offline_small.py --config runtime/real/config/production.json stop-offline
 ```
 
-停止不受新增容量准入阻止，也不删卷、目录或历史。失败时先取消本次精确远端 worker/driver，再停固定项目服务并软关已确认归属的 VM。SSH 心跳丢失、SIGTERM/SIGHUP 会触发远端进程组收尾；Windows 用精确 PID 处理自身进程树，metadata/aggregate 传输直接使用固定 host key 的 SCP。
+停止不受新增容量准入阻止，也不删卷、目录或历史。失败时先取消本次精确远端 worker/driver，再停固定项目服务并软关已确认归属的 VM。SSH 心跳丢失、SIGTERM/SIGHUP 会触发远端进程组收尾；Windows 普通任务用精确 PID 处理自身进程树，metadata/aggregate 传输直接使用固定 host key 的 SCP。
+
+VMware 的 `start/stop/list` 直接调用固定 `vmrun.exe`，超时仅终止持有的控制进程，不终止可能由它启动的虚拟机进程树。启动前同时检查实际 VMX 内存、所选 profile 以及两层容量门槛；旧容量扫描仍在有超时、受监测且不会启动来宾的 `status` 子进程中执行。软关后限时读回精确目标；库存格式、路径或数量异常不能变成“已停止”。启动命令结果不确定时回执保留 `uncertain_starts`，即使后来读到关闭也不宣称完整收尾成功。监测器自身关闭失败仍会尝试停止已确认归属的资源，并保留失败。上述规则是操作入口的收尾改进，不是宿主蓝屏根因修复。
 
 所有非 `status` 操作共用固定跨 lane 锁，因为三台 VM、Compose 项目和 Spark driver 名称是共享的。发现外来运行工作、同名异 owner、镜像/挂载不符或已观测容器 ID 被替换时，拒绝接管/关闭该 VM，保留失败回执。此时需要人工检查，不能以全局 `prune`、删除历史或降低门槛恢复。
 

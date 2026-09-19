@@ -360,6 +360,18 @@ def process_identity(pid):
         return None
 
 
+def stop_process(process):
+    """Stop only the held control process, never a VM it may have started."""
+    if process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
 def stop_tree(process):
     """Windows wrapper descendants or a Linux session, never process-name killing."""
     if process.poll() is not None:
@@ -813,8 +825,15 @@ class SmallRunner(Runner):
         spec.loader.exec_module(self.vm)
 
     def vm_state(self):
-        raw = self.vm.run(self.vm.VMWARE / "vmrun.exe", "-T", "ws", "list").splitlines()
+        raw = self.run([str(self.vm.VMWARE / "vmrun.exe"), "-T", "ws", "list"],
+                       capture=True, timeout=15, monitored=False, vm_control=True).decode().strip().splitlines()
+        if (not raw or not re.fullmatch(r"Total running VMs: \d+", raw[0])
+                or int(raw[0].split(": ")[1]) != len(raw) - 1):
+            raise ValueError("Unexpected VMware inventory; do not infer that guests stopped")
         running = {str(Path(v).absolute()).lower() for v in raw[1:]}
+        if (any(not Path(v).is_absolute() or Path(v).suffix.lower() != ".vmx" for v in raw[1:])
+                or len(running) != len(raw) - 1):
+            raise ValueError("Unexpected VMware inventory paths; do not infer that guests stopped")
         return {node: str(self.vm.RUNTIME / node / (node + ".vmx")).lower() in running for node in NODES}
 
     def host(self):
@@ -844,8 +863,11 @@ class SmallRunner(Runner):
                 "cd " + REMOTE_ROOT + " && exec " + shlex.join(args)]
 
     def run(self, command, *, body=None, output=None, timeout=1200, quiet=False, env=None,
-            capture=False, heartbeat=False, monitored=True):
+            capture=False, heartbeat=False, monitored=True, vm_control=False):
         command = self.direct_transfer(command)
+        if vm_control and (not command or Path(command[0]) != self.vm.VMWARE / "vmrun.exe"
+                           or heartbeat or body is not None):
+            raise ValueError("Direct-process cleanup is reserved for the fixed VMware controller")
         process = subprocess.Popen(command, cwd=self.root, stdin=subprocess.PIPE if body is not None or heartbeat else subprocess.DEVNULL,
                                    stdout=subprocess.PIPE if capture else output if output else subprocess.DEVNULL,
                                    stderr=subprocess.PIPE if capture else output if output else subprocess.DEVNULL,
@@ -897,7 +919,7 @@ class SmallRunner(Runner):
                 return result[0][0]
         finally:
             try:
-                stop_tree(process)
+                (stop_process if vm_control else stop_tree)(process)
             finally:
                 if heartbeat and process.stdin:
                     try:
@@ -966,13 +988,39 @@ class SmallRunner(Runner):
             self.inflight.discard((node, attempt))
 
     def vm_command(self, action, node):
-        command = [sys.executable, "tools/vmware_lab.py", action, "--node", node]
+        if action not in {"configure", "start", "stop"} or node not in NODES:
+            raise ValueError("Only fixed offline VM actions and nodes are allowed")
         if action == "configure":
-            command += ["--profile", self.profile]
+            self.run([sys.executable, "tools/vmware_lab.py", action, "--node", node,
+                      "--profile", self.profile], timeout=90)
+            return
+        vmx = self.vm.RUNTIME / node / (node + ".vmx")
+        if vmx.resolve() != vmx.absolute():
+            raise ValueError("Owned VMX path cannot traverse links")
         if action == "start":
+            actual = self.vm.validate_memory(node, self.vm.configured_memory(vmx))
+            if actual != self.memory[node]:
+                raise ValueError("VM memory differs from the explicitly selected offline profile")
             check_host(self.host(), self.memory[node] + 256)
-            command += ["--reserve-mib", "256"]
-        self.run(command, timeout=90, monitored=action != "stop")
+            # Keep the legacy capacity scan bounded and monitored. This wrapper
+            # only inspects capacity/inventory and cannot create a guest.
+            self.run([sys.executable, "tools/vmware_lab.py", "status", "--reserve-mib",
+                      str(actual + 256)], timeout=90)
+        command = [str(self.vm.VMWARE / "vmrun.exe"), "-T", "ws", action, str(vmx),
+                   "nogui" if action == "start" else "soft"]
+        try:
+            self.run(command, timeout=90, monitored=action != "stop", vm_control=True)
+        except BaseException:
+            if action == "start":
+                self.uncertain_starts = getattr(self, "uncertain_starts", set()) | {node}
+            raise
+
+    def wait_stopped(self, node):
+        deadline = time.monotonic() + 30
+        while self.vm_state()[node]:
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Owned VM still appears in inventory after soft stop")
+            time.sleep(1)
 
     def wait_node(self, node):
         deadline = time.monotonic() + 60
@@ -1011,6 +1059,7 @@ class SmallRunner(Runner):
         state = self.probe("snow-analysis", "guard", monitored=True)
         if not state["has_input"]:
             self.vm_command("stop", "snow-analysis")
+            self.wait_stopped("snow-analysis")
             self.ready_nodes.clear()
             self.owned_nodes.clear()
             self.started_nodes.clear()
@@ -1068,6 +1117,7 @@ class SmallRunner(Runner):
                     raise
                 self.remote(node, "node-stop-offline")
                 self.vm_command("stop", node)
+                self.wait_stopped(node)
                 self.ready_nodes.discard(node)
             except Exception:
                 # A VM started from the proven fully-off state may fail before
@@ -1076,10 +1126,12 @@ class SmallRunner(Runner):
                 if node in self.started_nodes and node not in self.ready_nodes and node not in self.foreign_nodes:
                     try:
                         self.vm_command("stop", node)
+                        self.wait_stopped(node)
                         continue
                     except Exception:
                         pass
                 errors.append("stop:" + node)
+        errors.extend("uncertain-start:" + node for node in sorted(getattr(self, "uncertain_starts", set())))
         if errors:
             raise RuntimeError("Some exact owned resources remain; inspect the retained receipt: " + ",".join(errors))
         return dict(status="offline_stopped", data_deleted=False)
@@ -1161,18 +1213,22 @@ class SmallRunner(Runner):
             return result
         except BaseException as error:
             report.update(status="failed", error_type=type(error).__name__)
-            try:
-                if self.monitor:
+            if self.monitor:
+                try:
                     self.monitor.close()
+                except Exception as monitor_error:
+                    report["monitor_cleanup_error_type"] = type(monitor_error).__name__
+            try:
                 had_ownership = bool(self.owned_nodes or self.inflight)
                 self.stop()
-                report["cleanup_complete"] = had_ownership
+                report["cleanup_complete"] = had_ownership and "monitor_cleanup_error_type" not in report
                 report["cleanup_scope"] = "owned_offline_nodes" if had_ownership else "none_admitted"
             except Exception as cleanup_error:
                 report["cleanup_error_type"] = type(cleanup_error).__name__
             raise
         finally:
             report.update(finished_at=datetime.now(UTC).isoformat(),
+                          uncertain_starts=sorted(getattr(self, "uncertain_starts", set())),
                           monitor_samples=self.monitor.samples if self.monitor else 0,
                           last_host_sample=self.monitor.last if self.monitor else None,
                           owned_nodes=sorted(self.owned_nodes), data_deleted=False)

@@ -48,7 +48,9 @@ class FixtureRunner(small.SmallRunner):
         self.inflight, self.attempt, self.calls = set(), "a" * 32, []
         self.state = dict.fromkeys(small.NODES, False)
         self.input = dict(has_pending=True, has_landed=False, has_input=True)
-        self.vm = SimpleNamespace(RUNTIME=tmp_path / "runtime/vmware", configured_memory=lambda p: self.memory[p.stem])
+        self.vm = SimpleNamespace(RUNTIME=tmp_path / "runtime/vmware", VMWARE=tmp_path / "vmware-program",
+                                  configured_memory=lambda p: self.memory[p.stem],
+                                  validate_memory=lambda node, value: value, capacity=lambda _: None)
         self.failure = None
 
     def vm_state(self):
@@ -125,9 +127,163 @@ def test_candidate_vm_commands_use_selected_memory_and_original_start_reserve(tm
     small.SmallRunner.vm_command(runner, "configure", "snow-compute")
     small.SmallRunner.vm_command(runner, "start", "snow-compute")
     assert runner.calls[0][1][-2:] == ["--profile", "real-small-1792"]
-    assert runner.calls[1][1][-2:] == ["--reserve-mib", "256"]
+    assert runner.calls[1][1] == [sys.executable, "tools/vmware_lab.py", "status", "--reserve-mib", "2048"]
+    assert runner.calls[1][2] == {"timeout": 90}
+    assert runner.calls[2][1] == [str(runner.vm.VMWARE / "vmrun.exe"), "-T", "ws", "start",
+                                  str(runner.vm.RUNTIME / "snow-compute/snow-compute.vmx"), "nogui"]
+    assert runner.calls[2][2]["vm_control"]
     assert reservations == [1792 + 256]
     assert "--profile real-small-1792" in runner.ssh("snow-compute", "probe")[-1]
+
+
+def test_vm_soft_stop_bypasses_resource_admission_and_uses_only_direct_control(tmp_path):
+    runner = FixtureRunner(tmp_path)
+    runner.host = lambda: pytest.fail("Resource admission must never prevent soft stop")
+    runner.vm.capacity = lambda _: pytest.fail("No start capacity check during shutdown")
+    small.SmallRunner.vm_command(runner, "stop", "snow-analysis")
+    _, command, options = runner.calls[-1]
+    assert command == [str(runner.vm.VMWARE / "vmrun.exe"), "-T", "ws", "stop",
+                       str(runner.vm.RUNTIME / "snow-analysis/snow-analysis.vmx"), "soft"]
+    assert options["vm_control"] and not options["monitored"]
+
+
+def test_actual_vm_memory_mismatch_refuses_before_start(tmp_path):
+    runner = FixtureRunner(tmp_path, profile="real-small-1792")
+    runner.vm.configured_memory = lambda _: 1920
+    with pytest.raises(ValueError, match="memory differs"):
+        small.SmallRunner.vm_command(runner, "start", "snow-compute")
+    assert not runner.calls
+
+
+@pytest.mark.parametrize("response", [b"", b"Total running VMs: 1\n", b"Total running VMs: 0\nextra.vmx\n",
+                                      b"Total running VMs: 1\ntruncated\n"])
+def test_incomplete_vm_inventory_is_not_a_zero_vm_receipt(tmp_path, response):
+    runner = FixtureRunner(tmp_path)
+    runner.run = lambda *_, **__: response
+    with pytest.raises(ValueError, match="inventory"):
+        small.SmallRunner.vm_state(runner)
+
+
+def test_duplicate_inventory_is_refused_and_valid_other_vms_are_not_adopted(tmp_path):
+    runner = FixtureRunner(tmp_path)
+    other = str(tmp_path / "another.vmx")
+    runner.run = lambda *_, **__: f"Total running VMs: 2\n{other}\n{other}\n".encode()
+    with pytest.raises(ValueError, match="inventory"):
+        small.SmallRunner.vm_state(runner)
+    runner.run = lambda *_, **__: f"Total running VMs: 1\n{other}\n".encode()
+    assert not any(small.SmallRunner.vm_state(runner).values())
+
+
+def test_soft_stop_return_is_not_proof_of_shutdown(tmp_path, monkeypatch):
+    runner = FixtureRunner(tmp_path)
+    runner.owned_nodes = {"snow-analysis"}
+    runner.ready_nodes = {"snow-analysis"}
+    runner.state["snow-analysis"] = True
+    runner.vm_command = lambda *a: None
+    clock = iter([0, 31])
+    monkeypatch.setattr(small.time, "monotonic", lambda: next(clock))
+    with pytest.raises(RuntimeError, match="owned resources remain"):
+        runner.stop()
+
+
+def test_no_input_keeps_ownership_when_stop_readback_fails(tmp_path):
+    runner = FixtureRunner(tmp_path)
+    runner.input["has_input"] = False
+    runner.wait_stopped = lambda _: (_ for _ in ()).throw(ValueError("Synthetic malformed inventory"))
+    with pytest.raises(ValueError, match="inventory"):
+        runner.start()
+    assert runner.owned_nodes == runner.started_nodes == {"snow-analysis"}
+
+
+def test_failed_capacity_precheck_never_launches_or_marks_uncertain_start(tmp_path):
+    runner = FixtureRunner(tmp_path)
+    calls = []
+    def fail(command, **kwargs):
+        calls.append((command, kwargs))
+        raise RuntimeError("Synthetic capacity timeout")
+    runner.run = fail
+    with pytest.raises(RuntimeError, match="capacity"):
+        small.SmallRunner.vm_command(runner, "start", "snow-control")
+    assert len(calls) == 1 and calls[0][0][2] == "status" and calls[0][1] == {"timeout": 90}
+    assert not getattr(runner, "uncertain_starts", set())
+
+
+def test_failed_vm_start_retains_uncertainty_even_after_soft_stop(tmp_path):
+    runner = FixtureRunner(tmp_path)
+    def fail_start(command, **kwargs):
+        if kwargs.get("vm_control"):
+            raise RuntimeError("Synthetic ambiguous VM start")
+    runner.run = fail_start
+    with pytest.raises(RuntimeError, match="ambiguous"):
+        small.SmallRunner.vm_command(runner, "start", "snow-control")
+    runner.owned_nodes = runner.started_nodes = {"snow-control"}
+    with pytest.raises(RuntimeError, match="uncertain-start:snow-control"):
+        runner.stop()
+    assert not runner.state["snow-control"]
+
+
+@pytest.mark.parametrize("failure", ["command_timeout", "active_monitor"])
+def test_failed_vmrun_never_kills_the_vm_descendant_tree(tmp_path, monkeypatch, failure):
+    runner = FixtureRunner(tmp_path)
+    released = threading.Event()
+    class Process:
+        returncode = None
+        terminated = False
+        def communicate(self, **_):
+            if failure == "command_timeout":
+                raise subprocess.TimeoutExpired("synthetic vmrun", 1)
+            assert released.wait(5), "Monitor failure should release the owned controller"
+            return b"", b""
+        def poll(self):
+            return self.returncode
+        def terminate(self):
+            self.terminated, self.returncode = True, -15
+            released.set()
+        def wait(self, timeout):
+            assert self.returncode is not None and timeout <= 10
+            return self.returncode
+        def kill(self):
+            pytest.fail("Synthetic controller terminates gracefully")
+    process = Process()
+    monkeypatch.setattr(small.subprocess, "Popen", lambda *_, **__: process)
+    monkeypatch.setattr(small, "stop_tree", lambda _: pytest.fail("VM descendants must not be tree-killed"))
+    def fail_monitor():
+        raise RuntimeError("Synthetic active resource failure")
+    runner.monitor = SimpleNamespace(check=fail_monitor) if failure == "active_monitor" else None
+    with pytest.raises(RuntimeError):
+        small.SmallRunner.run(runner, [str(runner.vm.VMWARE / "vmrun.exe"), "-T", "ws", "start"],
+                              vm_control=True, timeout=1)
+    assert process.terminated and process.returncode == -15
+
+
+def test_direct_process_mode_cannot_be_used_for_ssh_or_arbitrary_programs(tmp_path, monkeypatch):
+    runner = FixtureRunner(tmp_path)
+    monkeypatch.setattr(small.subprocess, "Popen", lambda *_, **__: pytest.fail("Invalid control command started"))
+    with pytest.raises(ValueError, match="reserved"):
+        small.SmallRunner.run(runner, ["ssh", "synthetic"], vm_control=True)
+
+
+def test_monitor_shutdown_failure_still_stops_every_owned_vm(tmp_path, monkeypatch):
+    runner = FixtureRunner(tmp_path)
+    runner.failure = ("node-start-offline", "snow-compute")
+    class StuckMonitor:
+        samples, last = 0, None
+        def __init__(self, *_):
+            pass
+        def start(self):
+            pass
+        def check(self):
+            pass
+        def close(self):
+            raise RuntimeError("Synthetic monitor did not join")
+    monkeypatch.setattr(small, "Monitor", StuckMonitor)
+    with pytest.raises(RuntimeError):
+        runner.perform("start-offline")
+    assert not any(runner.state.values())
+    assert {call[1] for call in runner.calls if call[0] == "stop"} == set(small.NODES)
+    receipt = small.read_json(tmp_path / "runtime/real/offline-small" / runner.attempt / "controller.json")
+    assert receipt["monitor_cleanup_error_type"] == "RuntimeError"
+    assert not receipt["cleanup_complete"]  # A live monitor is not successful total cleanup.
 
 
 @pytest.mark.parametrize("phase", ["land", "stop-offline"])
