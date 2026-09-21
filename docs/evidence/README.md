@@ -18,6 +18,13 @@
 | [0xA转储诊断](host-crash-diagnosis-0a-20260921.json) | 获批的本机 WinDbg 离线栈和模块读取；故障位于 Windows 内核异构软停路径，当前进程为 python.exe，未确定责任驱动，不证明 VMware 责任或来宾恢复 |
 | [V8 land实际通过](fixture-land-v8-20260920.json) | 6c60/real-small-1792 合成 land；HDFS 验证和资源样本通过，Kafka 认证仍为 false |
 | [daily失败](fixture-daily-controller-failure-20260921.json) | snow-control execute 返回码 1；只保留错误长度和收尾读回，日指标及后续模型均未接受 |
+| [第二次崩溃临时回收](host-reboot-second-cleanup-20260921.json) | 用户批准后按固定 scope 删除 10 个文件和 6 个空锁目录；4,842,510,583 字节逐项缺失回读通过，未启动 VM、未读取临时正文、未触碰虚拟磁盘/数据/Checkpoint；冷启动仅完成 describe，仍待独立恢复窗口，完整逐项回执保留在私有 runtime |
+
+## 2026-09-21恢复后的真实代码路径合成验收
+
+| 证据 | 实际范围与边界 |
+|---|---|
+| [real-small-1792 fixture 验收](offline-real-fixture-v8-20260921.json) | 6c60 源码、1792 profile 下完成 land、元数据同步、Spark/YARN 日指标、行为包实际生成与再校验、私有发布和分析节点接收；28 条输入、11 个会话、6 条日会话、2 条留存、1 条转化、3 条漏斗，聚合哈希在发布与传输间一致；最终三台 VM 已全部关闭且无数据删除。行为第一次外层回执未完成但不可变结果保留，重试拒绝覆盖；Kafka/Flink/Doris/Iceberg、自然生产闭日和物理 HA 不由此收据宣称通过 |
 
 ## 历史合成验收收据
 

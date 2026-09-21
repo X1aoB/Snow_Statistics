@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-09-21T04:38:16.5605719Z",
+  "scope_sha256": "81b28a061ab0bf96fabcd980c5ed6c553564061aee4345a05d30418241e8339c",
+  "receipt_sha256": "bfaa488e5e9a9c9c20125193307673f10a9249b58e80814c06ebe40b4216ddc2",
+  "operation": "approved exact cleanup of second-host-crash temporary residue",
+  "deleted_files": 10,
+  "deleted_empty_directories": 6,
+  "deleted_bytes": 4842510583,
+  "readback": "all scoped paths absent",
+  "vmrun": "Total running VMs: 0",
+  "vm_started": false,
+  "payload_read": false,
+  "guest_recovery_verified": false,
+  "business_or_data_resources_touched": false,
+  "post_cleanup": {
+    "project_bytes": 63446949439,
+    "cold_project_plus_reserve_bytes": 68413005375,
+    "cold_stopline_bytes": 68451041280,
+    "cold_headroom_bytes": 38035905,
+    "start_offline_describe": "passed; no execution"
+  }
+}

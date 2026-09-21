@@ -1,12 +1,20 @@
 # 实施状态
 
+## 恢复后正式合成真实代码路径已完成（香港 2026-09-21）
+
+用户恢复任务后，按 `real-small-1792`（control 2048 MiB、compute 1792 MiB、analysis 768 MiB）重新启动并完成固定 `fixture-lake-01-r1` 的后续闭环。三节点使用源码提交 `6c60f761fccf09bf8e67a75464714ef0619ff259`；`land`、`stage-compute`、`daily`、`publish` 和 `transfer` 均有完整控制器回执。Spark 3.5.7/YARN 日指标实际处理 28 条有效输入（重复、隔离和截止后均为 0），行为作业实际生成 11 个会话、6 条日会话、2 条留存、1 条转化和 3 条漏斗，并在发布阶段再次通过行为模型与日指标成对校验。发布和传输的聚合包哈希均为 `57d7013c559a14b8a84a8275888ab3db45a4779c3f7af64319a3dfe364c57ee5`；完整摘要见[real-small-1792 fixture 验收](evidence/offline-real-fixture-v8-20260921.json)。
+
+行为第一次监控调用在不可变包已经落盘后未取得完整外层回执，第二次按设计拒绝覆盖，因此保留两个失败回执并把“行为包实际生成、发布阶段验证通过”与“行为控制器外层回执完整”分开记录。期间没有发现 OOM；最终主动执行 `stop-offline`，`vmrun list` 为零，项目占用 `63,474,296,753` bytes，宿主可用磁盘 `132,276,695,040` bytes、可用内存约 `18,030 MiB`，未删除数据。此收据使用合成 fixture，Kafka 引擎标志仍为 false；Flink、Doris、Iceberg、自然生产闭日新鲜度和物理 HA 仍需各自实际回执，不能从本轮结果推断通过。
+
+收尾校验：本地 Python `pytest` 为 `936 passed, 16 skipped`（1 条依赖弃用警告）；手册检查为 40 个 Markdown、164 个本地引用、`errors: []`；`git diff --check` 通过。Java 依赖包此前已在 Linux CI 和本地历史构建回执中验证，本机 Maven 压缩包属于用户批准的可再生缓存清理范围，因此本次没有伪造新的 Maven 运行结果。
+
 ## 用户要求暂停：第二次宿主异常中断后停点（香港 2026-09-20）
 
 用户于恢复准备期间明确要求暂时中止。已在运行的离线启动于 UTC 16:50:45 开始，尚未取得终态时宿主再次异常中断；Windows 最新启动时间为 UTC 16:53:34.500，System 1001/41 记录本次 BugCheck `0x0000000a`，WER bucket 为 `AV_nt!KiDoesHeteroSoftParkElectionHaveWinner`。获批的本机 WinDbg 离线分析已完成：故障指令位于 `nt!KiDoesHeteroSoftParkElectionHaveWinner+0x4fa`，当前进程为 `python.exe`，短栈未落入 VMware 模块；这仍不是责任驱动归因，不能将其归因于 VMware、某个驱动或数仓作业，也不能将异常中断描述为正常软关。见[0xA转储诊断摘要](evidence/host-crash-diagnosis-0a-20260921.json)。
 
 重启后仅做中止核对，没有重新启动任何 VM 或引擎。两次独立 `vmrun list` 均为零，VMware 虚拟机进程及本项目 Python/SSH 进程均未运行；三节点共 9 项内存后备/锁残留保留，未删除虚拟磁盘、真实数据、检查点或故障记录。原启动回执仍为 `started / cleanup_complete=false`，不补写成功；来宾文件系统、HDFS、数据库和 Checkpoint 的崩溃后恢复尚未验证。私有停点回执 `runtime/real/operator/user-pause-after-second-crash-20260920.json`，SHA256 `35e6e651a0c9d78e01398dbcf4b1bddd56b2513fa5e88a14c3ae42e1e4793a25`；只读宿主诊断摘要为 `runtime/real/operator/host-debug/second-crash-diagnosis-20260921.json`，SHA256 `db60c3b3701ddde96014b146f628051719b43f806f4b0b4b47376ddbf5f4de5d`，WinDbg原始输出及包装回执另保留在 `runtime/real/operator/host-debug/second-crash-offline-20260921.*`。当前任务仍保持暂停；诊断完成后，恢复仍需新的明确窗口和重新资源门禁。
 
-用户随后已清理宿主空间；2026-09-21 的只读复核显示宿主 C 盘可用约 121.8 GiB、可用内存约 16.5 GiB、`vmrun list` 为零，三台 VM 和 VMware 进程均未运行。第二次中断产生的 3 个 `.vmem`、6 个锁目录/锁文件及旧 `vmware-vmx.dmp` 仍在项目内，合计约 4.50 GiB；没有删除或读取这些临时副本的正文。当前项目占用 `68,289,387,535` 字节，按 `real-small-1792` 冷启动还需增加 `4,736 MiB`，投影超出 `63.75 GiB` 停止线约 `4,804,402,191` 字节，因此未启动 VM。精确范围已登记在私有审阅单 `runtime/real/operator/host-reboot-second-cleanup-review-20260921.md`，待用户明确批准后才可清理；`.vmdk`、数据库、Checkpoint、真实数据和源码不在范围内。
+用户随后已清理宿主空间；2026-09-21 的只读复核显示宿主 C 盘可用约 121.8 GiB、可用内存约 16.5 GiB、`vmrun list` 为零，三台 VM 和 VMware 进程均未运行。清理前第二次中断产生的 3 个 `.vmem`、6 个锁目录/锁文件及旧 `vmware-vmx.dmp` 合计约 4.50 GiB；没有读取这些临时副本的正文。用户明确批准后，已于 UTC 04:38:07–04:38:16 按范围删除 10 个文件和 6 个空锁目录，共 `4,842,510,583` 字节；逐项缺失回读通过，`vmrun list` 仍为零。私有回执为 `runtime/real/operator/host-reboot-second-cleanup-20260921.receipt.jsonl`，SHA256 `bfaa488e5e9a9c9c20125193307673f10a9249b58e80814c06ebe40b4216ddc2`；未读取临时正文，未触碰 `.vmdk`、数据库、Checkpoint、真实数据或源码。清理后项目占用 `63,446,949,439` 字节，冷启动投影为 `68,413,005,375` 字节，距 `63.75 GiB` 停止线仅余 `38,035,905` 字节（约 36.27 MiB）；`start-offline --describe` 通过，但尚未重新启动 VM，仍需独立恢复窗口。
 
 中断前已验证：V8 合成 `land` 与 `stage-compute` 成功，原固定截止点保持，见[实际落地证据](evidence/fixture-land-v8-20260920.json)。随后 `daily` 在 snow-control 远端返回非零，监测无资源失败，精确子任务取消及三机停止回读通过；只保留退出码和 stderr 长度，不公开正文，日指标不得标为通过，见[daily失败证据](evidence/fixture-daily-controller-failure-20260921.json)。原失败回执 `prerequisites-v8/605c93f4ccd044699517844a671e685d/receipt.json` 保留。新的 fixture 湖仓 V9、真实 catalog V1 及私有看板工具仅为未执行候选。最后生产只读检查 UTC 16:39:25 全部通过；这是中断前的线上检查时间，不冒充重启后新观测。线上两个产品与轻量统计独立于本机 VM，本次未更改其运行或发布配置。
 
