@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "source_git_commit": "6c60f761fccf09bf8e67a75464714ef0619ff259",
+  "input_origin": "synthetic fixtures",
+  "profile": "real-small-1792",
+  "phase": "daily",
+  "controller_revision": "private-v8",
+  "controller_complete": false,
+  "failure_type": "RuntimeError",
+  "failure": {
+    "node": "snow-control",
+    "operation": "execute",
+    "error_message": "Fixed prerequisite SSH failed: snow-control/execute",
+    "returncode": 1,
+    "stdout_bytes": 0,
+    "stderr_bytes": 656,
+    "monitor_errors": []
+  },
+  "cleanup": {
+    "pending_workers": [],
+    "adoption_complete": true,
+    "stop_complete": true,
+    "all_vms_stopped": true,
+    "data_deleted": false
+  },
+  "sample_window": {
+    "samples": 2,
+    "minimum_guest_ram_mib": {
+      "snow-control": 1089,
+      "snow-compute": 994,
+      "snow-analysis": 157
+    },
+    "oom_observed": false
+  },
+  "boundaries": {
+    "remote_stderr_body_published": false,
+    "daily_metric_accepted": false,
+    "model_or_hive_or_iceberg_accepted": false,
+    "failure_cause_established": false,
+    "original_receipt_rewritten": false
+  },
+  "receipt_sha256": "7dacfaf7a1f93df01d22b70b42e73b14efad9a38bdfd3fef5b156f9c43d27d58"
+}

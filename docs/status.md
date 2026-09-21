@@ -1,8 +1,22 @@
 # 实施状态
 
+## 用户要求暂停：第二次宿主异常中断后停点（香港 2026-09-20）
+
+用户于恢复准备期间明确要求暂时中止。已在运行的离线启动于 UTC 16:50:45 开始，尚未取得终态时宿主再次异常中断；Windows 最新启动时间为 UTC 16:53:34.500，System 1001/41 记录本次 BugCheck `0x0000000a`，WER bucket 为 `AV_nt!KiDoesHeteroSoftParkElectionHaveWinner`。获批的本机 WinDbg 离线分析已完成：故障指令位于 `nt!KiDoesHeteroSoftParkElectionHaveWinner+0x4fa`，当前进程为 `python.exe`，短栈未落入 VMware 模块；这仍不是责任驱动归因，不能将其归因于 VMware、某个驱动或数仓作业，也不能将异常中断描述为正常软关。见[0xA转储诊断摘要](evidence/host-crash-diagnosis-0a-20260921.json)。
+
+重启后仅做中止核对，没有重新启动任何 VM 或引擎。两次独立 `vmrun list` 均为零，VMware 虚拟机进程及本项目 Python/SSH 进程均未运行；三节点共 9 项内存后备/锁残留保留，未删除虚拟磁盘、真实数据、检查点或故障记录。原启动回执仍为 `started / cleanup_complete=false`，不补写成功；来宾文件系统、HDFS、数据库和 Checkpoint 的崩溃后恢复尚未验证。私有停点回执 `runtime/real/operator/user-pause-after-second-crash-20260920.json`，SHA256 `35e6e651a0c9d78e01398dbcf4b1bddd56b2513fa5e88a14c3ae42e1e4793a25`；只读宿主诊断摘要为 `runtime/real/operator/host-debug/second-crash-diagnosis-20260921.json`，SHA256 `db60c3b3701ddde96014b146f628051719b43f806f4b0b4b47376ddbf5f4de5d`，WinDbg原始输出及包装回执另保留在 `runtime/real/operator/host-debug/second-crash-offline-20260921.*`。当前任务仍保持暂停；诊断完成后，恢复仍需新的明确窗口和重新资源门禁。
+
+用户随后已清理宿主空间；2026-09-21 的只读复核显示宿主 C 盘可用约 121.8 GiB、可用内存约 16.5 GiB、`vmrun list` 为零，三台 VM 和 VMware 进程均未运行。第二次中断产生的 3 个 `.vmem`、6 个锁目录/锁文件及旧 `vmware-vmx.dmp` 仍在项目内，合计约 4.50 GiB；没有删除或读取这些临时副本的正文。当前项目占用 `68,289,387,535` 字节，按 `real-small-1792` 冷启动还需增加 `4,736 MiB`，投影超出 `63.75 GiB` 停止线约 `4,804,402,191` 字节，因此未启动 VM。精确范围已登记在私有审阅单 `runtime/real/operator/host-reboot-second-cleanup-review-20260921.md`，待用户明确批准后才可清理；`.vmdk`、数据库、Checkpoint、真实数据和源码不在范围内。
+
+中断前已验证：V8 合成 `land` 与 `stage-compute` 成功，原固定截止点保持，见[实际落地证据](evidence/fixture-land-v8-20260920.json)。随后 `daily` 在 snow-control 远端返回非零，监测无资源失败，精确子任务取消及三机停止回读通过；只保留退出码和 stderr 长度，不公开正文，日指标不得标为通过，见[daily失败证据](evidence/fixture-daily-controller-failure-20260921.json)。原失败回执 `prerequisites-v8/605c93f4ccd044699517844a671e685d/receipt.json` 保留。新的 fixture 湖仓 V9、真实 catalog V1 及私有看板工具仅为未执行候选。最后生产只读检查 UTC 16:39:25 全部通过；这是中断前的线上检查时间，不冒充重启后新观测。线上两个产品与轻量统计独立于本机 VM，本次未更改其运行或发布配置。
+
 ## 正式轻量统计上线（2026-09-19，最新）
 
-**15:50 UTC最新停点：1792配置已完成实际Linux断管/孤儿会话探针与56条合成Spark/YARN计算；原控制器因Docker缺失容器消息大小写判断而失败，随后独立精确收尾成功，三台VM已软关并读回零运行。** Spark输出为28条有效、28条重复，整数指标与固定独立基准一致；9次资源采样峰值68,275,425,430 bytes，三节点最低可用RAM为505/463/168 MiB。15:48:59–15:49:02 UTC恢复只补原attempt的实际清理，没有重跑或改写原计算包、工作身份及失败控制器回执。公共离线/Hive/湖仓入口现统一校验有界输出、退出码及精确CID/固定驱动名，仅允许已知缺失消息的前缀大小写变化；未知错误仍拒绝。StageDocker同时对完整Mounts记录排序后取摘要，不忽略字段。新源码尚待签名CI及三节点安装，旧未完成stage/lease不得迁移摘要；真实自然闭日、Hive/Iceberg与新鲜度仍待后续验收。见[计算、失败与独立恢复证据](evidence/offline-1792-recovery-20260919.json)。
+**香港9月20日新进展：签名源码`6c60f761fccf09bf8e67a75464714ef0619ff259`已通过Linux CI35453652696/35453650019，并于UTC16:05:50–16:10:10分三个窗口安装到全部节点。** 每台完整归档、12个冻结writer、无未释放stage owner及安装后软关读回通过；原analysis元数据和保留期限保持。见[新源码安装证据](evidence/postcrash-source-install-6c60-20260920.json)。随后1792离线启动及固定closed-day/storage worker安装通过，尚未执行真实闭日读取或计算。
+
+新合成fixture的`land`控制器随后被资源监测中止：仅保存了一轮完整资源样本（analysis可用154 MiB），触发检查的实际样本缺失，不能据此断言内存、磁盘或SSH中的具体原因。外层`complete=false`、待取消worker为空、cleanup记录RuntimeError；根操作人独立读回三台VM全部关闭。16:25:17–16:25:45 UTC的独立只读核对确认原guest阶段已完成，原日志报告HDFS核验成功，ODS state与landed一致、pending不存在，子会话和驱动实际收尾；此核对只读元数据，不是新的HDFS引擎验证，也不将原外层失败改成成功。随后16:27 UTC正常软关并读回三台VM全部关闭。见[原失败与独立读回证据](evidence/fixture-land-controller-failure-20260920.json)。新私有V8监测候选先保存失败样本并串行采样，28项针对合成测试通过，资源门槛不变；尚待实际重试。模型、Hive/Iceberg和真实闭日仍不得标为通过。
+
+**15:50 UTC历史停点：1792配置已完成实际Linux断管/孤儿会话探针与56条合成Spark/YARN计算；原控制器因Docker缺失容器消息大小写判断而失败，随后独立精确收尾成功，三台VM已软关并读回零运行。** Spark输出为28条有效、28条重复，整数指标与固定独立基准一致；9次资源采样峰值68,275,425,430 bytes，三节点最低可用RAM为505/463/168 MiB。15:48:59–15:49:02 UTC恢复只补原attempt的实际清理，没有重跑或改写原计算包、工作身份及失败控制器回执。公共离线/Hive/湖仓入口现统一校验有界输出、退出码及精确CID/固定驱动名，仅允许已知缺失消息的前缀大小写变化；未知错误仍拒绝。StageDocker同时对完整Mounts记录排序后取摘要，不忽略字段。新源码CI及三节点安装已在上方后续记录完成，旧未完成stage/lease不得迁移摘要；真实自然闭日、Hive/Iceberg与新鲜度仍待后续验收。见[计算、失败与独立恢复证据](evidence/offline-1792-recovery-20260919.json)。
 
 15:53 UTC生产只读复查通过：轻量采集、日志读取/转发、socket响应、v1/v2分组保护、no-store及私有接口404正常，历史失败与缺口未增加。未发送测试事件、调用模型或导出真实计数。香港日期已自然进入9月20日，闭日任务仍须绑定实际已提交的接收前缀和原保留期限；自然跨日不等于全天完整、留存成熟或公开样本达标。
 

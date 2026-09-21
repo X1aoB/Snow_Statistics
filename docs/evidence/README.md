@@ -11,6 +11,14 @@
 | [Windows VM控制与收尾](offline-vm-control-20260919.json) | 签名954451c、直接vmrun控制、严格库存与软关读回；双CI通过，记录时尚未安装VM或恢复引擎 |
 | [逐台源码更新](postcrash-source-install-20260919.json) | 三个独立单机窗口实际安装954451ce、冻结文件核验及软关读回；无引擎启动，不证明三机或数据恢复 |
 
+## 2026-09-21第二次宿主故障
+
+| 证据 | 实际范围与边界 |
+|---|---|
+| [0xA转储诊断](host-crash-diagnosis-0a-20260921.json) | 获批的本机 WinDbg 离线栈和模块读取；故障位于 Windows 内核异构软停路径，当前进程为 python.exe，未确定责任驱动，不证明 VMware 责任或来宾恢复 |
+| [V8 land实际通过](fixture-land-v8-20260920.json) | 6c60/real-small-1792 合成 land；HDFS 验证和资源样本通过，Kafka 认证仍为 false |
+| [daily失败](fixture-daily-controller-failure-20260921.json) | snow-control execute 返回码 1；只保留错误长度和收尾读回，日指标及后续模型均未接受 |
+
 ## 历史合成验收收据
 
 2026-09-11。这里保存实际工具输出的汇总 JSON；无用户数据、凭据或原始事件。首轮引擎及服务代码为 `98f217e`；轻量镜像 ID 记录在其收据内。适配器最新浏览器验收为 Project_Snow `cf13565`。
