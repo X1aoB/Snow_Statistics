@@ -1,5 +1,9 @@
 # 实施状态
 
+## 真实闭日重试前的宿主门禁修复（香港 2026-09-23）
+
+首个真实闭日 `start-storage` 的首次执行在启动 VM 前被宿主工具拒绝：analysis storage 阶段需要 `4608+256=4864 MiB` 预留，但 `tools/vmware_lab.py` 的 `--reserve-mib` 仍限制为 4096。执行回执已保留为失败，VM 自动收尾后 `vmrun list` 为零，未读取或修改真实数据。已将该 CLI 的有限上限调整为 8192 MiB，并增加 4608 MiB storage 余量测试；`tests/test_lab_capacity.py`、闭日 worker/Windows 安全测试共 **109 项通过**，实际 `status --reserve-mib 4864` 预检通过。该修复只解决宿主门禁矛盾，不代表 storage、闭日计算或 Doris 发布已经通过，随后按同一固定 scope 流程重试。
+
 ## 个人网站公开统计刷新修复（香港 2026-09-23）
 
 MyWebsite 提交 `ef01efca4a91266521f67d0f52659a712d91cf91` 已推送并通过 Cloudflare Pages 生产回归。首页与小吉项目页的两张紧凑统计卡、`/statistics/` 完整页现在以 `summaryEndpoint` 为首选，构建生成的同源快照只作为故障回退；请求带 `no-store` 与时间参数，紧凑卡在页面可见时每 5 分钟刷新，隐藏页面暂停。`/statistics-summary.json` 和统计脚本均返回 `no-store`，线上首页、项目页、完整页均为 HTTP 200，统计接口的 CORS 与 `no-store` 保持通过。
