@@ -1,5 +1,11 @@
 # 实施状态
 
+## 个人网站公开统计刷新修复（香港 2026-09-23）
+
+MyWebsite 提交 `ef01efca4a91266521f67d0f52659a712d91cf91` 已推送并通过 Cloudflare Pages 生产回归。首页与小吉项目页的两张紧凑统计卡、`/statistics/` 完整页现在以 `summaryEndpoint` 为首选，构建生成的同源快照只作为故障回退；请求带 `no-store` 与时间参数，紧凑卡在页面可见时每 5 分钟刷新，隐藏页面暂停。`/statistics-summary.json` 和统计脚本均返回 `no-store`，线上首页、项目页、完整页均为 HTTP 200，统计接口的 CORS 与 `no-store` 保持通过。
+
+MyWebsite 本地 `npm test -- --run` 为 80 项通过，`npm run check` 和 `npm run build` 均通过；新增测试覆盖紧凑卡五分钟刷新及缓存绕过。当前公开 v2 最新日期仍是 `pending`，历史小样本日期按策略为 `empty` 或 `suppressed`，因此页面显示“等待公开／无数据／样本不足”而不是伪造数字；真实数值只有达到公开门槛后才会出现。实时汇总、轻量存储和数仓数据没有被本次前端修复改写。
+
 ## 恢复后正式合成真实代码路径已完成（香港 2026-09-21）
 
 用户恢复任务后，按 `real-small-1792`（control 2048 MiB、compute 1792 MiB、analysis 768 MiB）重新启动并完成固定 `fixture-lake-01-r1` 的后续闭环。三节点使用源码提交 `6c60f761fccf09bf8e67a75464714ef0619ff259`；`land`、`stage-compute`、`daily`、`publish` 和 `transfer` 均有完整控制器回执。Spark 3.5.7/YARN 日指标实际处理 28 条有效输入（重复、隔离和截止后均为 0），行为作业实际生成 11 个会话、6 条日会话、2 条留存、1 条转化和 3 条漏斗，并在发布阶段再次通过行为模型与日指标成对校验。发布和传输的聚合包哈希均为 `57d7013c559a14b8a84a8275888ab3db45a4779c3f7af64319a3dfe364c57ee5`；完整摘要见[real-small-1792 fixture 验收](evidence/offline-real-fixture-v8-20260921.json)。
