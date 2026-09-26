@@ -18,10 +18,6 @@ LIMITS = json.loads((ROOT / "deploy/resources.json").read_bytes())["local"]
 MAX_PROJECT_BYTES = LIMITS["max_project_bytes"]
 MIN_HOST_FREE_BYTES = LIMITS["min_host_free_bytes"]
 MIN_HOST_AVAILABLE_MIB = LIMITS["min_host_available_mib"]
-# A storage-only analysis window uses 4608 MiB plus a 256 MiB startup
-# headroom.  Keep the CLI bound above that reviewed profile while retaining a
-# finite guard against accidental, unbounded reservations.
-MAX_RESERVE_MIB = 8192
 RUNTIME = ROOT / "runtime/vmware"
 VMWARE = Path(r"C:\Program Files (x86)\VMware\VMware Workstation")
 BASE_URL = "https://cloud-images.ubuntu.com/releases/noble/release-20260826/"
@@ -197,8 +193,8 @@ def main():
     parser.add_argument("--reserve-mib", type=int, default=0,
                         help="Additional headroom for start/status; does not change the host/project limits")
     args = parser.parse_args()
-    if not 0 <= args.reserve_mib <= MAX_RESERVE_MIB or args.reserve_mib and args.action not in {"start", "status"}:
-        parser.error(f"--reserve-mib is 0..{MAX_RESERVE_MIB} and only applies to start/status")
+    if not 0 <= args.reserve_mib <= 4096 or args.reserve_mib and args.action not in {"start", "status"}:
+        parser.error("--reserve-mib is 0..4096 and only applies to start/status")
     vmrun = VMWARE / "vmrun.exe"
     vmx = RUNTIME / args.node / f"{args.node}.vmx"
     if args.action == "prepare":

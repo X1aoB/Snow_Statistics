@@ -1,8 +1,14 @@
 # 实施状态
 
-## 真实闭日重试前的宿主门禁修复（香港 2026-09-23）
+## 真实闭日窗口实际收尾（香港 2026-09-26）
 
-首个真实闭日 `start-storage` 的首次执行在启动 VM 前被宿主工具拒绝：analysis storage 阶段需要 `4608+256=4864 MiB` 预留，但 `tools/vmware_lab.py` 的 `--reserve-mib` 仍限制为 4096。执行回执已保留为失败，VM 自动收尾后 `vmrun list` 为零，未读取或修改真实数据。已将该 CLI 的有限上限调整为 8192 MiB，并增加 4608 MiB storage 余量测试；`tests/test_lab_capacity.py`、闭日 worker/Windows 安全测试共 **109 项通过**，实际 `status --reserve-mib 4864` 预检通过。该修复只解决宿主门禁矛盾，不代表 storage、闭日计算或 Doris 发布已经通过，随后按同一固定 scope 流程重试。
+首个真实闭日按固定 source `6c60f761fccf09bf8e67a75464714ef0619ff259` 启动了同一 `real-prod-01` storage 窗口。`start-storage`、`observe-cutoff`、`start-realtime` 和 `resume-writer` 均取得完整回执；analysis 使用 4608 MiB，control/compute 保持关闭，Flink 保持停止，writer 在同步前确实恢复为 resumed。对应回执分别为 `runtime/real/operator/storage-v3/37c459ed10b04456aef6f76421d86266/finished.json`、`c8ae3b26a6104a5f86dc592edcd67bee`、`a0ca81f87d464932acd22b5b42895903` 和 `eb7788ea1e53437aa1b4c86f13a6d7cf`。
+
+`sync` 在 guest 执行阶段以 `NodeCommandFailure` 失败，未生成成功同步结果；失败收尾已停止该 epoch 和 VM，`data_deleted=false`，没有把失败写成已覆盖闭日。回执为 `runtime/real/operator/storage-v3/a7fb22a2fb704b0799e107ad36ee97bc/finished.json`。随后为读取实际状态再次启动 storage，但 writer 已不再能被证明为 paused，控制器按门禁拒绝启动并再次完成收尾，回执为 `f312af41b1874535887cdf3838cb1508`。因此本轮没有通过 closed-register、离线计算、真实 Doris 发布或真实 P95；没有延长原 epoch，也没有删除数据。当前 `vmrun list` 为零，下一次真实重试必须先建立新的、经审阅的 writer 恢复窗口，不能复用本轮失败 scope 或绕过 paused 检查。
+
+## 真实闭日候选控制器修复（香港 2026-09-26）
+
+首个真实闭日 `start-storage` 的首次执行在启动 VM 前被宿主工具拒绝：analysis storage 阶段需要 `4608+256=4864 MiB` 预留，但小配置共用的 `tools/vmware_lab.py --reserve-mib` 上限为 4096。执行回执已保留为失败，VM 自动收尾后 `vmrun list` 为零，未读取或修改真实数据。最终保持冻结公共源码不变，在真实 storage 控制器中直接执行完整 `check_host(..., 4864)`，再调用固定 analysis VM 的 `vmrun`；闭日 Windows 包同步绑定新的控制器摘要。`tests/test_lab_capacity.py`、storage/closed-day worker 与 Windows 安全测试共 **186 项通过**。该修复只解决候选控制器门禁矛盾，不代表 storage、闭日计算或 Doris 发布已经通过，随后按同一固定 scope 流程重试。
 
 ## 个人网站公开统计刷新修复（香港 2026-09-23）
 

@@ -23,7 +23,7 @@ uv run python tools/vmware_lab.py status
 
 启动会检查宿主空闲磁盘至少 35 GiB、整个项目文件预算 64 GiB（含本次启动可能新增的 .vmem），并保留 4 GiB 当前可用内存。文件长度是保守预算近似，不等于底层精确分配量；外部共享 uv/Maven 缓存不纳入本目录计数，扩样前还需核查依赖缓存和宿主空闲空间。薄置备逻辑容量与物理实占不同，不能只看输入文件大小。
 
-analysis 的真实 storage 窗口使用 4608 MiB VM 加 256 MiB 启动余量；`tools/vmware_lab.py status --reserve-mib 4864` 是该阶段的宿主预检，不能被旧的 4096 MiB CLI 上限拦截。预检余量仍须同时满足项目 64 GiB、磁盘 35 GiB 和宿主可用内存门禁。
+analysis 的真实 storage 窗口使用 4608 MiB VM 加 256 MiB 启动余量。该候选控制器直接执行 `check_host(..., 4864)`，再调用固定 analysis VM 的 `vmrun`，不把 4864 MiB 传给小配置共用的 `vmware_lab.py --reserve-mib` 参数。预检余量仍须同时满足项目 64 GiB、磁盘 35 GiB 和宿主可用内存门禁。
 
 首次 SSH 主机公钥在本地 seed 中生成，以 `HostKeyAlias=snow-control` 等名称记录在 `runtime/vmware/known_hosts`，使用 `StrictHostKeyChecking=yes`。IP 可从 VMware NAT DHCP 租约按本节点 MAC 查询；不要关闭全局 SSH 校验。初始化脚本 `tools/bootstrap_guest.sh` 只接受三个指定实验主机名。
 

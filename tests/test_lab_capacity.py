@@ -61,9 +61,3 @@ def test_small_batch_headroom_cannot_be_spent_as_vm_memory(lab, monkeypatch):
     lab.capacity(768)
     with pytest.raises(RuntimeError, match="project gate"):
         lab.capacity(768 + 256)
-
-
-def test_storage_window_reservation_covers_4608_mib_analysis_profile(lab, monkeypatch):
-    assert lab.MAX_RESERVE_MIB >= 4608 + 256
-    monkeypatch.setattr(lab, "run", lambda *args: str((4608 + 256 + lab.MIN_HOST_AVAILABLE_MIB) * 1024))
-    assert lab.capacity(4608 + 256)["project_limit_gib"] == 64.0
