@@ -46,6 +46,11 @@ def test_follow_reuses_transport_and_stops_without_skipping(tmp_path, monkeypatc
             closed.append(True)
     monkeypatch.setitem(sys.modules, "kafka", SimpleNamespace(KafkaProducer=Producer))
     def handle(request):
+        if request.url.path.endswith("/status"):
+            return httpx.Response(200, json=dict(schema_version=1, source="real",
+                instance_id="00000000-0000-0000-0000-000000000001",
+                generation="00000000-0000-0000-0000-000000000002", earliest_available_seq=1,
+                latest_accepted_seq=1, expired_through=0, aggregate_cursor=1))
         fetched.append(int(request.url.params["after"]))
         return httpx.Response(200, json=dict(events=[row] if len(fetched) == 1 else [], next_cursor=1))
     real_client = httpx.Client
@@ -62,7 +67,7 @@ def test_follow_reuses_transport_and_stops_without_skipping(tmp_path, monkeypatc
     else:
         with pytest.raises(ValueError, match="Unexpected source"):
             kafka_sync("http://localhost:8100", "private-reader-token", "localhost:9092", tmp_path, **options)
-        assert not published and (tmp_path / "pending.json").exists()
+        assert not published and not (tmp_path / "pending.json").exists()
         assert not (tmp_path / "cursor.json").exists()
     assert len(created) == 1 and closed == [True]
     assert "private-reader-token" not in (tmp_path / "target.json").read_text()

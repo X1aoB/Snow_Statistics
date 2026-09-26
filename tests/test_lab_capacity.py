@@ -32,3 +32,32 @@ def test_available_ram_must_cover_reservation_and_host_margin(lab, monkeypatch):
     monkeypatch.setattr(lab, "run", lambda *args: str((1024 + lab.MIN_HOST_AVAILABLE_MIB - 1) * 1024))
     with pytest.raises(RuntimeError, match="Free RAM"):
         lab.capacity(1024)
+
+
+def test_reduced_memory_is_confined_to_explicit_analysis_option(lab):
+    assert lab.validate_memory("snow-analysis", 768) == 768
+    for node, memory in (("snow-control", 768), ("snow-compute", 768), ("snow-analysis", 767),
+                         ("snow-analysis", 900), ("snow-analysis", 10241)):
+        with pytest.raises(RuntimeError, match="reviewed node budget"):
+            lab.validate_memory(node, memory)
+
+
+def test_1792_candidate_is_separate_and_cannot_reconfigure_a_running_vm(lab, tmp_path, monkeypatch):
+    assert lab.PROFILES["real-small-1920"]["snow-compute"] == 1920
+    assert lab.PROFILES["real-small-1792"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768}
+    assert lab.validate_memory("snow-compute", 1792) == 1792
+    vmx = tmp_path / "snow-compute.vmx"
+    original = 'memsize = "1920"\n'
+    vmx.write_text(original)
+    monkeypatch.setattr(lab, "run", lambda *args: str(vmx))
+    with pytest.raises(RuntimeError, match="completely"):
+        lab.configure_memory("synthetic-vmrun", vmx, "snow-compute", "real-small-1792")
+    assert vmx.read_text() == original
+
+
+def test_small_batch_headroom_cannot_be_spent_as_vm_memory(lab, monkeypatch):
+    monkeypatch.setattr(lab, "MAX_PROJECT_BYTES", 1023 * 1024**2)
+    monkeypatch.setattr(lab, "run", lambda *args: str((768 + lab.MIN_HOST_AVAILABLE_MIB + 256) * 1024))
+    lab.capacity(768)
+    with pytest.raises(RuntimeError, match="project gate"):
+        lab.capacity(768 + 256)

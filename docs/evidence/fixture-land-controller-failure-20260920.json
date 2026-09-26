@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "source_git_commit": "6c60f761fccf09bf8e67a75464714ef0619ff259",
+  "input_origin": "synthetic fixtures",
+  "profile": "real-small-1792",
+  "original_controller": {
+    "revision": "private-v6",
+    "phase": "land",
+    "complete": false,
+    "failure_type": "KeyboardInterrupt",
+    "monitor_error_types": [
+      "RuntimeError"
+    ],
+    "retained_resource_samples": 1,
+    "failing_sample_available": false,
+    "first_trigger": "unknown",
+    "cleanup_error_type": "RuntimeError",
+    "receipt_sha256": "642ce1e3d7e73086a0849af170a264869eeb40e0e2fc22d0ee16b092df44b3ca"
+  },
+  "independent_readback": {
+    "started_at": "2026-09-19T16:25:17.405648+00:00",
+    "finished_at": "2026-09-19T16:25:45.840363+00:00",
+    "complete": true,
+    "modifies_guest": false,
+    "payload_read": false,
+    "child_phase_complete": true,
+    "child_group_stopped": true,
+    "driver_stopped": true,
+    "active_child_members": 0,
+    "hdfs_verified": true,
+    "ods_pending_absent": true,
+    "state_matches_landed": true,
+    "kafka_engine_tested": false,
+    "original_controller_success_claimed": false,
+    "receipt_sha256": "985c8c5b5c8381ac7817da7908811b8ebb0c21db8c24a25e73de8e4024f4083a"
+  },
+  "boundaries": {
+    "real_user_input": false,
+    "fixture_reinitialized": false,
+    "land_rerun_by_readback": false,
+    "spark_model_or_hive_or_iceberg_acceptance": false,
+    "first_resource_failure_proven": false,
+    "all_phase_monitoring_verified": false,
+    "original_retention_extended": false
+  }
+}

@@ -1,0 +1,44 @@
+name: snow-statistics-edge
+x-bounds: &bounds
+  restart: "on-failure:5"
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 64
+  cpus: 0.10
+  logging:
+    driver: local
+    options: {max-size: 2m, max-file: "2"}
+  labels:
+    org.snow-statistics.owner: Snow_Statistics
+services:
+  gateway:
+    <<: *bounds
+    image: ${SNOW_CADDY_IMAGE:?pinned production image required}
+    user: "10001:10001"
+    # The locked Caddy binary carries cap_net_bind_service; Linux otherwise
+    # refuses exec under an empty capability bounding set, even on port 8080.
+    cap_add: [NET_BIND_SERVICE]
+    command: [caddy, run, --config, /etc/caddy/Caddyfile, --adapter, caddyfile]
+    mem_limit: 64m
+    environment: {XDG_CONFIG_HOME: /tmp/config, XDG_DATA_HOME: /tmp/data}
+    tmpfs: ["/tmp:size=8m,mode=1777", "/data:size=1m,uid=10001,gid=10001", "/config:size=1m,uid=10001,gid=10001"]
+    ports: ["127.0.0.1:8110:8080"]
+    volumes: [./Caddyfile:/etc/caddy/Caddyfile:ro]
+    networks: [collector, tunnel]
+  tunnel:
+    <<: *bounds
+    image: ${SNOW_CLOUDFLARED_IMAGE:?pinned production image required}
+    user: "10002:10002"
+    command: [tunnel, --no-autoupdate, --config, /etc/cloudflared/config.yaml, run]
+    mem_limit: 128m
+    volumes:
+      - /etc/snow-statistics/tunnel.yaml:/etc/cloudflared/config.yaml:ro
+      - /etc/snow-statistics/tunnel.json:/run/secrets/tunnel.json:ro
+    networks: [tunnel]
+networks:
+  collector:
+    external: true
+    name: snow-statistics-lite
+  tunnel:
+    name: snow-statistics-edge

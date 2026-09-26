@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-09-21T04:13:51.4598000Z",
+  "scope": "approved local WinDbg read-only analysis; no VM start, no dump copy/upload, no system changes",
+  "dump": {
+    "path": "C:\\WINDOWS\\Minidump\\092026-13953-01.dmp",
+    "bytes": 5323316,
+    "last_write_utc": "2026-09-19T16:53:44.8643000Z"
+  },
+  "debugger": {
+    "version": "10.0.29617.1000",
+    "sha256": "5045bb1886bbd0032d4347027dc676a48d6352e6705013f1083598c515078b46",
+    "symbol_server": "none; existing local symbols only",
+    "commands": ".bugcheck; !analyze -v; kb 40; lmvm nt; lmvm vmx86; lm m vm*; q"
+  },
+  "analysis": {
+    "bugcheck": "IRQL_NOT_LESS_OR_EQUAL (0xA)",
+    "arguments": ["0x3f14", "0x2", "0x0", "0xfffff802d386c2fa"],
+    "faulting_ip": "nt!KiDoesHeteroSoftParkElectionHaveWinner+0x4fa",
+    "image": "ntkrnlmp.exe",
+    "image_version": "10.0.26100.9457",
+    "process_name": "python.exe",
+    "stack": [
+      "nt!KeBugCheckEx",
+      "nt!KiBugCheckDispatch+0x69",
+      "nt!KiPageFault+0x468",
+      "nt!KiDoesHeteroSoftParkElectionHaveWinner+0x4fa"
+    ],
+    "failure_bucket": "AV_nt!KiDoesHeteroSoftParkElectionHaveWinner",
+    "hypervisor_present": true,
+    "vmware_modules_listed": true,
+    "vmware_module_on_faulting_stack": false
+  },
+  "assessment": {
+    "driver_identified": false,
+    "vmware_responsibility_proven": false,
+    "root_cause_established": false,
+    "interpretation": "The dump shows a kernel scheduling/soft-park path page fault while python.exe was the current process. The VMware modules are listed in the dump, but the short triage stack does not attribute the fault to them or another third-party driver.",
+    "wrapper_note": "The bounded wrapper recorded a null debugger exit code, but stdout contains the complete dump analysis and module listing; the original wrapper receipt and logs are retained."
+  },
+  "output_sha256": {
+    "stdout": "a94db9f81d827d810e29c7ed7b8d2171d800733fb4e6bae6dc9540be048d1c62",
+    "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
+

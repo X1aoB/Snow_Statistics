@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-19T10:56:54.133661+00:00",
+  "checks": {
+    "new_acknowledged_completion": true,
+    "occurred_after_baseline": true,
+    "white_list_only": true,
+    "exact_projected_event_persisted": true,
+    "request_dedup_present": true,
+    "aggregation_committed": true,
+    "daily_request_integers_match_retained_request_state": true,
+    "successful_completion_observed": true
+  },
+  "all_checks_passed": true,
+  "observation_scope": "new acknowledged completion prefix after operator baseline",
+  "event_rows_exported": false,
+  "identifiers_exported": false,
+  "chat_content_read": false,
+  "model_invoked_by_verifier": false,
+  "production_modified": false,
+  "production_p95_claimed": false
+}

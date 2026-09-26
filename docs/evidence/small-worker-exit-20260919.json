@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-19T12:26:59.365529+00:00",
+  "source_git_commit": "de406cbfe0eff069f56a3b04420d280175966d95",
+  "scope": "Sequential installation, actual child normal exit and analysis startup cleanup; no model execution",
+  "install_profile": "real-small-1792",
+  "nodes": [
+    {
+      "node": "snow-control",
+      "frozen_writer_unchanged": true,
+      "normal_worker_exit_zero": true,
+      "stdin_held_open_until_exit": true,
+      "all_containers_stopped_at_check": true
+    },
+    {
+      "node": "snow-compute",
+      "frozen_writer_unchanged": true,
+      "normal_worker_exit_zero": true,
+      "stdin_held_open_until_exit": true,
+      "all_containers_stopped_at_check": true
+    },
+    {
+      "node": "snow-analysis",
+      "frozen_writer_unchanged": true,
+      "normal_worker_exit_zero": true,
+      "stdin_held_open_until_exit": true,
+      "all_containers_stopped_at_check": true
+    }
+  ],
+  "analysis_sync_cleanup": {
+    "supervisor_restarted_with_current_source": true,
+    "existing_registry_checked": true,
+    "original_window_unchanged": true,
+    "unexpired_raw_retained": true,
+    "containers_stopped_at_check": true,
+    "payload_read": false
+  },
+  "limitations": {
+    "full_topology_1792_accepted": false,
+    "hive_iceberg_accepted": false,
+    "diagnostic_adoption_completed": false
+  }
+}

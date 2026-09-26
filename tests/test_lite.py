@@ -129,7 +129,7 @@ def test_public_api_private_fields_origin_and_server_trust(settings, store, page
 def test_off_and_lite_keep_identical_summary(settings, store, page):
     store.ingest([page])
     store.aggregate()
-    expected = store.summary().daily
+    expected = store.public_summary_v1().daily
     for mode in ("full", "lite", "off"):
         with TestClient(create_app(replace(settings, mode=mode), store)) as client:
             result = Summary.model_validate(client.get("/analytics/public/v1/summary.json").json())

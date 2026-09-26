@@ -24,9 +24,13 @@ BASE_URL = "https://cloud-images.ubuntu.com/releases/noble/release-20260826/"
 IMAGE = "ubuntu-24.04-server-cloudimg-amd64.vmdk"
 IMAGE_SHA256 = "fb3ba097a9013d759fa13ab22d2b4118bd55452c617ca3758a55303eea96de6e"
 NODES = {"snow-control": (6144, 2), "snow-compute": (6144, 4), "snow-analysis": (10240, 4)}
-DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 28}
+DISK_GB = {"snow-control": 18, "snow-compute": 18, "snow-analysis": 29}
 PROFILES = {"batch": {"snow-control": 4096, "snow-compute": 4096, "snow-analysis": 2048},
             "scale": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 1024},
+            "real-small": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 768},
+            "real-small-1920": {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768},
+            "real-small-1792": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768},
+            "hive-only": {"snow-control": 2048, "snow-compute": 1024, "snow-analysis": 1536},
             "ods": {"snow-control": 3584, "snow-compute": 4096, "snow-analysis": 1024},
             "ods-compact": {"snow-control": 3584, "snow-compute": 3072, "snow-analysis": 1024},
             "governance": {"snow-analysis": 2048},
@@ -40,6 +44,14 @@ def configured_memory(vmx):
     if not match:
         raise RuntimeError("VMX has no explicit memory size")
     return int(match[1])
+
+
+def validate_memory(node, memory):
+    # The reduced analysis VM is an explicit, measured small-batch option;
+    # it does not lower the minimum for the YARN control/compute nodes.
+    if not (1024 <= memory <= NODES[node][0] or node == "snow-analysis" and memory == 768):
+        raise RuntimeError("VMX memory exceeds the reviewed node budget")
+    return memory
 
 
 def configure_memory(vmrun, vmx, node, profile):
@@ -178,19 +190,21 @@ def main():
     parser.add_argument("action", choices=["prepare", "configure", "start", "stop", "ip", "status"])
     parser.add_argument("--node", choices=list(NODES), default="snow-control")
     parser.add_argument("--profile", choices=list(PROFILES), default="batch")
+    parser.add_argument("--reserve-mib", type=int, default=0,
+                        help="Additional headroom for start/status; does not change the host/project limits")
     args = parser.parse_args()
+    if not 0 <= args.reserve_mib <= 4096 or args.reserve_mib and args.action not in {"start", "status"}:
+        parser.error("--reserve-mib is 0..4096 and only applies to start/status")
     vmrun = VMWARE / "vmrun.exe"
     vmx = RUNTIME / args.node / f"{args.node}.vmx"
     if args.action == "prepare":
         prepare()
     elif args.action == "status":
-        print(json.dumps(capacity()))
+        print(json.dumps(capacity(args.reserve_mib)))
         print(run(vmrun, "-T", "ws", "list"))
     elif args.action == "start":
-        memory = configured_memory(vmx)
-        if not 1024 <= memory <= NODES[args.node][0]:
-            raise RuntimeError("VMX memory exceeds the reviewed node budget")
-        print(json.dumps(capacity(memory)), flush=True)
+        memory = validate_memory(args.node, configured_memory(vmx))
+        print(json.dumps(capacity(memory + args.reserve_mib)), flush=True)
         print(run(vmrun, "-T", "ws", "start", vmx, "nogui"))
     elif args.action == "configure":
         configure_memory(vmrun, vmx, args.node, args.profile)

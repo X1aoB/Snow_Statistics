@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "source": "real",
+  "input_origin": "real",
+  "lane": "real-start-001",
+  "transport_node": "snow-analysis",
+  "nodes": {
+    "snow-control": "192.168.216.131",
+    "snow-compute": "192.168.216.132",
+    "snow-analysis": "192.168.216.133"
+  },
+  "collector_url": "http://127.0.0.1:18100",
+  "reader_token_file": "runtime/real/secrets/reader.token",
+  "tunnel": {
+    "host": "collector-ssh.example.invalid",
+    "user": "snow_stats_reader",
+    "port": 22,
+    "key_file": "runtime/real/ssh/collector.key",
+    "known_hosts_file": "runtime/real/ssh/collector.known_hosts",
+    "remote_port": 8100
+  },
+  "backend_config_file": "runtime/real/config/backends.json",
+  "doris_config_file": "runtime/real/config/doris.json"
+}
