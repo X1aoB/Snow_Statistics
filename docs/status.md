@@ -6,6 +6,12 @@
 
 `sync` 在 guest 执行阶段以 `NodeCommandFailure` 失败，未生成成功同步结果；失败收尾已停止该 epoch 和 VM，`data_deleted=false`，没有把失败写成已覆盖闭日。回执为 `runtime/real/operator/storage-v3/a7fb22a2fb704b0799e107ad36ee97bc/finished.json`。随后为读取实际状态再次启动 storage，但 writer 已不再能被证明为 paused，控制器按门禁拒绝启动并再次完成收尾，回执为 `f312af41b1874535887cdf3838cb1508`。因此本轮没有通过 closed-register、离线计算、真实 Doris 发布或真实 P95；没有延长原 epoch，也没有删除数据。当前 `vmrun list` 为零，下一次真实重试必须先建立新的、经审阅的 writer 恢复窗口，不能复用本轮失败 scope 或绕过 paused 检查。
 
+窗口关闭后做的只读源检查确认 collector 私有 status 仍返回 200，`source=real`，accepted 与 aggregate 末端一致，且从该末端读取返回零事件。没有读取或导出事件正文、标识或凭据。这只能排除当前 collector 明显不可达或末端仍有待同步事件，不能替 guest `sync` 失败给出具体原因；下一候选应保留受限的阶段失败类型和返回码元数据，供该次 fresh scope 内诊断。
+
+## 下一真实窗口的诊断候选（香港 2026-09-26）
+
+已在 ignored 私有路径准备 storage V4 诊断候选：guest 失败时只写入固定字段的 `failure.json`，控制器在阶段返回非零后只读取错误类别、受限返回码、日志存在性、字节数和摘要哈希。测试不会导出日志正文、事件、位点或凭据；V4 的 `SOURCE_PENDING` 门禁保持开启，且不得复用已过期的 `real-prod-01` scope。候选编译及边界测试 **84 项通过**，审阅记录为 `runtime/real/operator/real-storage-v4-diagnostic-review-20260926.md`。它只是下一窗口的诊断准备，不增加本轮真实闭日的通过项。
+
 ## 真实闭日候选控制器修复（香港 2026-09-26）
 
 首个真实闭日 `start-storage` 的首次执行在启动 VM 前被宿主工具拒绝：analysis storage 阶段需要 `4608+256=4864 MiB` 预留，但小配置共用的 `tools/vmware_lab.py --reserve-mib` 上限为 4096。执行回执已保留为失败，VM 自动收尾后 `vmrun list` 为零，未读取或修改真实数据。最终保持冻结公共源码不变，在真实 storage 控制器中直接执行完整 `check_host(..., 4864)`，再调用固定 analysis VM 的 `vmrun`；闭日 Windows 包同步绑定新的控制器摘要。`tests/test_lab_capacity.py`、storage/closed-day worker 与 Windows 安全测试共 **186 项通过**。该修复只解决候选控制器门禁矛盾，不代表 storage、闭日计算或 Doris 发布已经通过，随后按同一固定 scope 流程重试。
