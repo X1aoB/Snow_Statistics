@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source_git_commit": "6c60f761fccf09bf8e67a75464714ef0619ff259",
+  "input_origin": "synthetic fixtures",
+  "controller_revision": "private-v8",
+  "profile": "real-small-1792",
+  "phase": "land",
+  "controller_complete": true,
+  "sample_window": {
+    "first_at": "2026-09-19T16:46:10.598818+00:00",
+    "last_finished_at": "2026-09-19T16:47:01.313051+00:00",
+    "samples": 4,
+    "maximum_observed_project_bytes": 68287111711,
+    "minimum_observed_guest_ram_mib": {
+      "snow-control": 1093,
+      "snow-compute": 988,
+      "snow-analysis": 160
+    }
+  },
+  "result": {
+    "hdfs_verified": true,
+    "transport_adapter": "deterministic_fixture_source_not_kafka",
+    "kafka_engine_tested": false,
+    "original_fixture_reinitialized": false,
+    "pending_workers_empty": true,
+    "diagnostics_empty": true,
+    "original_retention_unchanged": true
+  },
+  "private_receipt_sha256": "5b84c83b5703c3feaf92078449c1d48754ad9323b97658cd85cc286ce8754dc5",
+  "boundaries": {
+    "first_v6_failure_rewritten": false,
+    "first_v6_trigger_identified": false,
+    "real_user_input": false,
+    "spark_model_or_hive_or_iceberg_verified": false,
+    "continuous_resource_peak_claimed": false
+  }
+}

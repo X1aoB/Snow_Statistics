@@ -1,0 +1,18 @@
+[Unit]
+Description=Independent Snow Statistics public allowlist and Tunnel
+Requires=docker.service snow-statistics-lite.service
+After=docker.service snow-statistics-lite.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/snow-statistics
+ExecStartPre=/usr/bin/mountpoint -q /var/lib/snow-statistics/state
+ExecStart=/usr/bin/docker compose --env-file deploy/production/images.env -f deploy/production/compose.edge.yaml up -d
+ExecStop=/usr/bin/docker compose --env-file deploy/production/images.env -f deploy/production/compose.edge.yaml stop
+TimeoutStartSec=120
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

@@ -103,3 +103,78 @@ class Summary(BaseModel):
     completeness: Literal["accepted_events_only"] = "accepted_events_only"
     daily: list[Daily]
     popularity: list[Popularity]
+
+
+class AccessMetrics(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    pv: int = Field(ge=0, strict=True)
+    uv: int = Field(ge=10, strict=True)
+
+
+class QualityMetrics(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    requests: int = Field(ge=10, strict=True)
+    successes: int = Field(ge=0, strict=True)
+    success_rate: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def protected_counts(self):
+        failures = self.requests - self.successes
+        if failures < 0 or self.successes not in (0,) and self.successes < 10 or 0 < failures < 10:
+            raise ValueError("quality count below public threshold")
+        if abs(self.success_rate - self.successes / self.requests) > 1e-12:
+            raise ValueError("quality rate inconsistent")
+        return self
+
+
+class HeatMetric(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["page", "character"]
+    name: str = Field(max_length=200)
+    count: int = Field(ge=10, strict=True)
+
+
+class ProtectedGroup[T](BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    state: Literal["published", "suppressed", "pending", "empty"]
+    value: T | None
+
+    @model_validator(mode="after")
+    def hidden_is_null(self):
+        if (self.state == "published") != (self.value is not None):
+            raise ValueError("only published groups may contain values")
+        return self
+
+
+class PublicDay(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    app: Literal["mywebsite", "project_snow"]
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    cutoff_at: str
+    access: ProtectedGroup[AccessMetrics]
+    quality: ProtectedGroup[QualityMetrics]
+    popularity: ProtectedGroup[list[HeatMetric]]
+
+
+class PublicPolicy(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: Literal[1] = 1
+    timezone: Literal["Asia/Hong_Kong"] = "Asia/Hong_Kong"
+    publication_time: Literal["00:15"] = "00:15"
+    delay_days: Literal[3] = 3
+    threshold: Literal[10] = 10
+    frozen_days: Literal[True] = True
+    stale_after_seconds: Literal[93600] = 93600
+
+
+class PublicSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    schema_version: Literal[2] = 2
+    generated_at: str | None
+    cutoff_at: str | None
+    date_from: str | None
+    date_to: str | None
+    status: Literal["ok", "empty", "stale", "unavailable", "archived"]
+    completeness: Literal["accepted_events_only"] = "accepted_events_only"
+    policy: PublicPolicy = Field(default_factory=PublicPolicy)
+    daily: list[PublicDay] = Field(max_length=180)

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-19T12:31:27.674839+00:00",
+  "source_git_commit": "de406cbfe0eff069f56a3b04420d280175966d95",
+  "scope": "One precisely associated analysis worker diagnostic and the existing sync retention registry",
+  "node": "snow-analysis",
+  "diagnostic_association": {
+    "exact_original_worker_confirmed": true,
+    "bounded_header_inspected": true,
+    "core_payload_read": false,
+    "core_content_hash_computed": false
+  },
+  "actual_adoption": {
+    "same_filesystem_no_overwrite_rename": true,
+    "original_inode_preserved": true,
+    "original_source_path_absent": true,
+    "registered_before_move": true,
+    "existing_registry_used": true,
+    "original_earliest_acceptance_and_expiry_preserved": true,
+    "data_copied": false,
+    "data_deleted": false
+  },
+  "actual_startup_cleanup": {
+    "unexpired_diagnostic_retained": true,
+    "gate_open": true,
+    "original_deadline_unchanged": true
+  },
+  "limitations": {
+    "other_node_diagnostics_processed_at_this_check": false,
+    "natural_seven_day_expiry_elapsed": false,
+    "forensic_media_erasure_claimed": false,
+    "historical_retirement_receipt_is_new_deletion": false
+  },
+  "private_receipt_sha256": {
+    "adoption": "71ec804791468a05ecd17d4aacf5d0599787132faa6eb20973ae04389a1d0cde",
+    "cleanup_readback": "9787077b2f6e7166ec4a1fb3c3cd231d95cb814720fd3ed98ac308e5e78ce43b"
+  }
+}

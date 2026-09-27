@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "kind": "offline_real_fixture_acceptance",
+  "observed_at": "2026-09-21T06:45:04Z",
+  "input_origin": "synthetic fixtures",
+  "source_git_commit": "6c60f761fccf09bf8e67a75464714ef0619ff259",
+  "profile": "real-small-1792",
+  "vm_memory_mib": {
+    "snow-control": 2048,
+    "snow-compute": 1792,
+    "snow-analysis": 768
+  },
+  "run_id": "fixture-lake-01-r1",
+  "transport_adapter": "deterministic_fixture_source_not_kafka",
+  "kafka_engine_tested": false,
+  "phases": {
+    "land": {
+      "controller_receipt": "1cf9617ad6f44065bf9a25c057c9ed88",
+      "complete": true,
+      "hdfs_verified": true
+    },
+    "stage_compute": {
+      "controller_receipt": "0539dcc5325b463591ba49b5ab12ad56",
+      "complete": true,
+      "metadata_validated": true,
+      "original_cutoff_preserved": true
+    },
+    "daily": {
+      "controller_receipt": "ed2168451e054041b5ea881b6c682094",
+      "complete": true,
+      "application_id": "application_1789971103349_0001",
+      "package_sha256": "ec700d955c99b037e62d6a02373e6f52b651d0ebb07eaec97f7b8e90846d39fe",
+      "quality": {
+        "raw": 28,
+        "valid": 28,
+        "duplicates": 0,
+        "quarantined": 0,
+        "after_cutoff": 0
+      },
+      "engine": "Spark 3.5.7",
+      "master": "yarn"
+    },
+    "behavior": {
+      "controller_receipts": [
+        "0551676ef7fe4cb0aba011d2363255ea",
+        "d0229a98b0d74d639a7a991c1042bf05"
+      ],
+      "controller_receipt_complete": false,
+      "controller_failure_reason": "The first monitored call retained a completed immutable package but did not return a complete outer receipt; the retry correctly refused to overwrite it.",
+      "package_validated_by_publish": true,
+      "application_id": "application_1789971103349_0002",
+      "package_sha256": "5611a527fe3e6c0711f1c25a46ac6771b6a061e4dd46ba62f68144613b177a92",
+      "counts": {
+        "sessions": 11,
+        "session_daily": 6,
+        "retention": 2,
+        "conversions": 1,
+        "funnel": 3
+      },
+      "quality": {
+        "raw": 28,
+        "valid": 28,
+        "duplicates": 0,
+        "quarantined": 0,
+        "after_cutoff": 0
+      },
+      "engine": "Spark 3.5.7",
+      "master": "yarn"
+    },
+    "publish": {
+      "controller_receipt": "ed73958966584df3b56aebfb85cb7171",
+      "complete": true,
+      "aggregate_sha256": "57d7013c559a14b8a84a8275888ab3db45a4779c3f7af64319a3dfe364c57ee5",
+      "validated_pair": true,
+      "private_release": true
+    },
+    "transfer": {
+      "controller_receipt": "bc09c6460963471aac40daefeb8de46d",
+      "complete": true,
+      "aggregate_sha256": "57d7013c559a14b8a84a8275888ab3db45a4779c3f7af64319a3dfe364c57ee5",
+      "accepted_on_analysis": true
+    }
+  },
+  "hdfs_outputs": {
+    "daily": "/snow/warehouse/real/fixture-lake-01/runs/fixture-lake-01-r1",
+    "behavior": "/snow/warehouse/real/fixture-lake-01/model-runs/fixture-lake-01-r1/behavior",
+    "auxiliary": "/snow/auxiliary/real/fixture-lake-01/fixture-lake-01-r1"
+  },
+  "final_host_readback": {
+    "vms_running": false,
+    "vmrun_list_count": 0,
+    "project_bytes": 63474296753,
+    "host_free_bytes": 132276695040,
+    "host_available_mib": 18030,
+    "data_deleted": false
+  },
+  "limitations": [
+    "The input is synthetic and the deterministic fixture adapter is explicitly not a Kafka engine test.",
+    "Flink, Doris, Iceberg, natural production closed-day freshness and physical HA are outside this receipt.",
+    "The behavior package is validated and published, but its first outer monitored receipt remains incomplete; the failed and refusal receipts are retained privately."
+  ]
+}

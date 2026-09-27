@@ -1,0 +1,32 @@
+[Unit]
+Description=Read only whitelisted Project Snow completion logs
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+Group=snow-statistics-log
+WorkingDirectory=/
+ExecStart=/usr/bin/python3 -I /opt/snow-statistics/tools/production_log_reader.py
+Restart=on-failure
+RestartSec=10
+RuntimeDirectory=snow-statistics-log
+RuntimeDirectoryMode=0750
+StateDirectory=snow-statistics-reader
+StateDirectoryMode=0700
+UMask=0077
+MemoryMax=64M
+CPUQuota=10%
+TasksMax=32
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX
+ReadWritePaths=/run/snow-statistics-log /var/lib/snow-statistics-reader
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

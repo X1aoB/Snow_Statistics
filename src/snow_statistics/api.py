@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from .config import Settings
-from .contracts import Batch, Summary
+from .contracts import Batch, PublicSummary, Summary
 from .store import CursorExpired, EventConflict, StorageFull, Store
 
 
@@ -105,8 +105,24 @@ def create_app(settings=None, store=None):
 
     @app.get("/analytics/public/v1/summary.json", response_model=Summary)
     def summary():
-        result = app.state.store.summary(archived=settings.mode == "off")
+        result = app.state.store.public_summary_v1(archived=settings.mode == "off")
         return JSONResponse(json.loads(result.model_dump_json()), headers={"Cache-Control": "public, max-age=60"})
+
+    @app.get("/analytics/public/v2/summary.json", response_model=PublicSummary)
+    def summary_v2():
+        result = app.state.store.public_summary_v2(archived=settings.mode == "off")
+        return JSONResponse(json.loads(result.model_dump_json()), headers={"Cache-Control": "public, max-age=60"})
+
+    @app.get("/analytics/private/v1/summary.json", response_model=Summary)
+    def exact_summary(authorization: str | None = Header(default=None)):
+        authorize(authorization, settings.reader_token)
+        result = app.state.store.summary(archived=settings.mode == "off")
+        return JSONResponse(json.loads(result.model_dump_json()), headers={"Cache-Control": "no-store"})
+
+    @app.get("/analytics/private/v1/status")
+    def sync_status(authorization: str | None = Header(default=None)):
+        authorize(authorization, settings.reader_token)
+        return JSONResponse(app.state.store.sync_status(), headers={"Cache-Control": "no-store"})
 
     @app.get("/analytics/private/v1/events")
     def read(after: int = Query(0, ge=0), limit: int = Query(500, ge=1, le=500), authorization: str | None = Header(default=None)):

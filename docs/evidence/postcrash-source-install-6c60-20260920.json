@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "source_git_commit": "6c60f761fccf09bf8e67a75464714ef0619ff259",
+  "source_archive_sha256": "62076a8c5e3933728ac6937c94cfb1fee9585cb4cb33ac5899ae56d161005f8a",
+  "previous_source_git_commit": "d17caaeaf3dd63f8a3cf320ccc9715f824538023",
+  "scope": "Sequential source-only update; strict Docker absence and canonical Lake mount ordering",
+  "profile": "real-small-1792",
+  "memory_mib": {
+    "control": 2048,
+    "compute": 1792,
+    "analysis": 768
+  },
+  "simultaneous_vm_start": false,
+  "nodes": [
+    {
+      "node": "snow-control",
+      "started_at": "2026-09-19T16:05:50.679533+00:00",
+      "finished_at": "2026-09-19T16:06:34.276654+00:00",
+      "source_files_sha256": "f354f49e40a88a05036819f54039d62aac388605ecd20d71152e15cebf020e80",
+      "frozen_writer_files_verified": 12,
+      "original_retention_unchanged": true,
+      "unfinished_lake_stage_owner_absent": true,
+      "guest_available_ram_mib": 1595,
+      "guest_free_disk_bytes": 673685504,
+      "running_containers_empty": true,
+      "root_filesystem_rw": true,
+      "soft_stop_and_zero_readback_passed": true,
+      "private_finished_receipt_sha256": "ecb2508fc6dbc8b80dde1b663ebb345a4dbe7eafde53b492d0e1dbb7a58da8c7",
+      "private_installation_envelope_sha256": "1e488e2f0f80db5e24f45c7c26d0a892061993912df8c01cbaffe829fe9546ff"
+    },
+    {
+      "node": "snow-compute",
+      "started_at": "2026-09-19T16:07:27.579370+00:00",
+      "finished_at": "2026-09-19T16:08:09.823402+00:00",
+      "source_files_sha256": "f354f49e40a88a05036819f54039d62aac388605ecd20d71152e15cebf020e80",
+      "frozen_writer_files_verified": 12,
+      "original_retention_unchanged": true,
+      "unfinished_lake_stage_owner_absent": true,
+      "guest_available_ram_mib": 1318,
+      "guest_free_disk_bytes": 5274288128,
+      "running_containers_empty": true,
+      "root_filesystem_rw": true,
+      "soft_stop_and_zero_readback_passed": true,
+      "private_finished_receipt_sha256": "84ff34bb1fa0e5ae22bb3b450900b4fb9c5d8d5c5469de9a9f47d9c36c8f6be3",
+      "private_installation_envelope_sha256": "5470ef9533cbd3e63411d562ae59aa2eff23bb5e8c7b8bc89ed8aa52eeee3103"
+    },
+    {
+      "node": "snow-analysis",
+      "started_at": "2026-09-19T16:08:56.792912+00:00",
+      "finished_at": "2026-09-19T16:10:10.559513+00:00",
+      "source_files_sha256": "f354f49e40a88a05036819f54039d62aac388605ecd20d71152e15cebf020e80",
+      "frozen_writer_files_verified": 12,
+      "original_retention_unchanged": true,
+      "unfinished_lake_stage_owner_absent": true,
+      "guest_available_ram_mib": 338,
+      "guest_free_disk_bytes": 2213875712,
+      "running_containers_empty": true,
+      "root_filesystem_rw": true,
+      "soft_stop_and_zero_readback_passed": true,
+      "private_finished_receipt_sha256": "d4ebf471ef5d58ddaa75f149985f746871fcc6f2a327063999af8df68cceb644",
+      "private_installation_envelope_sha256": "ca9b61634b7e341029b44c76e12816acb7c2f80651726194f1c2260b460117c3"
+    }
+  ],
+  "coordinator_observation": {
+    "checked_at_utc_minute": "2026-09-19T16:10Z",
+    "all_vms_off": true,
+    "later_1792_window_started": true,
+    "observation_is_not_continuous_state": true
+  },
+  "validation": {
+    "private_synthetic_tests_passed": 68,
+    "linux_ci_runs": [
+      35453652696,
+      35453650019
+    ],
+    "linux_ci_result": "success"
+  },
+  "boundaries": {
+    "engines_started_in_install_windows": false,
+    "three_node_engine_recovery_verified": false,
+    "hdfs_database_or_checkpoint_recovery_verified": false,
+    "host_bugcheck_root_cause_fixed": false,
+    "production_modified": false,
+    "real_event_payload_read": false,
+    "diagnostic_files_modified": false,
+    "original_epoch_deadline_changed": false,
+    "source_install_is_atomic_for_entire_checkout": false
+  }
+}

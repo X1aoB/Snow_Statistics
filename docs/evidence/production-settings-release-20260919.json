@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "completed_observation_at": "2026-09-19T10:16:08.506908+00:00",
+  "project_snow": {
+    "commit_sha": "65fa0d0cfb1e8ad8aafd090f88fab4364629757d",
+    "colour": "blue",
+    "image_id": "sha256:6e642d56b08437fb50209df2df03cda5fac7a1bc2364f0ce2e38d216dba0dd3d",
+    "frontend": {
+      "track": "current",
+      "version": "1.0.0",
+      "bundle_sha256": "2e7cdf9aab73f78f42ed08ae84594b1b0a8cfd71d3943b09846767de28a3427c"
+    },
+    "rollback_sha": "0388b78b079011e28b772462b6c3634668856b59",
+    "rollback_stopped_retained": true,
+    "shared_embedding_image_id": "sha256:465a1dbfa32e9c28f1e12cac9b96318ac804923428ff3d25a23eb463c0546471"
+  },
+  "mywebsite": {
+    "commit_sha": "cf3d2fb0f7ddb3f5f897a4de5181083363d50c31",
+    "deployment_id": "765c7e23-8350-4f28-bc4b-aac52b0f7c05",
+    "changed_in_this_release": false
+  },
+  "changes": [
+    "Persistent statistics entry is inside Settings > Privacy",
+    "Short consent copy with separate quality disclosure",
+    "Keyboard focus restoration"
+  ],
+  "workflow_runs": {
+    "pr": 35435355921,
+    "main": 35435773960,
+    "signed_release_proof": 35436288627
+  },
+  "acceptance": {
+    "receipt_id": "5d4038c6b0f04ea147906b9b2f7dbdd15a5cf91ef9e9ea7722f6776e23cad485",
+    "manually_approved_at": "2026-09-19T10:10:51.612898+00:00"
+  },
+  "checks": {
+    "public_get_checks": 67,
+    "all_public_http_passed": true,
+    "real_public_browser": true,
+    "actual_edge_csp_verified": true,
+    "viewport_widths": [
+      320,
+      390,
+      1440
+    ],
+    "privacy_entry_inside_settings": true,
+    "decline_no_events": true,
+    "cross_tab_withdrawal": true,
+    "exact_public_catalog": true,
+    "fresh_backup": true,
+    "backup_full_restore_drill": false
+  },
+  "boundaries": {
+    "paid_model_calls": 0,
+    "browser_analytics_intercepted": true,
+    "public_generation_end_to_end": false,
+    "raw_events_exported": false,
+    "production_freshness_claimed": false,
+    "natural_closed_day_warehouse_claimed": false
+  },
+  "private_receipt_hashes": {
+    "manual_approval": "b0b43464d2faa447b8cb67dad4548f96c70aa7f95d7dc8617f6ac77c1d530897",
+    "acceptance": "696ed78250650d816ac4c2bc52d0d9ef88fc09e532b1de6049de4dc7687c7f01",
+    "candidate": "0261511ad0d0955b0861ae772ca771940072ec9a5639be7e35deae811a5db983",
+    "production": "e0a677733fa17fc16b4786c9fcb47a35710a143a4c6f196f9c8cf6b89ae68cae",
+    "public_browser": "804157ad0c50fc462b27fbbd623810c02d281b665f788cee715d58524d2e09d5",
+    "public_http": "f49b418baceac3ed3dd0b27a1c30a47eaa36d0cc5190a96eb9af6bdf03d6f810",
+    "backup": "6e0cc7c3fb59d3c69b75e29a90f350be5575303f44efea3a114e4ab0a39332bf",
+    "quality_observation": "fad30a13a3af33540f11c37366a2cb8f3d01ea61f2e1e4e21eb263c40791e140",
+    "public_catalog": "cbce42d0563d5cc45562325906986232bfcb92a8ea1578c467a14a850a0dbc64"
+  }
+}

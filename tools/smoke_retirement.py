@@ -102,7 +102,10 @@ def start(mode):
 
 
 def summary(url):
-    return httpx.get(url + "/analytics/public/v1/summary.json", timeout=2).json()
+    # Exact retirement reconciliation is private; same-day public values are
+    # deliberately pending and must not bypass delayed publication.
+    return httpx.get(url + "/analytics/private/v1/summary.json", timeout=2,
+                     headers={"Authorization": "Bearer " + env["SNOW_READER_TOKEN"]}).json()
 
 
 def metrics(url, pv):
@@ -128,6 +131,9 @@ try:
     follower = subprocess.run([*command, "--enabled"], input=stream, text=True, capture_output=True, env=env, timeout=15)
     assert follower.returncode == 0 and not follower.stdout and not follower.stderr
     before = until(lambda: metrics(url, 1))
+    public = httpx.get(url + "/analytics/public/v2/summary.json", timeout=2).json()
+    assert all(row["access"]["state"] == "pending" for row in public["daily"])
+    assert httpx.get(url + "/analytics/public/v1/summary.json", timeout=2).json()["daily"] == []
     assert sum(r["successes"] for r in before["daily"]) == 1
     history.append(dict(mode="full", daily=before["daily"]))
     url = start("lite")

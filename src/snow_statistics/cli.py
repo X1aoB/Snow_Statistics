@@ -29,9 +29,17 @@ def main():
     sync.add_argument("--bootstrap", default="localhost:9092")
     sync.add_argument("--directory", type=Path, default=Path("runtime/sync"))
     sync.add_argument("--lane", help="Optional isolated replay lane; use a fresh sync directory")
-    sync.add_argument("--source", choices=("real", "synthetic"))
+    sync.add_argument("--source", choices=("real", "synthetic"), required=True)
     sync.add_argument("--follow", action="store_true", help="Keep polling; a transport error exits for supervised recovery")
     sync.add_argument("--poll-seconds", type=float, default=1.0)
+    restart = commands.add_parser("rebase-sync", help="Record an explicit gap and begin in a fresh transport lane")
+    restart.add_argument("--url", required=True)
+    restart.add_argument("--bootstrap", required=True)
+    restart.add_argument("--directory", type=Path, required=True)
+    restart.add_argument("--destination", type=Path, required=True)
+    restart.add_argument("--lane", required=True)
+    restart.add_argument("--after", type=int, required=True)
+    restart.add_argument("--reason", required=True, help="Short metadata reason code, never event content")
     bench = commands.add_parser("benchmark")
     bench.add_argument("--events", type=int, choices=(100_000, 1_000_000), default=100_000)
     bench.add_argument("--output", type=Path, default=Path("runtime/benchmark.json"))
@@ -59,6 +67,12 @@ def main():
         count = kafka_sync(args.url, os.getenv("SNOW_READER_TOKEN", ""), args.bootstrap, args.directory,
                            lane=args.lane, source=args.source, follow=args.follow, poll_seconds=args.poll_seconds)
         print(json.dumps({"published": count}))
+    elif args.command == "rebase-sync":
+        from .source_cursor import rebase_from_collector
+        receipt = rebase_from_collector(args.url, os.getenv("SNOW_READER_TOKEN", ""), args.bootstrap,
+                                        args.directory, args.destination, lane=args.lane, after=args.after,
+                                        reason=args.reason)
+        print(json.dumps(receipt))
     elif args.command == "benchmark":
         if shutil.disk_usage(Path.cwd()).free < 35 * 1024**3:
             parser.error("host free disk below 35 GiB gate")

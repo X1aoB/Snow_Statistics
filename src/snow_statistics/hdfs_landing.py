@@ -13,13 +13,15 @@ from snow_statistics.io import digest
 
 
 class HdfsSink:
-    def __init__(self, host, lane, datanodes):
+    def __init__(self, host, lane, datanodes, *, source="synthetic"):
         import re
         if not re.fullmatch(r"[a-z0-9-]{1,60}", lane):
             raise ValueError("Unsafe landing lane")
+        if source not in {"real", "synthetic"}:
+            raise ValueError("Invalid HDFS source")
         self.host = host
         self.datanodes = dict(datanodes) | {ip: ip for ip in datanodes.values()}
-        self.path = "/snow/ods/synthetic/kafka/" + lane
+        self.path = "/snow/ods/" + source + "/kafka/" + lane
         self.root = f"hdfs://{host}:9000" + self.path
         self.client = httpx.Client(timeout=30, follow_redirects=False, trust_env=False)
 
@@ -41,6 +43,24 @@ class HdfsSink:
 
     def read(self, path):
         return self.request("GET", path, "OPEN").content
+
+    def delete_real_directory(self, relative):
+        """Only exact content-addressed real batches/snapshots; no shared pruning."""
+        import re
+        if ("/snow/ods/real/kafka/" not in self.root or
+                not re.fullmatch(r"(?:batches|snapshots)/[0-9a-f]{64}", relative)):
+            raise ValueError("Deletion is outside registered real ODS content")
+        path = self.path + "/" + relative
+        try:
+            if not self.request("DELETE", path, "DELETE", recursive="true").json()["boolean"]:
+                raise RuntimeError("Real HDFS purge failed")
+        except FileNotFoundError:
+            pass
+        try:
+            self.request("GET", path, "GETFILESTATUS")
+        except FileNotFoundError:
+            return
+        raise RuntimeError("HDFS purge readback still finds the expired path")
 
     def mkdir(self, path):
         if not self.request("PUT", path, "MKDIRS").json()["boolean"]:

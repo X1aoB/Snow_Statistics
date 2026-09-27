@@ -1,0 +1,21 @@
+[Unit]
+Description=Owned real analytics epoch expiry and storage retirement
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+User=snow
+WorkingDirectory=@CHECKOUT@
+Environment=PYTHONPATH=@CHECKOUT@/src
+ExecStart=@PYTHON@ @CHECKOUT@/tools/real_epoch.py --root @CHECKOUT@/runtime/real/epochs watch
+ExecStopPost=@PYTHON@ @CHECKOUT@/tools/real_epoch.py --root @CHECKOUT@/runtime/real/epochs stop-all
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=120
+MemoryMax=192M
+CPUQuota=10%
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,65 @@
+{
+  "calculation": {
+    "engine": "Spark 3.5.7",
+    "fixed_expected_integer_metrics_equal": true,
+    "generated_at": "2026-09-19T15:37:17.373984+00:00",
+    "master": "yarn",
+    "package_sha256": "57a41e2132711b907f23b997b52e5006248016b30040726c98c5c0add86a4488",
+    "quality": {
+      "after_cutoff": 0,
+      "duplicates": 28,
+      "quarantined": 0,
+      "raw": 56,
+      "valid": 28
+    },
+    "run_id": "real-small-1792-golden-01"
+  },
+  "input_origin": "synthetic fixtures",
+  "limits": [
+    "Original controller remains failed; the separate cleanup receipt does not rewrite it.",
+    "Synthetic calculation and sampled resource observations do not prove a real closed-day model, Hive, Iceberg, or production P95.",
+    "No claim that the host 0xF7 cause was resolved."
+  ],
+  "linux_process_probes": {
+    "all_owned_test_processes_stopped": true,
+    "orphan_session_cleanup": true,
+    "pipe_eof_cleanup": true,
+    "private_receipt_sha256": "637e519dea2302046af298aa42292c8cff1264556e9b198d01fe85f6ac303fc6",
+    "production_work_called": false
+  },
+  "memory_mib": {
+    "analysis": 768,
+    "compute": 1792,
+    "control": 2048
+  },
+  "original_controller": {
+    "complete": false,
+    "preserved_unchanged": true,
+    "reason": "Docker missing-object diagnostic capitalization was not recognized during cleanup",
+    "receipt_sha256": "7625efdfc8b33c01b371c6fb064c47258c50228c914204497d655dce5a5cfb9c"
+  },
+  "profile": "real-small-1792",
+  "resource_samples": {
+    "count": 9,
+    "minimum_guest_available_mib": {
+      "snow-analysis": 168,
+      "snow-compute": 463,
+      "snow-control": 505
+    },
+    "minimum_host_available_mib": 11256,
+    "monitor_errors": [],
+    "peak_project_bytes": 68275425430
+  },
+  "schema_version": 1,
+  "separate_cleanup_recovery": {
+    "active_session_members": 0,
+    "complete": true,
+    "driver_absence_confirmed": true,
+    "finished_at": "2026-09-19T15:49:02.019341+00:00",
+    "original_package_and_work_identity_unchanged": true,
+    "recalculated": false,
+    "receipt_sha256": "8c25c9a8cf00360ef0bf809a595f6f77e51813a24655e0408f6abd3f74058bfa",
+    "started_at": "2026-09-19T15:48:59.799398+00:00"
+  },
+  "source_git_commit": "d17caaeaf3dd63f8a3cf320ccc9715f824538023"
+}

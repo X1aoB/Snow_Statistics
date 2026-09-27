@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "source_git_commit": "954451ceecb510933fd62a778e6fc7ffe781dda0",
+  "signature_verified": true,
+  "source_archive_sha256": "162144b619458495631dfc35d6170fd18950b996951f65caf8e8c1fe4de48365",
+  "scope": "Bounded Windows VMware control, inventory validation and exact shutdown readback",
+  "local_checks": {
+    "initial_full_suite_passed": 840,
+    "initial_full_suite_platform_skips": 16,
+    "final_targeted_suite_passed": 155,
+    "final_targeted_platform_skips": 9,
+    "ruff_and_contract_checks_passed": true,
+    "independent_review_completed": true
+  },
+  "linux_ci": {
+    "run_ids": [35449290573, 35449288384],
+    "conclusions": ["success", "success"],
+    "python_browser_job_id": 105913529859,
+    "flink_build_job_id": 105913529744,
+    "python_browser_contracts_and_smokes_passed": true,
+    "java_build_and_dependency_lock_passed": true,
+    "url": "https://github.com/X1aoB/Snow_Statistics/actions/runs/35449290573"
+  },
+  "verified_behavior": {
+    "vmrun_uses_direct_process_cleanup": true,
+    "capacity_check_bounded_and_monitored": true,
+    "actual_vmx_memory_matches_selected_profile": true,
+    "inventory_rejects_malformed_counts_paths_and_duplicates": true,
+    "soft_stop_requires_exact_target_readback": true,
+    "ambiguous_start_remains_manual_attention": true,
+    "monitor_close_failure_still_attempts_owned_resource_stop": true,
+    "stop_not_blocked_by_new_capacity_admission": true
+  },
+  "boundaries": {
+    "frozen_writer_files_unchanged": 12,
+    "deployed_to_vm_at_this_evidence": false,
+    "vm_installed_source_git_commit": "de406cbfe0eff069f56a3b04420d280175966d95",
+    "vm_or_engine_recovery_claimed": false,
+    "host_bugcheck_root_cause_fixed_claimed": false,
+    "production_modified": false,
+    "real_event_payload_used": false
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-19T13:58:13.3108137Z",
+  "scope": "Sanitized metadata from one authorized 768 MiB analysis-only post-crash inspection window",
+  "authorization": {
+    "single_node": "snow-analysis",
+    "memory_mib": 768,
+    "three_node_or_engine_restart_authorized": false
+  },
+  "attempt": {
+    "started_at": "2026-09-19T13:54:04.298622+00:00",
+    "metadata_window_finished_at": "2026-09-19T13:54:26.147623+00:00",
+    "finished_at": "2026-09-19T13:54:32.368178+00:00",
+    "status": "failed",
+    "error_type": "TimeoutError",
+    "guest_metadata_sample_received": false,
+    "timeout_location_verified": false,
+    "guest_recovery_verified": false,
+    "hdfs_or_database_recovery_verified": false
+  },
+  "closure": {
+    "soft_stop_attempted": true,
+    "soft_stop_succeeded": true,
+    "vmrun_zero": true,
+    "vmx_count": 0,
+    "analysis_vmx_count": 0,
+    "analysis_temporary_residue_names_empty": true,
+    "checked_at": "2026-09-19T13:54:32.368178+00:00"
+  },
+  "host_resource_observations": {
+    "sample_count": 2,
+    "project_bytes_max_among_samples": 64280203385,
+    "host_free_bytes_min_among_samples": 57857146880,
+    "host_available_mib_min_among_samples": 15840,
+    "continuous_monitoring_or_true_peak_claimed": false
+  },
+  "independent_post_window_host_readback": {
+    "verification_source": "Independent coordinator host readback after this window",
+    "vmrun_zero": true,
+    "latest_boot_utc": "2026-09-19T12:58:19.5000000Z",
+    "boot_timestamp_unchanged": true,
+    "additional_host_reboot_observed": false,
+    "boot_timestamp_is_not_exact_crash_timestamp": true,
+    "checked_at": "2026-09-19T13:58:13.3108137Z",
+    "vmx_process_count": 0,
+    "private_metadata_sha256": "dc93d1c06cadf6489f7075551c3803b320c33917ecabada11eaa71a8e9c4a6d9"
+  },
+  "versions": {
+    "functional_source_commit": "196c09c8e2c482f9e2dddcbf9a99151d6c5148a2",
+    "vm_installed_source_commit": "de406cbfe0eff069f56a3b04420d280175966d95",
+    "new_source_deployed_in_this_window": false
+  },
+  "boundaries": {
+    "three_node_and_engine_hold_released": false,
+    "guest_or_hdfs_database_recovery_verified": false,
+    "host_bugcheck_root_cause_verified": false,
+    "controller_timeout_root_cause_verified": false,
+    "controller_fix_claimed_as_host_crash_fix": false,
+    "production_revalidation_claimed_by_this_record": false,
+    "event_rows_or_dump_payload_exported": false
+  },
+  "private_finished_metadata_sha256": "feed243c65e999af9c2fc4f24bf309d4a530085d94b9c7ae5e17acf4aae34d47"
+}
