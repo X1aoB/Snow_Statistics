@@ -1,5 +1,11 @@
 # 实施状态
 
+## 公开汇总与下一窗口准备复查（香港 2026-09-27）
+
+公网公开汇总 v2 在只读复查中返回 HTTP 200 和 no-store；统计页、个人站首页也返回 HTTP 200。快照截止 2026-09-26 16:15 UTC，公开投影已经出现一组满足门槛的真实数值：project_snow 在香港日期 2026-09-24 的服务质量组为请求 43、成功 21、成功率约 48.84%。其他日期和指标继续按 pending、suppressed 或 empty 表达，页面不会把隐私策略返回的 null 改成零。私有回执为 runtime/real/operator/public-summary-followup-20260927.json；本次没有发送测试事件或读取原始事件。
+
+collector 私有只读状态仍为 HTTP 200，source=real，accepted 与 aggregate 末端一致，末端没有待同步事件；这不能替代新的 real epoch 或真实闭日计算。storage V4 诊断候选的 84 项合成边界测试再次通过，SOURCE_PENDING 仍为 true，真实执行继续关闭。容量 describe/status 复查显示项目约 59.23 GiB、宿主可用磁盘约 187.6 GiB、vmrun 为零，没有启动 VM 或数仓引擎。下一真实窗口仍必须使用新的签名来源、新 epoch 和 fresh scope，不能复用 9 月 26 日失败 scope。
+
 ## 真实闭日窗口实际收尾（香港 2026-09-26）
 
 首个真实闭日按固定 source `6c60f761fccf09bf8e67a75464714ef0619ff259` 启动了同一 `real-prod-01` storage 窗口。`start-storage`、`observe-cutoff`、`start-realtime` 和 `resume-writer` 均取得完整回执；analysis 使用 4608 MiB，control/compute 保持关闭，Flink 保持停止，writer 在同步前确实恢复为 resumed。对应回执分别为 `runtime/real/operator/storage-v3/37c459ed10b04456aef6f76421d86266/finished.json`、`c8ae3b26a6104a5f86dc592edcd67bee`、`a0ca81f87d464932acd22b5b42895903` 和 `eb7788ea1e53437aa1b4c86f13a6d7cf`。

@@ -1,5 +1,11 @@
 # 完成范围与验收清单
 
+## 2026-09-27 公开汇总与诊断准备复查
+
+- 线上 v2 汇总、统计页和个人站首页只读请求均为 HTTP 200，响应保持 no-store；project_snow 的 2026-09-24 服务质量组已公开请求 43、成功 21、成功率约 48.84%，其余组继续受 D+3 和样本门槛保护。
+- collector source=real 且 accepted 与 aggregate 末端一致，未读取原始事件；storage V4 诊断候选 84 项合成边界测试通过，仍保持 SOURCE_PENDING，未启动 VM。
+- 当前容量复查为项目约 59.23 GiB、宿主可用磁盘约 187.6 GiB、vmrun 运行数为 0；这只是启动前门禁证据，不构成真实闭日、Hive、Doris 或 P95 通过。
+
 ## 2026-09-19 正式接入进展
 
 两站已发布统计告知、同意/撤销和公开统计页；独立统计入口与轻量采集常驻。小吉最新正式`65fa0d0`已将入口移到“设置 → 隐私”并简化说明，具体人工晋级与公网检查见[设置调整版本证据](evidence/production-settings-release-20260919.json)。首次接入、浏览器入库与撤销回归见[正式发布记录](production-rollout.md)及[原接入证据](evidence/production-release-20260919.json)。
