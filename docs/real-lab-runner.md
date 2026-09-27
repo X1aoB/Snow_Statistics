@@ -59,13 +59,17 @@ uv run python tools/real_lab.py --config runtime/real/config/production.json sta
 
 容量依据是 2026-09-11 百万条合成实验中 analysis DataNode 峰值 371.6 MiB、1 GiB VM 可用内存 428 MiB。它支持一次受监测的小配置验证，**不是已经完成 768 MiB 配置的证明，也不是承诺更大输入可用**。本轮应先以合成小样例验收同一配置，再接实际输入；每阶段记录余量、实际两副本与失败收尾。768 MiB analysis 不同时运行 Doris、Flink、Hive 客户端或治理。Hive/私有看板需要单独核验自己的内存窗口。
 
+### 低流量实时存储候选
+
+正式 storage 历史 profile 为 analysis 4608 MiB，本机当前项目占用叠加 256 MiB 启动预留后会越过 63.75 GiB 停止线。新增的 realtime-4096 只设置 analysis 为 4096 MiB，默认 realtime 不变；它仅解决容量门禁，不能视作 Kafka、Flink、Doris 或 writer 在较小内存下已经通过。使用前必须在 VM 全关、真实 epoch 新建且来源已安装的独立窗口中先做引擎健康和小批量合成验证，失败就恢复 4608 或停止，不得降低 64/35/4 硬门槛。
+
 ## 阶段表
 
 | 阶段 | 实际执行位置 | 做什么 |
 |---|---|---|
 | start-offline | Windows → 三台 VM | 对已关机 VM 配置 scale 2/2/1 GiB，启动精确 NameNode/ResourceManager/DataNode/NodeManager |
 | stop-offline | Windows → 三台 VM | 只 stop 上述服务；加 --power-off 后软关闭三台本项目 VM |
-| start-storage | Windows → analysis（real） | 正式模式仅 analysis 4.5 GiB，启动已登记 epoch 的 Kafka/Doris 存储；只有显式合成 control 传输配置才额外启动 control 2 GiB |
+| start-storage | Windows → analysis（real） | 正式模式按已核准 profile 启动 analysis（历史 4.5 GiB，低流量候选 4096 MiB），启动已登记 epoch 的 Kafka/Doris 存储；只有显式合成 control 传输配置才额外启动 control 2 GiB |
 | start-realtime | analysis | 启动同一 epoch 的 Flink 阶段；此前必须已验证存储阶段 |
 | initialize-writer | analysis | 创建独立账号、精确四 Topic/四物理表后实际读回空库、空状态及 collector 身份，登记不可变 writer |
 | submit-writer | analysis | 从冻结 JAR 实际提交首个 Flink 作业并读回 JobID/状态，登记本次受控提交参数 |

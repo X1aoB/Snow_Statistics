@@ -55,6 +55,11 @@ def test_1792_candidate_is_separate_and_cannot_reconfigure_a_running_vm(lab, tmp
     assert vmx.read_text() == original
 
 
+def test_realtime_4096_storage_candidate_is_explicit(lab):
+    assert lab.PROFILES["realtime-4096"] == {"snow-analysis": 4096}
+    assert lab.validate_memory("snow-analysis", 4096) == 4096
+
+
 def test_small_batch_headroom_cannot_be_spent_as_vm_memory(lab, monkeypatch):
     monkeypatch.setattr(lab, "MAX_PROJECT_BYTES", 1023 * 1024**2)
     monkeypatch.setattr(lab, "run", lambda *args: str((768 + lab.MIN_HOST_AVAILABLE_MIB + 256) * 1024))

@@ -39,6 +39,8 @@ sudo bash deploy/prepare-state.sh
 
 `deploy/start-lite.sh` 和 systemd 单元同时读取镜像锁及本地 `.env`，使 Compose CPU/内存变量与容器环境一致。`tools/check_lite_compose.py` 已实际解析公开示例，确认 off、256 MiB、0.25 CPU、512 MiB，不读取私人 `.env` 或启动容器。挂载依赖、回环端口、只读根目录及进程限制仍保持原设置。
 
+2026-09-27 容量复查显示当前项目实占 63,597,863,100 bytes；历史 4608 MiB storage 加 256 MiB 预留会超出 63.75 GiB 停止线约 247 MiB。新增 realtime-4096 作为显式低流量候选后，静态余量约 276 MiB；它尚未经过真实引擎验证，不改变默认 profile，也不降低宿主 35 GiB 磁盘和 4 GiB RAM 门槛。私有容量回执为 runtime/real/operator/storage-memory-capacity-candidate-20260927.json。
+
 ## 本地实验的资源取舍
 
 [10 万条与百万条 Spark/YARN](scale.md)均已在 2/2/1 GiB 完成。百万条应用时长 115.023 秒，累计磁盘 spill 约 423.17 MiB；NodeManager 容器（包含 AM / executor）记录的生命周期内存峰值约 1327.33 MiB。计算节点仍需容纳 DataNode 与操作系统，因此本轮保留 2 GiB，不再压缩。
