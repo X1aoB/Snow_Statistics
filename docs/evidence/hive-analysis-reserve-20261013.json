@@ -1,0 +1,155 @@
+{
+  "actual_vm_memory_mib": {
+    "snow-analysis": 768,
+    "snow-compute": 1792,
+    "snow-control": 2048
+  },
+  "bounded_observations": {
+    "completed_samples": 16,
+    "first_started_at": "2026-10-13T13:34:16.805911+00:00",
+    "full_continuous_peak_or_global_oom_absence_claimed": false,
+    "largest_sample_start_gap_seconds": 8.304832,
+    "last_finished_at": "2026-10-13T13:36:15.334622+00:00",
+    "nodes": {
+      "snow-analysis": {
+        "available_ram_mib_max": 175,
+        "available_ram_mib_min": 127,
+        "continuous_peak_claimed": false,
+        "disk_free_mib_min": 2143,
+        "sampled_containers_with_nonzero_oom": 0,
+        "sampled_containers_with_nonzero_oom_kill": 0,
+        "samples": 17
+      },
+      "snow-compute": {
+        "available_ram_mib_max": 1204,
+        "available_ram_mib_min": 1176,
+        "continuous_peak_claimed": false,
+        "disk_free_mib_min": 5045,
+        "sampled_containers_with_nonzero_oom": 0,
+        "sampled_containers_with_nonzero_oom_kill": 0,
+        "samples": 17
+      },
+      "snow-control": {
+        "available_ram_mib_max": 1043,
+        "available_ram_mib_min": 602,
+        "continuous_peak_claimed": false,
+        "disk_free_mib_min": 2463,
+        "sampled_containers_with_nonzero_oom": 0,
+        "sampled_containers_with_nonzero_oom_kill": 0,
+        "samples": 17
+      }
+    },
+    "samples": 17
+  },
+  "checked_at": "2026-10-13T13:47:29.919229+00:00",
+  "control_spark_cleanup_subrequests": [
+    {
+      "action": "cleanup",
+      "complete": true,
+      "driver_elapsed_seconds": 33.936,
+      "driver_returncode": 0,
+      "evidence": {
+        "path": "runtime/real/operator/fixture-v15-diagnostics/2111db79b32908d92cbc48ff3cfc71510c59faf080efdbf3ba3a44affa0b5a04/1/windows-worker-2c4b8cc4ce9c4274a03f31087a518fb6/worker.json",
+        "sha256": "b1376ec47e1e6e816974894e9999ac0b07390708c2e45e7aef0634d198705881"
+      },
+      "sequence": 1
+    },
+    {
+      "action": "cleanup",
+      "complete": true,
+      "driver_elapsed_seconds": 33.832,
+      "driver_returncode": 0,
+      "evidence": {
+        "path": "runtime/real/operator/fixture-v15-diagnostics/2111db79b32908d92cbc48ff3cfc71510c59faf080efdbf3ba3a44affa0b5a04/2/windows-worker-851270dc133e428ebf5a39b6b9d62df6/worker.json",
+        "sha256": "397f55d9b49cb7b39e510af5dfd92997269f2b30313a895749717eebf0b137dc"
+      },
+      "sequence": 2
+    },
+    {
+      "action": "cleanup",
+      "complete": true,
+      "driver_elapsed_seconds": 31.905,
+      "driver_returncode": 0,
+      "evidence": {
+        "path": "runtime/real/operator/fixture-v15-diagnostics/2111db79b32908d92cbc48ff3cfc71510c59faf080efdbf3ba3a44affa0b5a04/3/windows-worker-dbd862dafda04ecba640d77742a51cbd/worker.json",
+        "sha256": "b4489f1b83d0f362e673af6c1586ad68f65d17b130b881654f81c4db76b2cfa5"
+      },
+      "sequence": 3
+    }
+  ],
+  "controller": "private-v15",
+  "credentials_included": false,
+  "diagnostic_tail_contents_read": false,
+  "exporter_ssh_connected": false,
+  "exporter_vm_started": false,
+  "hive_enter": {
+    "accepted": true,
+    "evidence": {
+      "path": "runtime/real/operator/fixture-lake-01-hive-enter-b9190072861c4c2eb32ffe8ef55b4f6c-windows-v15-resources.json",
+      "sha256": "ee23834841489f0c2ab6bafca4d6c4de5941b0770955d4cb77d6efddb08247a6"
+    }
+  },
+  "hive_register": {
+    "accepted": false,
+    "available_ram_mib": 127,
+    "cause": "Resource monitor interrupted the coordinator when analysis available RAM fell below its reserve.",
+    "evidence": {
+      "path": "runtime/real/operator/fixture-lake-01-hive-register-8f93be415c154a1883453f9b4036b8b8-windows-v15-resources.json",
+      "sha256": "029988b69ac4d68a1c183e41cf000183f94fa3eb6a4ef39c969a735403fcbe06"
+    },
+    "failure_type": "KeyboardInterrupt",
+    "finished_at": "2026-10-13T13:36:15.334622+00:00",
+    "minimum_ram_mib": 128,
+    "node": "snow-analysis",
+    "operation": "guest-gates",
+    "sampled_at": "2026-10-13T13:36:10.455426+00:00"
+  },
+  "input_origin": "synthetic fixtures",
+  "installed_source_evidence": "docs/evidence/signed-source-install-7173a00-20261013.json",
+  "limits": [
+    "Three successful cleanup child processes do not prove the entire hive-register phase passed.",
+    "Sampled zero OOM counters do not prove no unsampled OOM or a strict process/guest peak.",
+    "V14 Snappy failure and old/new probe remain separate evidence; V15 was interrupted by reserve admission.",
+    "The planned analysis increase has not been applied or accepted by this record.",
+    "The original synthetic aggregate expiry remains 2026-12-14T00:00:00+08:00; no raw renewal.",
+    "No frozen writer, dependency, existing recovery metadata, production privacy or DNT policy change is claimed.",
+    "No Hive independent verify, Iceberg, real closed-day or production P95 success is claimed."
+  ],
+  "next_capacity_candidate": {
+    "actual_vmx_changed_at_this_evidence_cutoff": false,
+    "additional_mib": 256,
+    "analysis_offline_memory_mib_from": 768,
+    "analysis_offline_memory_mib_to": 1024,
+    "compute_memory_mib": 1792,
+    "control_memory_mib": 2048,
+    "host_available_ram_min_gib": 4,
+    "host_free_disk_min_gib": 35,
+    "larger_profile_engine_verified": false,
+    "project_budget_gib": 72,
+    "reserve_threshold_lowered": false
+  },
+  "profile": "real-small-1792",
+  "row_data_included": false,
+  "schema_version": 1,
+  "source_commit": "7173a0011ae60d654eae1e0210917029c31788d8",
+  "source_files_checked_per_node": 444,
+  "stopping": {
+    "actual_vm_state": {
+      "snow-analysis": false,
+      "snow-compute": false,
+      "snow-control": false
+    },
+    "all_vms_stopped": true,
+    "data_deleted": false,
+    "lake_cleanup_uncertain": false,
+    "pending_transitions": [],
+    "stop_complete": true
+  },
+  "subsequent_root_readback": {
+    "cold_project_gib_approx": 59.52,
+    "evidence_type": "coordinator-reported independent actual host readback",
+    "exporter_repeated_host_probe": false,
+    "host_free_disk_gib_approx": 190.83,
+    "vmrun_running_count": 0
+  }
+}

@@ -99,8 +99,8 @@ def test_1792_profile_is_explicit_and_does_not_change_default_or_hard_gates():
     default = small.description("start-offline")
     value = small.description("start-offline", profile="real-small-1792")
     assert default["profile"] == "real-small-1920" and default["memory_mib"]["snow-compute"] == 1920
-    assert value["memory_mib"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768}
-    assert value["cold_vm_backing_mib"] == 4608 and value["cold_write_budget_mib"] == 128
+    assert value["memory_mib"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 1024}
+    assert value["cold_vm_backing_mib"] == 4864 and value["cold_write_budget_mib"] == 128
     for key in ("start_reserve_mib", "project_stop_bytes", "project_hard_bytes", "host_disk_min_bytes",
                 "host_ram_min_mib", "guest_ram_min_mib", "guest_disk_min_mib", "new_permit_implied"):
         assert value[key] == default[key]
@@ -110,31 +110,35 @@ def test_1792_profile_is_explicit_and_does_not_change_default_or_hard_gates():
 
 def test_cold_backing_and_write_budget_is_checked_before_configure_or_boot(tmp_path):
     runner = FixtureRunner(tmp_path, profile="real-small-1792")
-    last_accepted = small.STOP_BYTES - (4608 + 128) * small.MIB
+    last_accepted = small.STOP_BYTES - (4864 + 128) * small.MIB
     runner.host = lambda: host() | {"project_bytes": last_accepted + 1}
     with pytest.raises(RuntimeError, match="128 MiB write budget"):
         runner.start()
     assert runner.calls == [] and not runner.owned_nodes
     allowed = small.check_cold_start(host() | {"project_bytes": last_accepted}, runner.profile)
     assert allowed["projected_bytes"] == small.STOP_BYTES
+    # The old 768 MiB analysis budget must no longer admit the revised profile.
+    old_boundary = last_accepted + 256 * small.MIB
     with pytest.raises(RuntimeError, match="128 MiB write budget"):
-        small.check_cold_start(host() | {"project_bytes": last_accepted}, "real-small-1920")
+        small.check_cold_start(host() | {"project_bytes": old_boundary}, runner.profile)
+    assert small.check_cold_start(host() | {"project_bytes": last_accepted}, "real-small-1920")["projected_bytes"] < small.STOP_BYTES
 
 
-def test_candidate_vm_commands_use_selected_memory_and_original_start_reserve(tmp_path, monkeypatch):
+@pytest.mark.parametrize("node,memory", [("snow-compute", 1792), ("snow-analysis", 1024)])
+def test_candidate_vm_commands_use_selected_memory_and_original_start_reserve(tmp_path, monkeypatch, node, memory):
     runner = FixtureRunner(tmp_path, profile="real-small-1792")
     reservations = []
     monkeypatch.setattr(small, "check_host", lambda sample, reserve=0: reservations.append(reserve))
-    small.SmallRunner.vm_command(runner, "configure", "snow-compute")
-    small.SmallRunner.vm_command(runner, "start", "snow-compute")
+    small.SmallRunner.vm_command(runner, "configure", node)
+    small.SmallRunner.vm_command(runner, "start", node)
     assert runner.calls[0][1][-2:] == ["--profile", "real-small-1792"]
-    assert runner.calls[1][1] == [sys.executable, "tools/vmware_lab.py", "status", "--reserve-mib", "2048"]
+    assert runner.calls[1][1] == [sys.executable, "tools/vmware_lab.py", "status", "--reserve-mib", str(memory + 256)]
     assert runner.calls[1][2] == {"timeout": 90}
     assert runner.calls[2][1] == [str(runner.vm.VMWARE / "vmrun.exe"), "-T", "ws", "start",
-                                  str(runner.vm.RUNTIME / "snow-compute/snow-compute.vmx"), "nogui"]
+                                  str(runner.vm.RUNTIME / node / (node + ".vmx")), "nogui"]
     assert runner.calls[2][2]["vm_control"]
-    assert reservations == [1792 + 256]
-    assert "--profile real-small-1792" in runner.ssh("snow-compute", "probe")[-1]
+    assert reservations == [memory + 256]
+    assert "--profile real-small-1792" in runner.ssh(node, "probe")[-1]
 
 
 def test_vm_soft_stop_bypasses_resource_admission_and_uses_only_direct_control(tmp_path):

@@ -13,6 +13,7 @@ def lab(monkeypatch):
 @pytest.mark.parametrize("profile,expected_memory,expected_total", [
     ("hive-only", (2048, 1024, 1536), 4608),
     ("real-small-1920", (2048, 1920, 768), 4736),
+    ("real-small-1792", (2048, 1792, 1024), 4864),
 ])
 def test_resource_profile_preserves_existing_data_disks(lab, monkeypatch, tmp_path,
                                                        profile, expected_memory, expected_total):

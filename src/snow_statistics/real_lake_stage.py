@@ -110,8 +110,10 @@ class StageDocker:
 def checked_guest_total(node, total):
     # MemTotal excludes guest/kernel reservations. The 1792 MiB allocation is
     # a separate compute-only candidate band, not a lower floor for control.
+    # Analysis now has an explicit 1024 MiB option; retain the distinct 768 MiB
+    # band for the old profile/evidence, without accepting intermediate sizes.
     bands = {"snow-control": ((1800, 2048),), "snow-compute": ((1664, 1792), (1800, 2048)),
-             "snow-analysis": ((640, 768),)}
+             "snow-analysis": ((640, 768), (896, 1024))}
     if (node not in bands or type(total) is not int
             or not any(minimum * 1024 <= total <= maximum * 1024 for minimum, maximum in bands[node])):
         raise ValueError("Use the explicitly selected small offline VM sizes; this tool never reconfigures a VM")

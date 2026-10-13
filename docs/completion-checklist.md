@@ -1,6 +1,16 @@
 # 完成范围与验收清单
 
-## 当前继续入口（2026-10-13晚间 V14 诊断后）
+## 当前继续入口（2026-10-13晚间 V15 资源中断后）
+
+- V15 登记被 analysis 实际可用 127 MiB 触及原 128 MiB 保留线中断；三次 cleanup 子请求通过不等于登记通过。自动收尾已实际全 VM 停止、数据保留，见[资源中断](evidence/hive-analysis-reserve-20261013.json)。
+- 用户授权范围内的最小调整已准备：`real-small-1792` 仅 analysis 768→1024 MiB，增加 256 MiB 冷启动预算，不降低原监控门槛。完整 Windows 1055 passed / 23 skipped，相关 208 项检查及独立审查通过；新配置仍待签名/CI/安装及实际 VMX configure/readback，之后重跑引擎。不覆盖旧 768 MiB 结果，不修改数据或到期时间。
+
+## V15 实测开始时点（历史）
+
+- `7173a00` 修复已签名/推送，两轮 CI 全部步骤通过；三节点各 444 文件完整安装及独立回读通过，原配置、12 冻结 writer、依赖与恢复元数据保持，见[来源与 CI](evidence/signed-source-7173a00-20261013.json)和[三节点安装](evidence/signed-source-install-7173a00-20261013.json)。候选未签名/未安装描述为历史。
+- V15 现场原状态、聚合期限及未使用 Lake 范围检查通过，新 r6 worker 和诊断程序已精确上传回读。实际 Hive 阶段切换通过，登记运行中；后续登记、读回与 Iceberg 仍须实际结果，不能以安装或小 Snappy 往返代替。
+
+## V14 诊断后入口（2026-10-13晚间，历史）
 
 - V13 诊断包装器的默认 SSH 工作目录缺陷已保留为失败；V14 路径修正通过实际四项入口预检，阶段切换及四次 Spark 清理通过。实际登记仍失败，但已取得 Snappy 本地解压库在 `/tmp` 无法映射的具体异常；失败后实际三 VM 全关、数据保留。锁定镜像 V2 小合成对照已实际通过：旧配置复现错误，新配置完成 native 压缩/解压往返，普通 `/tmp` 保留 noexec；容器清理与 VM 全停实际回读通过，见[原生库对照](evidence/hive-snappy-native-20261013.json)。
 - Hive 专用 16 MiB 原生库目录及固定 control 发布血缘候选已合并工作区。完整 Windows Python **1042 passed / 23 skipped**、浏览器 23 项、契约/Ruff/diff 检查通过；12 冻结 writer 不变，独立审查无 P1/P2。候选待签名、CI、完整安装与实际引擎重跑，见[发布血缘候选](evidence/real-publish-lineage-candidate-20261013.json)。

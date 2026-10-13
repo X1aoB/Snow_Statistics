@@ -43,7 +43,7 @@ from .real_lab import (
 PROFILE = "real-small-1920"
 PROFILES = {
     PROFILE: {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768},
-    "real-small-1792": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768},
+    "real-small-1792": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 1024},
 }
 MEMORY = PROFILES[PROFILE]
 PHASES = ("status", "start-offline", "stop-offline", "land", "prepare", "cleanup", "permit",

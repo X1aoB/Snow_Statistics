@@ -161,7 +161,24 @@ def test_1792_compute_candidate_preserves_guest_floor_and_existing_container_ide
         stage.checked_snapshot("snow-compute", docker)
 
 
+@pytest.mark.parametrize("total", [640, 768, 896, 940, 1024])
+def test_analysis_explicit_allocation_keeps_guest_floor_and_datanode_identity(prepared, total):
+    config, roots, *_ = prepared
+    docker = Docker("snow-analysis")
+    docker.total = total * 1024  # Synthetic kernel-visible bands, not an actual guest reading.
+    docker.available = 128 * 1024
+    original = docker.snapshot("snow-analysis")
+    stage.reserve_stage(roots["operator"], config, RUN, ATTEMPT, "snow-analysis", docker=docker)
+    assert stage.SERVICES["snow-analysis"] == {"datanode": 768}
+    assert docker.actions == [] and docker.snapshot("snow-analysis") == original
+    docker.available = 127 * 1024
+    with pytest.raises(ValueError, match="128 MiB"):
+        stage.checked_snapshot("snow-analysis", docker)
+
+
 @pytest.mark.parametrize("node,total", [("snow-control", 1712), ("snow-analysis", 1712),
+                                       ("snow-analysis", 639), ("snow-analysis", 769),
+                                       ("snow-analysis", 895), ("snow-analysis", 1025),
                                        ("snow-compute", 1663), ("snow-compute", 1793),
                                        ("snow-compute", 1799), ("snow-compute", 2049)])
 def test_compute_candidate_does_not_lower_other_guests_or_accept_unknown_bands(node, total):

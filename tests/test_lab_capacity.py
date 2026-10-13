@@ -45,17 +45,28 @@ def test_reduced_memory_is_confined_to_explicit_analysis_option(lab):
             lab.validate_memory(node, memory)
 
 
-def test_1792_candidate_is_separate_and_cannot_reconfigure_a_running_vm(lab, tmp_path, monkeypatch):
+@pytest.mark.parametrize("node,previous", [("snow-compute", 1920), ("snow-analysis", 768)])
+def test_1792_candidate_is_separate_and_cannot_reconfigure_a_running_vm(lab, tmp_path, monkeypatch, node, previous):
     assert lab.PROFILES["real-small-1920"]["snow-compute"] == 1920
-    assert lab.PROFILES["real-small-1792"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768}
+    assert lab.PROFILES["real-small-1792"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 1024}
     assert lab.validate_memory("snow-compute", 1792) == 1792
-    vmx = tmp_path / "snow-compute.vmx"
-    original = 'memsize = "1920"\n'
+    vmx = tmp_path / (node + ".vmx")
+    original = f'memsize = "{previous}"\n'
     vmx.write_text(original)
     monkeypatch.setattr(lab, "run", lambda *args: str(vmx))
     with pytest.raises(RuntimeError, match="completely"):
-        lab.configure_memory("synthetic-vmrun", vmx, "snow-compute", "real-small-1792")
+        lab.configure_memory("synthetic-vmrun", vmx, node, "real-small-1792")
     assert vmx.read_text() == original
+
+
+def test_small_1792_capacity_manifest_matches_both_entry_points(lab):
+    from snow_statistics import real_offline_small as small
+    resources = lab.LIMITS["real_data"]["small_batch_1792_candidate"]
+    memory = resources["vm_memory_mib"]
+    assert memory == lab.PROFILES["real-small-1792"] == small.profile_memory("real-small-1792")
+    assert sum(memory.values()) == resources["cold_vm_backing_mib"] == 4864
+    assert resources["guest_min_available_mib"] == 128
+    assert resources["guest_min_disk_free_mib"] == 384
 
 
 def test_realtime_4096_storage_candidate_is_explicit(lab):

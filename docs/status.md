@@ -1,6 +1,18 @@
 # 实施状态
 
-## 最新进展：Hive 原生解压故障已定位，修复与发布血缘候选通过回归（香港2026-10-13晚间）
+## 最新整改：V15 触及分析节点保留线，增加 256 MiB 配置（香港2026-10-13晚间）
+
+V15 阶段切换通过，但登记阶段被资源监控中断：analysis 可用内存为 127 MiB，低于原 128 MiB 门槛。三个实际 Spark cleanup 子请求退出 0；它们不是登记通过，不能据此宣布新 Snappy 修复已完成完整 Hive 验收。失败后实际自动停止三 VM，数据保留、无待处理切换。17 次有界采样及触发点、停止结果见[资源中断证据](evidence/hive-analysis-reserve-20261013.json)；样本内未观测到 OOM，不宣称全程峰值或全局没有 OOM。
+
+按用户已有扩容授权，仅将 `real-small-1792` 的 analysis 配置 768→1024 MiB，control 2048、compute 1792 不变；冷启动 backing 4608→4864 MiB。原 128 MiB 来宾保留、384 MiB 来宾空闲磁盘、72/71.75 GiB 项目、35 GiB 宿主磁盘及 4 GiB 宿主 RAM 门槛均不变。完整 Windows **1055 passed / 23 skipped**、Ruff、v1/v2 契约与 diff 检查通过；208 项相关测试和独立审查通过。当前仅源码配置就绪，VMX 未修改，新的签名、CI、安装、实际 configure/readback 和引擎验收仍待完成；不改旧 V15 的 768 MiB 证据，详见[资源操作说明](resources.md)。
+
+## 最新进展：修复已签名、CI 与三节点安装回读通过（香港2026-10-13晚间）
+
+用户解锁后，12 文件修复提交签名为 `7173a0011ae60d654eae1e0210917029c31788d8` 并推送；push 和 PR 两轮 Linux CI 全部作业及步骤通过。新签名归档有 444 个源码文件，与完整 Git 树一致；analysis/control/compute 均实际完成固定 dc48 基线的 prepare、install 和独立完整 readback。原配置、12 个冻结 writer、依赖和 analysis 的保留元数据不变，安装没有启动容器或安装依赖；全部节点软关后 vmrun 为 0。见[新来源与 CI](evidence/signed-source-7173a00-20261013.json)及[三节点完整安装](evidence/signed-source-install-7173a00-20261013.json)。此前候选“未签名/未安装”描述保留其历史时点。
+
+V15 新 r6 基线和 lake20261013 的本地/登记/HDFS 未使用范围已经实际检查，03/04 原状态及香港12月14日聚合期限保持，三节点私有 worker 与 control 诊断 wrapper 上传后精确回读通过。V15 实际 Hive 阶段切换已通过，登记运行中；尚不判登记、独立读回或 Iceberg 完成。以下 V14 诊断和小原生库对照是保留的前序证据。
+
+## V14 诊断与修复验证（香港2026-10-13晚间）
 
 V13 私有诊断包装器曾错误使用 SSH 默认工作目录定位项目，worker 和 cancel 都在节点门禁前失败，未取得 V12 的 Spark 日志；该轮实际收尾全 VM 关闭、数据保留。V14 改为按脚本路径定位，实际默认 SSH 工作目录的四项预检复现旧缺陷并验证新 worker/cancel 路径门禁，不将预检误作引擎成功。
 
