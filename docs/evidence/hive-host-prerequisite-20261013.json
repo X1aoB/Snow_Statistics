@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "source_commit": "2434ab6bac6710becd81ed4f8714536d0b5a27c1",
+  "input_origin": "synthetic fixtures",
+  "profile": "real-small-1792",
+  "memory_mib": {
+    "snow-control": 2048,
+    "snow-compute": 1792,
+    "snow-analysis": 1024
+  },
+  "phases": [
+    {
+      "phase": "hive-enter",
+      "actual_process_exit_code": 0,
+      "complete": true,
+      "evidence": {
+        "path": "runtime/real/operator/fixture-lake-01-hive-enter-a3f1b5480a074ad2bf6e1a490014f1b6-windows-v16-resources.json",
+        "sha256": "e0b52250230087b12a2315c5a01d361d7e6bbe3816e4872428f2aeafe6f99094"
+      },
+      "resource_samples": 6,
+      "failure_type": null
+    },
+    {
+      "phase": "hive-register",
+      "actual_process_exit_code": 1,
+      "complete": false,
+      "evidence": {
+        "path": "runtime/real/operator/fixture-lake-01-hive-register-ea6324cd6562435d86b3d41e64c28dd7-windows-v16-resources.json",
+        "sha256": "0e6822b0828ec6c456cf1959206599092df2cbb4d13aa42ffea115cc322f56ed"
+      },
+      "resource_samples": 0,
+      "failure_type": "NodeCommandFailure",
+      "registration_driver_entered": false,
+      "failure_at": "host prerequisite check",
+      "triggering_resource_sample_available": false,
+      "exact_constraint_identified": false,
+      "all_vms_stopped": true,
+      "data_deleted": false
+    }
+  ],
+  "hive_registration_accepted": false,
+  "hive_readback_accepted": false,
+  "iceberg_accepted": false,
+  "kafka_engine_tested": false,
+  "retention_extended": false,
+  "limits": [
+    "Enter success does not establish registration or readback.",
+    "No triggering sample was retained; no exact host constraint is claimed.",
+    "The inputs are isolated synthetic aggregates, not production events."
+  ]
+}

@@ -990,6 +990,62 @@ def test_remote_command_configuration_hash_and_fixed_routing(tmp_path):
         runner.ssh("production", "guard")
 
 
+@pytest.mark.parametrize("node", small.NODES)
+@pytest.mark.parametrize("operation", ["probe", "guard", "input"])
+def test_only_analysis_pause_guard_receives_longer_finite_window(tmp_path, node, operation):
+    runner = FixtureRunner(tmp_path)
+    runner.probe = small.SmallRunner.probe.__get__(runner)
+    expected_command = runner.ssh(node, operation)
+    calls = []
+    def run(command, **options):
+        calls.append((command, options))
+        return b'{"synthetic_metadata":true}'
+    runner.run = run
+    assert runner.probe(node, operation, monitored=True) == {"synthetic_metadata": True}
+    assert calls == [(expected_command, dict(capture=True,
+        timeout=70 if (node, operation) == ("snow-analysis", "guard") else 20, monitored=True))]
+
+
+def test_analysis_guard_timeout_still_terminates_owned_transport_and_fails(tmp_path, monkeypatch):
+    runner = FixtureRunner(tmp_path)
+    runner.probe = small.SmallRunner.probe.__get__(runner)
+    runner.run = small.SmallRunner.run.__get__(runner)
+    stopped, timeouts = [], []
+    class Process:
+        pid, returncode = 1234, None
+        def __init__(self, command, **kwargs):
+            self.command = command
+        def communicate(self, *, input, timeout):
+            assert input is None
+            timeouts.append(timeout)
+            raise subprocess.TimeoutExpired(self.command, timeout)
+        def poll(self):
+            return self.returncode
+    def stop(process):
+        process.returncode = -15
+        stopped.append(process)
+    monkeypatch.setattr(small.subprocess, "Popen", Process)
+    monkeypatch.setattr(small, "stop_tree", stop)
+    with pytest.raises(RuntimeError, match="timed out") as caught:
+        runner.probe("snow-analysis", "guard")
+    assert isinstance(caught.value.__cause__, subprocess.TimeoutExpired)
+    assert timeouts == [70] and len(stopped) == 1 and stopped[0].returncode == -15
+
+
+@pytest.mark.parametrize("code,exception", [(1, ValueError), (255, small.NodeCommandFailure)])
+def test_analysis_guard_failure_does_not_become_success_or_timeout_retry(tmp_path, code, exception):
+    runner = FixtureRunner(tmp_path)
+    runner.probe = small.SmallRunner.probe.__get__(runner)
+    calls = []
+    def run(command, **options):
+        calls.append(options)
+        raise small.NodeCommandFailure(code)
+    runner.run = run
+    with pytest.raises(exception):
+        runner.probe("snow-analysis", "guard")
+    assert calls == [dict(capture=True, timeout=70, monitored=False)]
+
+
 def test_node_heartbeat_loss_stops_frozen_process_group(tmp_path, monkeypatch):
     stopped = []
     class Process:

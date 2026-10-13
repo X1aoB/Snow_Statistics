@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "evidence_scope": "Pre-engine guard timeout and subsequent actual bounded metadata verification",
+  "source_commit": "2434ab6bac6710becd81ed4f8714536d0b5a27c1",
+  "node": "snow-analysis",
+  "old_guard_timeout_seconds": 20,
+  "actual_success_elapsed_seconds": 26.706,
+  "diagnostic_outer_timeout_seconds": 65,
+  "proposed_analysis_guard_timeout_seconds": 70,
+  "unchanged_other_probe_timeout_seconds": 20,
+  "actual_guard_success": true,
+  "writer_paused": true,
+  "actual_engine_objects_stopped": true,
+  "checkpoint_metadata_validated": true,
+  "read_permission": false,
+  "v17": {
+    "phase": "hive-enter",
+    "actual_exit_code": 1,
+    "complete": false,
+    "engine_transition_invoked": false,
+    "automatic_vm_stop_claimed": false,
+    "resource_samples": 0
+  },
+  "separate_root_cleanup": {
+    "public_stop_offline_exit_code": 0,
+    "data_deleted": false,
+    "independently_read_back_running_vms": 0
+  },
+  "tests": {
+    "affected_suite_passed": 193,
+    "skipped": 4,
+    "new_cases": 12,
+    "ruff": "passed",
+    "independent_review": "passed"
+  },
+  "checkpoint_payload_read": false,
+  "guard_runs_existing_registered_copy_expiry_check": true,
+  "source_changes_installed": false,
+  "hive_registration_accepted": false,
+  "iceberg_accepted": false,
+  "evidence": [
+    {
+      "path": "runtime/real/operator/paused-guard-timing-20261013.json",
+      "sha256": "9af3aec1dcf6183ed6e7a50a31885db8add0bef54da87e5a48dd920279ad631b"
+    },
+    {
+      "path": "runtime/real/operator/fixture-lake-01-hive-enter-5fb6d84da6144d009a710a4bac881b1e-windows-v17-resources.json",
+      "sha256": "17e6d3686279ece79675f215f538e3b5666e2b153ea5845bda5dfe8c6462d392"
+    },
+    {
+      "path": "runtime/real/operator/measure-paused-guard-20261013.sh",
+      "sha256": "089ed37d566c7fdc2065003e22073693ea0ed1ef87a807c7a06f91e82a7e4b96"
+    }
+  ],
+  "limits": [
+    "The timing invocation is not Hive enter/register acceptance.",
+    "The V17 controller failed before owning cleanup; root separately stopped its known offline deployment.",
+    "All original pause, source, storage, expiry and failed-state validation remains required."
+  ]
+}

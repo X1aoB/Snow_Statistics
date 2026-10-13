@@ -1,0 +1,84 @@
+{
+  "archive": "runtime/real/operator/source-2434ab6bac67-20261013.tar.gz",
+  "archive_files": 447,
+  "archive_matches_commit_tree": true,
+  "archive_sha256": "3a84074fdb7ca839f976db98dc71375c28ce73046f497bb41779acaf8c6fc37c",
+  "archive_signature_verified": true,
+  "ci_runs": [
+    {
+      "conclusion": "success",
+      "event": "push",
+      "id": 38408122590,
+      "jobs": [
+        {
+          "all_steps_successful": true,
+          "conclusion": "success",
+          "id": 115333008433,
+          "name": "python-browser",
+          "steps_checked": 16
+        },
+        {
+          "all_steps_successful": true,
+          "conclusion": "success",
+          "id": 115333008948,
+          "name": "flink-build",
+          "steps_checked": 11
+        }
+      ],
+      "url": "https://github.com/X1aoB/Snow_Statistics/actions/runs/38408122590"
+    },
+    {
+      "conclusion": "success",
+      "event": "pull_request",
+      "id": 38408124913,
+      "jobs": [
+        {
+          "all_steps_successful": true,
+          "conclusion": "success",
+          "id": 115333016245,
+          "name": "python-browser",
+          "steps_checked": 16
+        },
+        {
+          "all_steps_successful": true,
+          "conclusion": "success",
+          "id": 115333016597,
+          "name": "flink-build",
+          "steps_checked": 11
+        }
+      ],
+      "url": "https://github.com/X1aoB/Snow_Statistics/actions/runs/38408124913"
+    }
+  ],
+  "dependencies_changed": false,
+  "evidence": [
+    {
+      "path": "runtime/real/operator/source-release-2434ab6bac67/release.json",
+      "sha256": "8c180014d6f4c61633072ad9923533ec88045b91a45ab46a3be603aafb3e1942"
+    },
+    {
+      "path": "runtime/real/operator/source-release-2434ab6bac67/generation-validation.json",
+      "sha256": "33545bccf4612001be85b776442120d6bb83d35d9db77e057cefdeea701c7919"
+    },
+    {
+      "path": "runtime/real/operator/ci-2434ab6-20261013.json",
+      "sha256": "8f1a158c032140971b8ecfd63fc5d77fdc3e4c5358a14f48bf47c93f001f64d1"
+    }
+  ],
+  "frozen_writer_files_changed": false,
+  "gpg_commit_verified": true,
+  "limits": [
+    "Source signing, CI and source installation do not prove Hive/Iceberg engine acceptance.",
+    "This record does not claim a closed-business-day result or current VM power state."
+  ],
+  "new_archive_installed_in_guests": true,
+  "schema_version": 1,
+  "signature": "runtime/real/operator/source-2434ab6bac67-20261013.tar.gz.asc",
+  "signature_sha256": "836ccbbf2898296e25975170adce01962f23816f5a31e1c42382f14ab56833a6",
+  "signed_attribute_crlf_paths": [
+    "tools/maven_build.ps1"
+  ],
+  "signer_fingerprint": "381D4D513D2E995D4D2BAF87DE65B83570F1955C",
+  "source_sha": "2434ab6bac6710becd81ed4f8714536d0b5a27c1",
+  "verified_at": "2026-10-13T14:06:45.957827+00:00"
+}

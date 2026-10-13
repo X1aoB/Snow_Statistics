@@ -1009,8 +1009,11 @@ class SmallRunner(Runner):
         return ["scp", *ssh[1:-2], *([str(local), target] if direction == "--upload" else [target, str(local)])]
 
     def probe(self, node, operation="probe", *, monitored=False):
+        # The analysis pause guard verifies preserved epochs and their actual
+        # Docker storage; ordinary resource probes keep their shorter window.
+        timeout = 70 if node == "snow-analysis" and operation == "guard" else 20
         try:
-            return json.loads(self.run(self.ssh(node, operation), capture=True, timeout=20, monitored=monitored))
+            return json.loads(self.run(self.ssh(node, operation), capture=True, timeout=timeout, monitored=monitored))
         except NodeCommandFailure as error:
             if error.returncode != 255:
                 raise ValueError("Remote authority/probe rejected the operation; it is not a cold-boot SSH retry") from error

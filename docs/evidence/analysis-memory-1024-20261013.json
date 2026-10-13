@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "evidence_scope": "VM memory configuration and one subsequent guest resource sample; metadata only",
+  "source_commit": "2434ab6bac6710becd81ed4f8714536d0b5a27c1",
+  "profile": "real-small-1792",
+  "source_installation": {
+    "nodes": ["snow-analysis", "snow-control", "snow-compute"],
+    "files_read_back_per_node": 447,
+    "frozen_writer_files_unchanged": 12,
+    "dependencies_changed": false,
+    "configuration_and_preserved_recovery_metadata_unchanged_during_source_install": true
+  },
+  "configuration": {
+    "checked_at": "2026-10-13T14:06:32.459056+00:00",
+    "all_vms_stopped_at_configuration": true,
+    "before_memory_mib": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 768},
+    "after_memory_mib": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 1024},
+    "analysis_increase_mib": 256,
+    "non_memory_configuration_unchanged": true,
+    "virtual_disk_or_snapshot_operation": false,
+    "engines_started_by_configuration": false,
+    "capacity_configuration_read_back": true
+  },
+  "guest_sample": {
+    "observed_at": "2026-10-13T14:11:07.294387+00:00",
+    "node": "snow-analysis",
+    "declared_allocation_mib": 1024,
+    "memtotal_kib": 983516,
+    "available_ram_mib": 385,
+    "accepted_memtotal_band_mib": [896, 1024],
+    "unchanged_available_floor_mib": 128,
+    "samples": 1,
+    "kernel_memory_band_confirmed": true,
+    "continuous_minimum_or_peak_claimed": false,
+    "event_payload_read": false
+  },
+  "unchanged_admission_limits": {
+    "project_limit_gib": 72,
+    "running_stop_line_gib": 71.75,
+    "host_min_free_disk_gib": 35,
+    "host_min_available_ram_gib": 4,
+    "guest_min_available_ram_mib": 128,
+    "guest_min_free_disk_mib": 384,
+    "per_start_additional_reserve_mib": 256,
+    "cold_write_budget_mib": 128
+  },
+  "cold_vm_memory_backing_budget_mib": 4864,
+  "data_or_retention_modified_by_capacity_operation": false,
+  "capacity_maintenance_verified": true,
+  "hive_registration_or_readback_verified_by_this_record": false,
+  "iceberg_verified_by_this_record": false,
+  "full_pipeline_acceptance_claimed": false,
+  "evidence": [
+    {
+      "path": "runtime/real/operator/analysis-memory-configure-1024-20261013.json",
+      "sha256": "88525d807b25d896658ed052f2b993d1f34e420c71ac0d682646fbddf2523017"
+    },
+    {
+      "path": "runtime/real/operator/analysis-memory-guest-1024-20261013.json",
+      "sha256": "a9c28df61391d393eab329f9c6b87a6cbfddeb546af2bb555ad4529ed25eca36"
+    },
+    {
+      "path": "docs/evidence/signed-source-install-2434ab6-20261013.json",
+      "sha256": "44b103d37e8d6a37eaeb8256c63c4f33b34e06a13aaed2d888a40b701f953026"
+    }
+  ],
+  "limits": [
+    "V15's original 768 MiB allocation and 127 MiB resource interruption remain historical failure evidence.",
+    "385 MiB is one actual guest sample, not a continuous minimum, a peak, or an engine stability result.",
+    "The configuration-time all-VM-stopped observation does not describe subsequent engine execution or current power state.",
+    "Hive registration, independent readback and Iceberg remain pending separate actual acceptance at this evidence boundary."
+  ]
+}
