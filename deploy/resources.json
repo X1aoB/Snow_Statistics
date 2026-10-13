@@ -8,7 +8,7 @@
       "private_key_directory": "lab/secrets/airflow-ssh",
       "publisher_lock_and_packages": "runtime/publication"
     },
-    "budget_revision_note": "User authorized practical resource adjustment: 64 GiB project files, 35 GiB host free disk, 4 GiB host available RAM. Current cold sample is in ha.json; recheck before every phase. Historical 60 GiB receipts keep their original cap.",
+    "budget_revision_note": "2026-10-13 user authorized a measured project-capacity expansion: 64 to 72 GiB project files, retaining 35 GiB host free disk and 4 GiB host available RAM. Running stop line is 71.75 GiB (256 MiB before the cap); recheck before every phase. This changes admission only, not VM disks, online volumes or actual engine acceptance. Historical 60/64 GiB receipts keep their original limits.",
     "compose_projects": [
       "snow-lab-control",
       "snow-lab-compute",
@@ -117,7 +117,7 @@
       "shutdown": "Remove only the dedicated test container, unmount its unique state path and retain the image and receipts. Stop the VM when done.",
       "temporary_containers": "snow-lite-acceptance-<unique-suffix>"
     },
-    "max_project_bytes": 68719476736,
+    "max_project_bytes": 77309411328,
     "min_host_available_mib": 4096,
     "min_host_free_bytes": 37580963840,
     "model_publication": {
@@ -239,7 +239,7 @@
         "temporary_client": "snow-analysis only: existing locked Spark local[1], container 768 MiB, driver heap 512 MiB, observed guest MemAvailable at least 768 MiB before each request",
         "input_requirement": "Existing validated managed aggregate pair; all referenced HDFS blocks must be readable from compute before pausing the analysis DataNode",
         "replicas": "Keep both DataNode volumes. Only compute DataNode is online during catalog work; restore the offline phase and verify both replicas afterward. No new ODS landing or YARN computation in this window.",
-        "capacity": "4.5 GiB VM total plus 256 MiB per-start headroom, same 64 GiB project / 35 GiB host disk / 4 GiB host RAM gates; require cached Spark image and Hive-client JAR inventory or preflight their full additional footprint",
+        "capacity": "4.5 GiB VM total plus 256 MiB per-start headroom, current 72 GiB project / 35 GiB host disk / 4 GiB host RAM gates; require cached Spark image and Hive-client JAR inventory or preflight their full additional footprint",
         "acceptance": "Candidate profile and local tests only; actual engine/available-memory, catalog, single-replica readability and post-phase two-replica acceptance pending",
         "shutdown": "Finish exact Hive client; stop only named Hive/NameNode/DataNode containers and soft-stop these three project VMs. Do not delete either DataNode volume, Hive metadata, epochs, or historical evidence."
       },
@@ -247,7 +247,7 @@
         "name": "real-small",
         "vm_memory_mib": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 768},
         "additional_start_reserve_mib": 256,
-        "purpose": "Explicit low-volume offline acceptance; HDFS replicas stay online, no change to the 64/35/4 host gates",
+        "purpose": "Explicit low-volume offline acceptance; HDFS replicas stay online, using the current 72/35/4 host gates",
         "prior_measurement": "2026-09-11 million-row analysis DataNode peak 389677056 bytes and guest available 428 MiB at 1024 MiB VM; this is sizing evidence, not a completed 768 MiB integration test",
         "restrictions": "No concurrent Doris, Flink, Hive client or governance on the 768 MiB analysis VM; validate current input/resource bounds and monitor each phase"
       },
@@ -255,10 +255,10 @@
         "name": "real-small-1920",
         "vm_memory_mib": {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768},
         "additional_start_reserve_mib": 256,
-        "project_stop_gib": 63.75,
+        "project_stop_gib": 71.75,
         "guest_min_available_mib": 128,
         "prior_measurement": "2026-09-11 2048 MiB compute VM during the million-row run had an observed 347 MiB available; subtracting 128 MiB is only a sizing estimate, not acceptance of this candidate",
-        "scope": "First verify the unchanged 56-row synthetic golden input while retaining both DataNodes; no million-row claim, no change to 64/35/4 hard gates",
+        "scope": "First verify the unchanged 56-row synthetic golden input while retaining both DataNodes; no million-row claim, using the current 72/35/4 hard gates",
         "entry": "Explicit vmware_lab configure/start, then frozen Linux real_lab node-start-offline phases; existing Windows real_lab start-offline does not accept this profile",
         "acceptance": "2026-09-19 actual 56-row synthetic YARN golden passed, followed by real ODS hash/two-DataNode readback and original Kafka ACK. Peak project 63.62 GiB; minimum guest available 641/669/202 MiB. Hive/Iceberg and the new unified small-profile wrapper remain pending; no million-row or concurrent-stack claim. See docs/evidence/real-production-loop-20260919.md."
       },
@@ -268,12 +268,12 @@
         "additional_start_reserve_mib": 256,
         "cold_vm_backing_mib": 4608,
         "cold_write_budget_mib": 128,
-        "cold_admission": "All project VMs fully stopped; actual project bytes + 4608 MiB VM backing + 128 MiB job-write budget must be <= 63.75 GiB before configure/start. Existing 64 GiB project, 35 GiB host free, 4 GiB host RAM and per-start 256 MiB reserve remain unchanged.",
-        "project_stop_gib": 63.75,
+        "cold_admission": "All project VMs fully stopped; actual project bytes + 4608 MiB VM backing + 128 MiB job-write budget must be <= 71.75 GiB before configure/start. Current 72 GiB project, 35 GiB host free, 4 GiB host RAM and per-start 256 MiB reserve apply.",
+        "project_stop_gib": 71.75,
         "guest_min_available_mib": 128,
         "guest_min_disk_free_mib": 384,
         "compute_memtotal_candidate_bands_mib": [[1664, 1792], [1800, 2048]],
-        "sizing_estimate": "Using rounded cold files 59.07 GiB gives projected running files 63.57 GiB, about 184 MiB below stop; subtracting 128 MiB from prior 1920 golden compute minimum 669 MiB gives about 541 MiB available. Both are estimates only, not observations of this candidate.",
+        "sizing_estimate": "Historical estimate under the 64 GiB cap: rounded cold files 59.07 GiB gave projected running files 63.57 GiB, about 184 MiB below the then 63.75 GiB stop; subtracting 128 MiB from prior 1920 golden compute minimum 669 MiB gave about 541 MiB available. Both are estimates only, not observations of this candidate; use a fresh sample with the current cap.",
         "unchanged_limits": "Compute DataNode 384 MiB / NodeManager 1536 MiB, one bounded YARN job, same heaps/JARs/Compose identities. Container limits are upper bounds, not guaranteed available guest memory. Control catalog still requires 768 MiB actual available; analysis runs no catalog or realtime engines.",
         "entry": "tools/real_offline_small.py --profile real-small-1792; explicitly repeat the selected profile on later phases and stop. Default remains real-small-1920; shared physical-resource lock is unchanged.",
         "acceptance": "Implementation and synthetic fault tests only. Actual 1792 guest memory, fresh bounded golden, wrapper start/stop, Hive and Iceberg resource peaks all remain pending. Historical 1920 evidence is retained under its original profile."
@@ -302,7 +302,7 @@
     "real_engine_epochs": {
       "host": "snow-analysis only, realtime VM profile 4608 MiB; control and compute stopped during engine stages",
       "guest_virtual_disk_gib": 29,
-      "disk_budget_note": "Analysis guest was explicitly expanded from 28 to 29 GiB for this phase and ext4 growth verified. Thin guest capacity is not host usage; the hard 64 GiB project, 35 GiB host disk and 4 GiB host available RAM checks remain. No further disk expansion is authorized by this record.",
+      "disk_budget_note": "Analysis guest was explicitly expanded from 28 to 29 GiB for the earlier phase and ext4 growth verified. Thin guest capacity is not host usage. The 2026-10-13 project-budget revision is 72 GiB; 35 GiB host disk and 4 GiB host available RAM checks remain. The budget revision does not itself resize a guest disk or filesystem; any later actual resize must be recorded separately.",
       "registry": "runtime/real/epochs/<epoch>/{manifest.json,compose.json,gate.json,retirement.json}; immutable writer registration and actual job receipts are separate from the startup gate",
       "compose_project": "snow-real-<epoch>",
       "exact_container_roles": ["kafka", "doris-fe", "doris-be", "jobmanager", "taskmanager"],

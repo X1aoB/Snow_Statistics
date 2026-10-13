@@ -57,7 +57,7 @@ HDFS 目录固定为该 owner 的 `/snow/warehouse/real/<lane>/iceberg/<run>/<at
 
 ## 执行前置条件
 
-先完成同版本代码分发、锁定 Spark/Iceberg 缓存检查，以及独立合成拓扑验收。资源仍受64GiB项目、35GiB宿主空闲磁盘和4GiB宿主可用内存约束；本工具不会自行启动VM、增大内存、删除缓存或改变配额。
+先完成同版本代码分发、锁定 Spark/Iceberg 缓存检查，以及独立合成拓扑验收。资源仍受当前72GiB项目、35GiB宿主空闲磁盘和4GiB宿主可用内存约束；本工具不会自行启动VM、增大内存、删除缓存或改变配额。
 
 正式路线要求真实writer已按原流程暂停并停止，当前三台VM已经由操作者选择为`real-small`（2048／2048／768MiB）或明确的`real-small-1920`（2048／1920／768MiB）。入口用来宾实际MemTotal范围复核，而不设置VM参数；compute原容器配额不随VM候选改变。每台来宾的实际MemAvailable保留至少128MiB，control进入或恢复Hive阶段还必须至少768MiB；不足就停止，不能强行加内存或同时启动Hive和YARN。
 

@@ -424,6 +424,15 @@ def prepare(directory, manifest, analysis_ip=None, jar=None):
 
 
 def expire_due(root, docker):
+    """Clean up before admitting work, including contention with the supervisor.
+
+    Every public caller shares one 60-second lock-acquisition retry budget.
+    Ownership, I/O and removal failures still propagate without retry.
+    """
+    return _expire_due_with_lock_retry(root, docker)
+
+
+def _expire_due_once(root, docker):
     root = Path(root).absolute()
     if root.resolve() != root:
         raise ValueError("Epoch registry contains a link")
@@ -453,7 +462,7 @@ def supervise(root, docker):
     signal.signal(signal.SIGINT, stopping)
     try:
         while True:
-            _expire_due_with_lock_retry(root, docker)
+            expire_due(root, docker)
             expiries = [timestamp(Epoch(path, docker).read()["expires_at"]).timestamp()
                         for path in Path(root).iterdir() if not (path / "retirement.json").exists()]
             delay = min(30, max(0.1, min(expiries) - time.time())) if expiries else 30
@@ -463,11 +472,11 @@ def supervise(root, docker):
 
 
 def _expire_due_with_lock_retry(root, docker):
-    """Bound each cleanup cycle; successful cleanup gives the next cycle a new budget."""
+    """Compatibility entry; retry the single pass, never the public wrapper."""
     deadline = time.monotonic() + 60
     while True:
         try:
-            return expire_due(root, docker)
+            return _expire_due_once(root, docker)
         except PublicationLockBusy:
             remaining = deadline - time.monotonic()
             if remaining <= 0:

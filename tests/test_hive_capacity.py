@@ -33,7 +33,7 @@ def test_resource_profile_preserves_existing_data_disks(lab, monkeypatch, tmp_pa
         assert disk.read_bytes().startswith(b"synthetic existing disk identity")
         total += actual
     assert total == expected_total
-    assert lab.MAX_PROJECT_BYTES == 64 * 1024**3
+    assert lab.MAX_PROJECT_BYTES == 72 * 1024**3
     assert lab.MIN_HOST_FREE_BYTES == 35 * 1024**3
     assert lab.MIN_HOST_AVAILABLE_MIB == 4096
 

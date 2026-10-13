@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-13",
+  "scope": "MyWebsite local built candidate; production unchanged",
+  "base_sha": "ef01efca4a91266521f67d0f52659a712d91cf91",
+  "changed_files": 5,
+  "validation": {
+    "vitest_passed": 77,
+    "astro_check_errors": 0,
+    "astro_check_warnings": 0,
+    "built_pages": 35,
+    "desktop_viewport": "1280x900",
+    "mobile_viewport": "390x844",
+    "languages": ["zh", "en"],
+    "desktop_and_mobile_no_horizontal_overflow": true,
+    "full_statistics_table_matches": true,
+    "keyboard_retry_checked": true,
+    "five_minute_refresh_automated_test_passed": true,
+    "five_minute_browser_timing_measured": false
+  },
+  "changes": [
+    "Select the most recent published date independently for each app and keep all card metrics on that date.",
+    "Retain the latest original status if no published date exists; do not replace hidden values with zero.",
+    "Wrap metric status text so English mobile labels are no longer truncated."
+  ],
+  "observed_public_values": {
+    "project_snow": {"date": "2026-09-24", "requests": 43, "success_rate_display": "48.8%", "access": "suppressed"},
+    "mywebsite": {"date": "2026-10-13", "state": "pending"}
+  },
+  "limitations": [
+    "This is local browser acceptance, not a deployed Pages or production release.",
+    "An additional 320px viewport probe observed the existing global 320px minimum body width against a 305px content area; 390px acceptance passed.",
+    "The DOM readback does not distinguish the public live response from the configured build fallback."
+  ],
+  "private_receipt": "runtime/production-candidate/compact-browser-accepted-20261013.json",
+  "private_receipt_sha256": "062ab6e4859f20d9f38d7c6456347f68998964e60334e94fd3b4053508e7f06d",
+  "production_modified": false,
+  "signed": false,
+  "pushed": false,
+  "preview_stopped": true,
+  "browser_override_reset": true,
+  "collection_enabled_in_candidate": false,
+  "remaining": "User-requested GPG signing, release through the existing workflow, and public regression."
+}

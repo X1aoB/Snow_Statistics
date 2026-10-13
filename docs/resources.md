@@ -6,10 +6,29 @@
 |---|---|---|
 | 关闭统计 | 无统计进程、无运行 VM | 已有历史保留，不自动删除 |
 | 线上轻量统计 | 容器上限 **256 MiB / 0.25 CPU** | 新卷默认 **512 MiB**，SQLite、WAL、辅助表和日聚合共享限额 |
-| 本地离线实验 | 三 VM **2/2/1 GiB**，按需启动 | 当前实验文件约 55 GiB，含镜像、VM 磁盘、历史及合成数据；当前执行 64 GiB 门禁 |
+| 本地离线实验 | 三 VM **2/2/1 GiB**，按需启动 | 含镜像、VM 磁盘、历史及合成数据；当前执行 **72 GiB** 项目门禁，启动前重新测量 |
 | 本地实时 / 治理 | 实时单 VM 4.5 GiB；治理单 VM 2 GiB | 与离线重算分阶段运行，结束后关机 |
 
 本地镜像和实验成果的磁盘占用不等于线上统计库的需要。轻量服务无需任何虚拟机、Kafka、Spark、Flink 或 Doris 在线；对两个产品的接口和开关没有新增依赖。
+
+## 2026-10-13 项目容量调整
+
+用户授权“如果碰到空间上限不足可适当扩容并标注相应操作”。本次将 `deploy/resources.json` 的项目文件预算从 **64 GiB（68,719,476,736 bytes）提高到 72 GiB（77,309,411,328 bytes）**。运行中仍提前 **256 MiB** 停止，因此停止线为 **71.75 GiB**；宿主空闲磁盘 **35 GiB**、可用 RAM **4 GiB** 的门槛不变。
+
+调整依据：2026-10-13 冷态项目约 **59.23 GiB**，宿主磁盘约 **198.82 GiB** 空闲，RAM 约 **14.47 GiB** 可用，三台项目 VM 全关。旧 64 GiB 限额叠加 analysis 4608 MiB 内存后备及 256 MiB 启动预留后不足；4096 MiB 候选的来宾可用内存又未达到 storage 启动要求。新增 8 GiB 项目预算为沿用 4608 MiB 配置和后续分阶段离线计算提供空间。这是容量规划，尚不代表本轮引擎运行验收通过；每阶段仍按实际字节检查，不能同时启动全部服务。
+
+本次操作只修改项目容量门禁，**没有扩展 VMDK、来宾文件系统或线上统计卷**，也不删除任何历史数据。`tools/vmware_lab.py` 及其启动、监测、磁盘维护调用者读取同一资源清单；`src/snow_statistics/real_offline_small.py` 已移除固定 64/63.75 GiB 门限，改为读取该清单并计算停止线。运行入口需重新启动才能读取新配置，VM 上的源码包需重新核验并安装；旧签名包及历史回执仍绑定原有源码、限额和测量值。
+
+在 Windows PowerShell、仓库根目录检查当前门禁（只读，不启动 VM）：
+
+```powershell
+.\.venv\Scripts\python.exe tools/vmware_lab.py status
+.\.venv\Scripts\python.exe tools/real_offline_small.py --help
+```
+
+后续如实际增加来宾虚拟磁盘或文件系统，另行记录原容量、新容量、目标 VM、校验结果；本次预算变更不是该操作的完成证明。
+
+本轮后续实测：analysis 4608 MiB 单节点完成真实同步、同截止整数对账及整机软关/开后的 Checkpoint 恢复。切换 HDFS 阶段时实时引擎保持暂停，三台 VM 配置为 2048/2048/4608 MiB；宿主测得项目 67.74 GiB、VM 文件 66.93 GiB、空闲磁盘 182.83 GiB，低于新停止线。该阶段保留 analysis 原内存配置，以减少重复关机调配；不能把这组观察当作所有引擎同时运行的容量保证，也不改写上表的日常小配置。
 
 ## 小配置的实际验证
 
@@ -39,7 +58,7 @@ sudo bash deploy/prepare-state.sh
 
 `deploy/start-lite.sh` 和 systemd 单元同时读取镜像锁及本地 `.env`，使 Compose CPU/内存变量与容器环境一致。`tools/check_lite_compose.py` 已实际解析公开示例，确认 off、256 MiB、0.25 CPU、512 MiB，不读取私人 `.env` 或启动容器。挂载依赖、回环端口、只读根目录及进程限制仍保持原设置。
 
-2026-09-27 容量复查显示当前项目实占 63,597,863,100 bytes；历史 4608 MiB storage 加 256 MiB 预留会超出 63.75 GiB 停止线约 247 MiB。新增 realtime-4096 作为显式低流量候选后，静态余量约 276 MiB；它尚未经过真实引擎验证，不改变默认 profile，也不降低宿主 35 GiB 磁盘和 4 GiB RAM 门槛。私有容量回执为 runtime/real/operator/storage-memory-capacity-candidate-20260927.json。
+历史记录：2026-09-27 容量复查显示当时项目实占 63,597,863,100 bytes；4608 MiB storage 加 256 MiB 预留会超出当时 63.75 GiB 停止线约 236 MiB。新增 realtime-4096 作为显式低流量候选后，静态余量约 276 MiB；它尚未经过真实引擎验证，不改变默认 profile，也不降低宿主 35 GiB 磁盘和 4 GiB RAM 门槛。私有容量回执为 runtime/real/operator/storage-memory-capacity-candidate-20260927.json。此次 72 GiB 调整不追溯改写该历史门禁或实验结果。
 
 ## 本地实验的资源取舍
 

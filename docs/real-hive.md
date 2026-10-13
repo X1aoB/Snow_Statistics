@@ -57,7 +57,7 @@ cd /home/snow/Snow_Statistics
 1. 已有锁定 Hive 3.1.3 metastore、原元数据卷及 HDFS；沿用 `tools/prepare_hive_client.sh` 准备的客户端和 `lab/locks/hive-client.sha256`。本入口不会下载镜像或自动启动服务。
 2. 未到期 epoch 先暂停真实同步和 writer，保留完整、合法的恢复状态；工具使用实际 `StoppedStorage` 检查容器/卷、源、窗口和 ledger。已到期 epoch 改走下述实际物理退役检查；不能以「服务停了」冒充未初始化或 SQL 清理通过。
 3. 在运行客户端的 VM 腾出独占窗口。analysis 不允许其他运行容器；control 仅允许已有 NameNode 和 Hive。因此 analysis 的 DataNode 需要在确认其他副本可读后按既有服务管理流程暂停。不要为本工具盲目停止它，HDFS 副本不足时先解决可用性问题。
-4. Shell 要求 `MemAvailable >= 768 MiB`。客户端硬限制内存 768 MiB、1 CPU、128 PID，JVM 堆 512 MiB、`local[1]`、shuffle 1；这些是候选配置，尚未实测证明在当前 VM 组合下足够。整体仍遵守 64 GiB 项目、35 GiB 宿主空闲和 4 GiB 宿主可用 RAM 门槛。
+4. Shell 要求 `MemAvailable >= 768 MiB`。客户端硬限制内存 768 MiB、1 CPU、128 PID，JVM 堆 512 MiB、`local[1]`、shuffle 1；这些是候选配置，尚未实测证明在当前 VM 组合下足够。整体仍遵守 72 GiB 项目、35 GiB 宿主空闲和 4 GiB 宿主可用 RAM 门槛。
 5. `lab/.env` 只按四个允许值解析，不作为 shell 执行。容器只挂载代码、锁、Hadoop 配置、Hive client 和本次 metadata request；不挂载 reader token、SSH key 或完整 runtime。临时目录使用受限 tmpfs，事件日志关闭，根文件系统只读。
 
 这是阶段安排要求，不是新的常驻 profile。工具自己只运行临时 Spark 客户端，不自动停业务或其他实验容器，不改变现有 VM 容量。
@@ -72,7 +72,7 @@ cd /home/snow/Snow_Statistics
 | compute 1024 MiB | 已有 DataNode | 下方使用 compute-scale 的 384 MiB / heap192；不启动NodeManager | NodeManager、Flink及其他实验 |
 | analysis 1536 MiB | 无 | 临时Spark Hive客户端 768 MiB / heap512、1CPU、128PID；每次请求前实际MemAvailable至少768 MiB | analysis DataNode、所有epoch引擎和治理服务 |
 
-容器上限不是可相加的实测峰值；analysis剩余内存还要容纳Linux、Docker、Python协调器和监督进程。客户端本身会检查空容器窗口与可用内存，失败时停止，不通过减小门槛绕开。三台VM的4.5 GiB总内存与实时analysis单机相同，启动每台仍额外预留256 MiB，宿主项目64 GiB、空闲磁盘35 GiB、可用RAM4 GiB不变。
+容器上限不是可相加的实测峰值；analysis剩余内存还要容纳Linux、Docker、Python协调器和监督进程。客户端本身会检查空容器窗口与可用内存，失败时停止，不通过减小门槛绕开。三台VM的4.5 GiB总内存与实时analysis单机相同，启动每台仍额外预留256 MiB，宿主项目72 GiB、空闲磁盘35 GiB、可用RAM4 GiB不变。
 
 若某次观测项目63.42 GiB已经包含运行中analysis的4.5 GiB `.vmem`，那么在该文件确实随软关机消失后，冷态约为58.92 GiB，Hive-only重新启动后仍约63.42 GiB；这是容量推算，**必须以实际关机后的status重新检查**。剩下约0.58 GiB还要承受VMDK增长、日志、源包及临时文件，256 MiB预留不会制造更多空间。禁止删除历史证据或放宽门槛；缺失镜像/JAR时先算完整安装增长，不在这个余量里盲目拉镜像。
 

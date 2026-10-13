@@ -52,8 +52,12 @@ REMOTE_PHASES = set(PHASES) - {"status", "start-offline", "stop-offline", "stage
 REMOTE_PHASES |= {"node-start-offline", "node-stop-offline", "metadata-directories", "export-release",
                   "release-directories", "reserve-release", "import-release"}
 MIB, GIB = 1024**2, 1024**3
-STOP_BYTES = 255 * GIB // 4
-LIMIT_BYTES = 64 * GIB
+# Read the same policy as vmware_lab; the stop margin is not another hard cap.
+LIMITS = json.loads((ROOT / "deploy/resources.json").read_bytes())["local"]
+LIMIT_BYTES = LIMITS["max_project_bytes"]
+STOP_BYTES = LIMIT_BYTES - 256 * MIB
+MIN_HOST_FREE_BYTES = LIMITS["min_host_free_bytes"]
+MIN_HOST_AVAILABLE_MIB = LIMITS["min_host_available_mib"]
 LOG_LIMIT = MIB
 COLD_WRITE_BUDGET_MIB = 128
 
@@ -99,7 +103,7 @@ def description(phase, run_id=None, profile=PROFILE):
     return dict(phase=phase, run_id=run_id, profile=profile, memory_mib=memory,
                 start_reserve_mib=256, project_stop_bytes=STOP_BYTES, project_hard_bytes=LIMIT_BYTES,
                 cold_vm_backing_mib=sum(memory.values()), cold_write_budget_mib=COLD_WRITE_BUDGET_MIB,
-                host_disk_min_bytes=35 * GIB, host_ram_min_mib=4096,
+                host_disk_min_bytes=MIN_HOST_FREE_BYTES, host_ram_min_mib=MIN_HOST_AVAILABLE_MIB,
                 guest_ram_min_mib=128, guest_disk_min_mib=384,
                 executes=False, new_permit_implied=False, data_deleted_by_stop=False)
 
@@ -109,7 +113,8 @@ def check_host(value, reserve_mib=0):
             type(v) is not int or v < 0 for v in value.values()):
         raise ValueError("Unexpected actual host resource sample")
     if (value["project_bytes"] >= STOP_BYTES or value["project_bytes"] + reserve_mib * MIB > LIMIT_BYTES
-            or value["host_free_bytes"] < 35 * GIB or value["host_available_mib"] < 4096 + reserve_mib):
+            or value["host_free_bytes"] < MIN_HOST_FREE_BYTES
+            or value["host_available_mib"] < MIN_HOST_AVAILABLE_MIB + reserve_mib):
         raise RuntimeError("Host resource gate failed; retain data and stop owned offline work")
     return value
 
@@ -118,7 +123,7 @@ def check_cold_start(value, profile):
     check_host(value)
     projected = value["project_bytes"] + (sum(profile_memory(profile).values()) + COLD_WRITE_BUDGET_MIB) * MIB
     if projected > STOP_BYTES:
-        raise RuntimeError("Cold VM backing plus 128 MiB write budget exceeds the 63.75 GiB stop line")
+        raise RuntimeError(f"Cold VM backing plus 128 MiB write budget exceeds the {STOP_BYTES / GIB:g} GiB stop line")
     return dict(projected_bytes=projected, write_budget_mib=COLD_WRITE_BUDGET_MIB)
 
 
@@ -322,11 +327,15 @@ def guest_sample(root, node, config, attempt=None):
                 disk_free_mib=shutil.disk_usage(root).free // MIB, containers=containers)
 
 
-def paused_guard(config, root):
+def paused_guard(config, root, preserved=None):
     from .landing import collector_identity
     from .real_epoch import Epoch
     from .real_quiescent import DockerStorage, WriterRegistry, storage
     cleanup_local_copies(root)
+    compatibility = {}
+    if preserved is not None:
+        from .real_offline_preserved import verify_selection
+        compatibility = verify_selection(config, root, preserved)
     registry = WriterRegistry(Epoch(Path(root) / "runtime/real/epochs" / config["lane"], DockerStorage()))
     with registry.operation_lock():
         identity = collector_identity(read_json(Path(root) / "runtime/real/sync" / config["lane"] / "source.json"))
@@ -338,7 +347,7 @@ def paused_guard(config, root):
             raise ValueError("Stopped real epoch storage identity changed")
         return dict(writer_paused=True, actual_engine_objects_stopped=True,
                     checkpoint_metadata_validated=True, checkpoint_bytes_rechecked=False,
-                    lifecycle_permit=False, **input_state(config, root))
+                    lifecycle_permit=False, **compatibility, **input_state(config, root))
 
 
 def input_state(config, root):
@@ -544,7 +553,16 @@ def node_cancel(root, config, attempt):
         if not path.exists():
             return dict(status="cancelled_before_worker", data_deleted=False)
         worker = read_json(path)
-        if (set(worker) != {"config_sha256", "phase", "run_id", "process"}
+        fields = {"config_sha256", "phase", "run_id", "process"}
+        if "preserved_failed" in worker:
+            from .real_offline_preserved import selection
+            selected = worker["preserved_failed"]
+            if (not isinstance(selected, dict) or set(selected) != {"failed_epoch", "state_sha256"} or
+                    selection(selected["failed_epoch"], selected["state_sha256"]) != selected or
+                    worker["phase"] != "node-start-offline" or worker["run_id"] is not None):
+                raise ValueError("Cancellation has an unexpected preserved service scope")
+            fields.add("preserved_failed")
+        if (set(worker) != fields
                 or worker["config_sha256"] != digest(canonical(config)) or worker["phase"] not in REMOTE_PHASES):
             raise ValueError("Cancellation ownership differs from this operation")
         identity = worker["process"]
@@ -560,6 +578,7 @@ def node_cancel(root, config, attempt):
         if done and done["child_group_stopped"] and done["driver_stopped"]:
             # A later attempt may now own a different driver. Never re-stop it
             # merely because an already finished cancellation was retried.
+            preserved_service_cleanup(root, directory, worker, complete=done["phase_complete"])
             return dict(status="cancelled", already_cleaned=True, data_deleted=False)
     group_stopped, driver_stopped, cleanup = False, False, None
     try:
@@ -583,6 +602,7 @@ def node_cancel(root, config, attempt):
         child = checked_child(directory, worker, attempt)
         done = checked_done(directory, worker, child, attempt)
         if done and done["child_group_stopped"] and done["driver_stopped"]:
+            preserved_service_cleanup(root, directory, worker, complete=done["phase_complete"])
             return dict(status="cancelled", already_cleaned=True, data_deleted=False)
         if child is None:
             if not done or done["launch_attempted"] or not done["child_group_stopped"]:
@@ -593,7 +613,10 @@ def node_cancel(root, config, attempt):
             group_stopped = True
     finally:
         if not (done and done["child_group_stopped"] and done["driver_stopped"]):
-            driver_cleanup(root, worker["phase"], worker["run_id"])
+            try:
+                driver_cleanup(root, worker["phase"], worker["run_id"])
+            finally:
+                preserved_service_cleanup(root, directory, worker, complete=bool(done and done["phase_complete"]))
             driver_stopped = True
         else:
             driver_stopped = True
@@ -603,6 +626,14 @@ def node_cancel(root, config, attempt):
                    phase_complete=bool(done and done["phase_complete"]), child_group_stopped=True,
                    driver_stopped=True, session_cleanup=cleanup))
     return dict(status="cancelled", data_deleted=False)
+
+
+def preserved_service_cleanup(root, directory, worker, *, complete):
+    # Successful start deliberately leaves the admitted offline daemon running.
+    # Failed/lost-controller attempts have a separate exact-ID cleanup journal.
+    if "preserved_failed" in worker and not complete:
+        from .real_offline_preserved import stop_service
+        return stop_service(root, directory, worker)
 
 
 def phase_result(log, phase):
@@ -656,7 +687,7 @@ class ControllerHeartbeat:
             raise RuntimeError("Controller heartbeat was lost")
 
 
-def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
+def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None, preserved=None):
     """Pipe loss or heartbeat loss stops the whole owned Linux process group."""
     if phase not in REMOTE_PHASES:
         raise ValueError("Unsupported remote phase")
@@ -673,6 +704,11 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
             raise ValueError("This exact node attempt cannot be reused")
         worker = dict(config_sha256=digest(canonical(config)), phase=phase,
                       run_id=run_id, process=process_identity(os.getpid()))
+        if preserved is not None:
+            from .real_offline_preserved import selection
+            if phase != "node-start-offline" or run_id is not None:
+                raise ValueError("Preserved service compatibility is only an analysis start child")
+            worker["preserved_failed"] = selection(preserved["failed_epoch"], preserved["state_sha256"])
         write_json(directory / "worker.json", worker)
     cancelled = threading.Event()
     def interrupted(*_):
@@ -690,6 +726,10 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
     try:
         heartbeat = ControllerHeartbeat(stdin if stdin is not None else sys.stdin.buffer)
         command = [sys.executable, "tools/real_lab.py", "--config", config_file, phase]
+        if preserved is not None:
+            command = [sys.executable, "tools/real_offline_preserved.py", "--config", config_file, "start",
+                       "--preserve-stopped-epoch", preserved["failed_epoch"],
+                       "--preserved-state-sha256", preserved["state_sha256"], "--attempt", attempt]
         if run_id:
             command += ["--run-id", run_id]
         stream = log.open("xb")
@@ -732,6 +772,11 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
             raise RuntimeError("Frozen offline output exceeded its bounded metadata log")
         stream.flush()
         result = phase_result(log, phase)
+        # The child can exit just as its controller disappears, or a signal can
+        # arrive while output/session cleanup finishes. Do not commit a daemon
+        # start as successful using only the earlier loop's heartbeat sample.
+        heartbeat.check()
+        check_cancelled()
         complete = True
         return result
     finally:
@@ -750,7 +795,10 @@ def node_execute(config, config_file, root, phase, run_id, attempt, stdin=None):
                 group_stopped = True
         finally:
             try:
-                driver_cleanup(root, phase, run_id)
+                try:
+                    driver_cleanup(root, phase, run_id)
+                finally:
+                    preserved_service_cleanup(root, directory, worker, complete=complete)
                 driver_stopped = True
             finally:
                 if drain_thread:
@@ -813,9 +861,13 @@ class Monitor:
 
 
 class SmallRunner(Runner):
-    def __init__(self, config, config_file, root=ROOT, *, profile=PROFILE):
+    def __init__(self, config, config_file, root=ROOT, *, profile=PROFILE, preserved=None):
         super().__init__(checked_config(config), config_file, root)
         self.profile, self.memory = profile, profile_memory(profile)
+        from .real_offline_preserved import CURRENT, selection
+        self.preserved = selection(preserved["failed_epoch"], preserved["state_sha256"]) if preserved is not None else None
+        if preserved is not None and self.config["lane"] != CURRENT:
+            raise ValueError("Preserved failed03 compatibility requires the exact current04 configuration")
         self.monitor = None
         self.ready_nodes = set()
         self.owned_nodes = set()
@@ -852,6 +904,9 @@ class SmallRunner(Runner):
         args = [".venv/bin/python", "tools/real_offline_small.py", "--config", self.config_file,
                 "--config-sha256", digest(canonical(self.config)), "--profile", self.profile,
                 "--node-operation", operation, "status"]
+        if node == "snow-analysis" and getattr(self, "preserved", None) is not None:
+            args += ["--preserve-stopped-epoch", self.preserved["failed_epoch"],
+                     "--preserved-state-sha256", self.preserved["state_sha256"]]
         if phase:
             args += ["--node-phase", phase]
         if operation == "probe" and node == "snow-control" and attempt is None:
@@ -1172,6 +1227,7 @@ class SmallRunner(Runner):
         receipt = attempt_path(self.root, self.attempt) / "controller.json"
         report = dict(schema_version=1, source="real", phase=phase, run_id=run_id,
                       profile=self.profile, memory_mib=self.memory,
+                      preserved_failed=getattr(self, "preserved", None),
                       started_at=datetime.now(UTC).isoformat(), status="started", cleanup_complete=False)
         write_json(receipt, report)
         try:
@@ -1247,11 +1303,16 @@ def main():
     parser.add_argument("--describe", action="store_true")
     parser.add_argument("--profile", choices=tuple(PROFILES), default=PROFILE,
                         help="Explicit profile, also required for later phases and stopping; default stays 1920")
+    parser.add_argument("--preserve-stopped-epoch", choices=("real-prod-03",),
+                        help="Explicit candidate for unchanged stopped failed03 beside actual paused current04")
+    parser.add_argument("--preserved-state-sha256", help="Actual inspect digest; never a pause or read permit")
     parser.add_argument("--node-operation", choices=("probe", "guard", "input", "execute", "cancel"), help=argparse.SUPPRESS)
     parser.add_argument("--node-phase", choices=sorted(REMOTE_PHASES), help=argparse.SUPPRESS)
     parser.add_argument("--attempt", help=argparse.SUPPRESS)
     parser.add_argument("--config-sha256", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    from .real_offline_preserved import selection
+    preserved = selection(args.preserve_stopped_epoch, args.preserved_state_sha256)
     private_relative(args.config, "config", ".json")
     config = checked_config(read_json(ROOT / args.config))
     if args.phase in JOB_PHASES:
@@ -1260,6 +1321,7 @@ def main():
         if args.node_operation:
             parser.error("Internal node operations are not controller descriptions")
         result = description(args.phase, args.run_id, args.profile)
+        result["preserved_failed"] = preserved
     elif args.node_operation:
         if args.config_sha256 != digest(canonical(config)):
             raise ValueError("Node configuration differs from the controller's exact real scope")
@@ -1271,7 +1333,7 @@ def main():
         if args.node_operation == "probe":
             result = guest_sample(ROOT, node, config, args.attempt)
         elif args.node_operation == "guard":
-            result = paused_guard(config, ROOT)
+            result = paused_guard(config, ROOT, preserved)
         elif args.node_operation == "input":
             cleanup_local_copies(ROOT)
             result = input_state(config, ROOT)
@@ -1280,11 +1342,12 @@ def main():
         else:
             if args.node_phase not in {"node-start-offline", "node-stop-offline"} and route(config, args.node_phase) != node:
                 raise ValueError("Offline phase was sent to the wrong authority node")
-            result = node_execute(config, args.config, ROOT, args.node_phase, args.run_id, args.attempt)
+            effective = preserved if node == "snow-analysis" and args.node_phase == "node-start-offline" else None
+            result = node_execute(config, args.config, ROOT, args.node_phase, args.run_id, args.attempt, preserved=effective)
     else:
         if os.name != "nt":
             raise ValueError("Use the Windows controller for offline orchestration")
-        result = SmallRunner(config, args.config, profile=args.profile).perform(args.phase, args.run_id)
+        result = SmallRunner(config, args.config, profile=args.profile, preserved=preserved).perform(args.phase, args.run_id)
     print(json.dumps(result, ensure_ascii=False))
 
 

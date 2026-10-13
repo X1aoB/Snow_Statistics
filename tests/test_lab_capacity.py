@@ -66,3 +66,27 @@ def test_small_batch_headroom_cannot_be_spent_as_vm_memory(lab, monkeypatch):
     lab.capacity(768)
     with pytest.raises(RuntimeError, match="project gate"):
         lab.capacity(768 + 256)
+
+
+def test_expanded_project_budget_still_reserves_full_vm_backing(lab, monkeypatch):
+    # Fake measured file sizes: no large files or VMs are created by this test.
+    used = [64 * 1024**3]
+    file = SimpleNamespace(is_file=lambda: True, stat=lambda: SimpleNamespace(st_size=used[0]),
+                           is_relative_to=lambda _: True)
+    monkeypatch.setattr(lab, "ROOT", SimpleNamespace(rglob=lambda _: [file]))
+    monkeypatch.setattr(lab, "run", lambda *args: str(14000 * 1024))
+    assert lab.capacity(4608 + 256)["project_limit_gib"] == 72
+    used[0] = lab.MAX_PROJECT_BYTES - (4608 + 256) * 1024**2
+    assert lab.capacity(4608 + 256)
+    used[0] += 1
+    with pytest.raises(RuntimeError, match="project gate"):
+        lab.capacity(4608 + 256)
+
+
+def test_offline_and_vmware_read_the_same_current_resource_policy(lab):
+    from snow_statistics import real_offline_small as small
+
+    assert small.LIMIT_BYTES == lab.MAX_PROJECT_BYTES == lab.LIMITS["max_project_bytes"]
+    assert small.STOP_BYTES == lab.MAX_PROJECT_BYTES - 256 * 1024**2
+    assert small.MIN_HOST_FREE_BYTES == lab.MIN_HOST_FREE_BYTES == 35 * 1024**3
+    assert small.MIN_HOST_AVAILABLE_MIB == lab.MIN_HOST_AVAILABLE_MIB == 4096

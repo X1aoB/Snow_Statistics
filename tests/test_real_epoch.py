@@ -1,7 +1,10 @@
 import copy
 import errno
 import json
+import runpy
+import sys
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -273,7 +276,7 @@ def test_supervisor_recovers_transient_lock_contention_before_resuming_watch(tmp
             raise SystemExit(0)  # Stop the otherwise perpetual watch after its first successful cycle.
         clock.sleep(delay)
 
-    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    monkeypatch.setattr(real_epoch, "_expire_due_once", expire)
     monkeypatch.setattr(real_epoch, "time", SimpleNamespace(monotonic=clock.monotonic, time=clock.time, sleep=sleep))
     with pytest.raises(SystemExit):
         real_epoch.supervise(tmp_path, docker)
@@ -292,7 +295,7 @@ def test_continuous_lock_contention_exhausts_budget_and_stops_owned_readers(tmp_
         attempts.append(clock.elapsed)
         raise failure
 
-    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    monkeypatch.setattr(real_epoch, "_expire_due_once", expire)
     with pytest.raises(PublicationLockBusy) as caught:
         real_epoch.supervise(tmp_path, docker)
     assert caught.value is failure
@@ -312,7 +315,7 @@ def test_cleanup_body_blocking_io_error_is_not_retried_and_stops_owned_readers(t
         with publication_lock(tmp_path / "fixture-a"):
             raise failure
 
-    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    monkeypatch.setattr(real_epoch, "_expire_due_once", expire)
     with pytest.raises(BlockingIOError) as caught:
         real_epoch.supervise(tmp_path, docker)
     assert caught.value is failure and not isinstance(caught.value, PublicationLockBusy)
@@ -331,8 +334,73 @@ def test_successful_cleanup_resets_retry_budget_and_returns_actual_receipt(tmp_p
             raise PublicationLockBusy(errno.EAGAIN, "synthetic held lock")
         return [receipt]
 
-    monkeypatch.setattr(real_epoch, "expire_due", expire)
+    monkeypatch.setattr(real_epoch, "_expire_due_once", expire)
     for _ in range(2):
         result = real_epoch._expire_due_with_lock_retry(tmp_path, Docker())
         assert result[0] is receipt
     assert len(attempts) == 120 and clock.elapsed == 118
+
+
+def cleanup_caller(entry, tmp_path, monkeypatch, actions):
+    """Exercise unchanged consumers of expire_due, without Docker or real rows."""
+    from snow_statistics import real_lab
+
+    directory = tmp_path / "runtime/real/epochs"
+    directory.mkdir(parents=True, mode=0o700)
+    docker = Docker()
+    monkeypatch.setattr(real_epoch, "DockerEpoch", lambda: docker)
+    if entry == "public":
+        return lambda: real_epoch.expire_due(directory, docker)
+    if entry == "compatibility":
+        return lambda: real_epoch._expire_due_with_lock_retry(directory, docker)
+    if entry == "real_lab_start":
+        monkeypatch.setattr(real_lab, "REMOTE_ROOT", tmp_path.as_posix())
+        monkeypatch.setattr(real_lab.socket, "gethostname", lambda: "snow-analysis")
+        runner = SimpleNamespace(config={}, root=tmp_path,
+                                 run=lambda command, **kwargs: actions.append("offline-start"))
+        return lambda: real_lab.execute_linux(runner, "node-start-offline")
+    command = "start" if entry == "cli_start" else "cleanup"
+    script = Path(__file__).resolve().parents[1] / "tools/real_epoch.py"
+    args = [str(script), "--root", str(directory), command]
+    if command == "start":
+        args += ["--epoch", "fixture-start"]
+
+        def start(stage):
+            actions.append("epoch-start")
+            return {"fixture_ready": True}
+
+        monkeypatch.setattr(real_epoch, "Epoch", lambda *args: SimpleNamespace(start=start))
+    monkeypatch.setattr(sys, "argv", args)
+    return lambda: runpy.run_path(str(script), run_name="__main__")
+
+
+@pytest.mark.parametrize("entry", ["public", "compatibility", "real_lab_start", "cli_cleanup", "cli_start"])
+@pytest.mark.parametrize("failure_kind", ["transient_lock", "persistent_lock", "body_io", "ownership"])
+def test_all_cleanup_entries_share_one_bounded_lock_retry(tmp_path, monkeypatch, entry, failure_kind):
+    clock = supervisor_clock(monkeypatch)
+    attempts, actions = [], []
+    failure = (BlockingIOError(errno.EAGAIN, "synthetic cleanup I/O failure") if failure_kind == "body_io"
+               else ValueError("synthetic ownership mismatch") if failure_kind == "ownership"
+               else PublicationLockBusy(errno.EAGAIN, "synthetic supervisor lock"))
+
+    def expire(*_):
+        attempts.append(clock.elapsed)
+        assert actions == []  # No engines or offline services start before cleanup succeeds.
+        if failure_kind != "transient_lock" or len(attempts) <= 2:
+            raise failure
+        return [{"source": "synthetic fixtures", "retired": True}]
+
+    monkeypatch.setattr(real_epoch, "_expire_due_once", expire)
+    call = cleanup_caller(entry, tmp_path, monkeypatch, actions)
+    if failure_kind == "transient_lock":
+        call()
+        assert attempts == [0, 1, 2]
+        assert actions == ({"real_lab_start": ["offline-start"], "cli_start": ["epoch-start"]}.get(entry, []))
+    else:
+        with pytest.raises(type(failure)) as caught:
+            call()
+        assert caught.value is failure and actions == []
+        if failure_kind == "persistent_lock":
+            assert attempts == list(range(61)) and clock.elapsed == 60
+        else:
+            assert attempts == [0] and clock.sleeps == []

@@ -90,8 +90,8 @@ def test_description_is_explicit_and_non_executing(phase):
     value = small.description(phase, "bounded")
     assert not value["executes"] and not value["new_permit_implied"]
     assert value["memory_mib"] == {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768}
-    assert value["project_stop_bytes"] == 63.75 * small.GIB
-    assert value["project_hard_bytes"] == 64 * small.GIB
+    assert value["project_stop_bytes"] == 71.75 * small.GIB
+    assert value["project_hard_bytes"] == 72 * small.GIB
     assert value["start_reserve_mib"] == 256
 
 
@@ -314,7 +314,7 @@ def test_no_realtime_or_arbitrary_phase(value):
         small.description(value)
 
 
-@pytest.mark.parametrize("change", [dict(project_bytes=small.STOP_BYTES), dict(project_bytes=64 * small.GIB),
+@pytest.mark.parametrize("change", [dict(project_bytes=small.STOP_BYTES), dict(project_bytes=small.LIMIT_BYTES),
                                   dict(host_available_mib=4095), dict(host_free_bytes=35 * small.GIB - 1)])
 def test_exact_unrounded_resource_thresholds_fail(change):
     with pytest.raises(RuntimeError):
@@ -326,8 +326,20 @@ def test_reservation_requires_additional_ram_and_capacity():
     with pytest.raises(RuntimeError):
         small.check_host(host() | {"host_available_mib": 4200}, 256)
     with pytest.raises(RuntimeError):
-        small.check_host(host() | {"project_bytes": int(63.7 * small.GIB)}, 512)
-    assert small.check_host(host() | {"project_bytes": int(63.7 * small.GIB)}, 256)
+        small.check_host(host() | {"project_bytes": small.LIMIT_BYTES - 300 * small.MIB}, 512)
+    assert small.check_host(host() | {"project_bytes": small.LIMIT_BYTES - 300 * small.MIB}, 256)
+
+
+def test_expansion_accepts_old_cap_but_preserves_stop_and_reserve():
+    sample = host() | {"project_bytes": 64 * small.GIB}
+    assert small.check_cold_start(sample, "real-small-1920")["projected_bytes"] < small.STOP_BYTES
+    sample["project_bytes"] = small.STOP_BYTES - 1
+    assert small.check_host(sample)
+    with pytest.raises(RuntimeError, match="Host resource gate"):
+        small.check_host(sample, 257)
+    sample["project_bytes"] += 1
+    with pytest.raises(RuntimeError, match="Host resource gate"):
+        small.check_host(sample)
 
 
 @pytest.mark.parametrize("change", [dict(available_ram_mib=127), dict(disk_free_mib=383),

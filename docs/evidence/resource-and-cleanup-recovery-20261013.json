@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-13T04:22:35.866605+00:00",
+  "scope": "Synthetic Python regression and static review only; no VM or production acceptance is asserted here.",
+  "source": {
+    "base_commit": "0a548ec12a20a5a9f0c2f7991fbec6000f696ab1",
+    "working_tree_changes": true,
+    "signed_or_deployed_by_this_record": false,
+    "file_sha256": {
+      "deploy/resources.json": "08707fbb41637f1f6e34c6fd2b79ad6a7e5e2f6f38dcb3425c2a60701a333484",
+      "src/snow_statistics/real_epoch.py": "cc435d83f233426fc63d3b76130ff436f693d0ddfda8c81c07de8def4018f60b",
+      "src/snow_statistics/real_offline_small.py": "ab0bc7e011998244dd10e5287bf0a793c508d61f7772f87cc7652309318d52c4",
+      "tests/test_real_epoch.py": "6079a1eda8275993ae0b2d4ccff7b6ed80919f3fb1a0492b8ce49fd2d54aa6f8",
+      "tests/test_lab_capacity.py": "97eb4e6bc2e0d188569e7ecce7c5fac1770569aec5d8a19b53e212eaf7f9b2d9",
+      "tests/test_hive_capacity.py": "f0aa264591fc087ccb4f8ff3027fce26e477638adbf5ae52aab501c757c1348d",
+      "tests/test_real_offline_small.py": "e73738ce3f5296fe1f23b236ba31a91f062a4a3b90c7799659f80c5d6c1d9053"
+    }
+  },
+  "resource_policy": {
+    "authorization_date": "2026-10-13",
+    "previous_project_max_bytes": 68719476736,
+    "project_max_bytes": 77309411328,
+    "project_stop_bytes": 77040975872,
+    "host_free_min_bytes": 37580963840,
+    "host_available_min_mib": 4096,
+    "policy_source": "deploy/resources.json",
+    "disk_or_filesystem_resized": false,
+    "historical_evidence_limits_rewritten": false
+  },
+  "cleanup_retry": {
+    "public_entry": "snow_statistics.real_epoch.expire_due",
+    "single_pass": "snow_statistics.real_epoch._expire_due_once",
+    "compatibility_entry_retained": "snow_statistics.real_epoch._expire_due_with_lock_retry",
+    "retryable_exception": "PublicationLockBusy",
+    "lock_retry_budget_seconds": 60,
+    "maximum_retry_sleep_seconds": 1,
+    "nested_retry_budgets": false,
+    "unchanged_consumers_exercised": [
+      "real_lab node-start-offline",
+      "real_epoch CLI start",
+      "real_epoch CLI cleanup"
+    ],
+    "synthetic_cases": [
+      "transient lock recovery",
+      "persistent lock failure after one budget",
+      "ordinary I/O failure without retry",
+      "ownership failure without retry",
+      "no service start before successful cleanup"
+    ],
+    "frozen_writer_file_count": 12,
+    "modified_frozen_writer_files": []
+  },
+  "validation": {
+    "full_python": {
+      "command": ".venv/Scripts/python.exe -m pytest -q",
+      "exit_code": 0,
+      "passed": 960,
+      "skipped": 16,
+      "warnings": 1,
+      "duration_seconds": 103.59,
+      "warning": "Dependency deprecation: anyio.abc.BlockingPortal alias in starlette.testclient."
+    },
+    "ruff": {
+      "command": ".venv/Scripts/python.exe -m ruff check .",
+      "exit_code": 0
+    },
+    "diff_whitespace": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "browser_and_java": "Not rerun: no browser, Java, event or summary contract change."
+  },
+  "review": {
+    "findings": [],
+    "checked": [
+      "Both VMware and small-offline host admission read the same project/host limits.",
+      "VM memory backing remains reserved; old-cap admission and byte-exact new boundaries are tested.",
+      "Public cleanup and supervisor share a single retry layer; other errors propagate.",
+      "No modifications to the 12 frozen writer files; their imports receive the new public cleanup behavior.",
+      "Project policy is an admission/monitor threshold, not a filesystem hard quota."
+    ]
+  },
+  "vm_measurements": null,
+  "engine_acceptance": null,
+  "production_data": null,
+  "limitations": [
+    "VMs retain their previously installed source until separately verified deployment.",
+    "Prior signatures do not authenticate this modified working tree.",
+    "Synthetic test counts do not prove real engine recovery or warehouse completeness."
+  ]
+}

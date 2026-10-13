@@ -29,7 +29,7 @@
 
 沿用[增量 ODS 手册](incremental-ods.md)的三台 `ods` VM：3.5 / 4 / 1 GiB。开启 batch 服务时，分析节点必须使用 `tools/start_batch_node.sh --ods-small`。先运行主机 `tools/vmware_lab.py status`，并通过 `tools/lab_remote.py --reserve-mib 1024` 进行作业前容量检查。所有输入均为合成数据；不扩样、不绕过 60 GiB 门禁。
 
-治理阶段曾通过相同 DAG 的 `ods-compact`（3.5 / 3 / 1 GiB）。后续增长曾使该组合无法满足初始 60 GiB 预算；当前上限按用户授权调整为 64 GiB，具体余量仍须按[最新资源门禁](runbook.md)检查，不能将历史结果当作当前并发保障。分析节点仍使用 `--ods-small`。
+治理阶段曾通过相同 DAG 的 `ods-compact`（3.5 / 3 / 1 GiB）。后续增长曾使该组合无法满足初始 60 GiB 预算；当前上限按用户授权调整为 72 GiB，具体余量仍须按[最新资源门禁](runbook.md)检查，不能将历史结果当作当前并发保障。分析节点仍使用 `--ods-small`。
 
 后续 `scale`（2/2/1 GiB）已通过日指标 10 万及百万条 YARN 验证，见[扩样手册](scale.md)。该阶段关闭 Hive 和 Airflow，未验证本页完整模型 DAG，不能直接将本页命令套入小配置。
 

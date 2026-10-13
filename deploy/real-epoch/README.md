@@ -39,7 +39,7 @@ python tools/real_epoch.py --root "$PWD/runtime/real/epochs" expire-fixture --ep
 
 此首版复用分析 VM 的标准引擎端口及先前小样本验收的 JVM 参数，各容器使用独立卷和名字。启动前要求其他分析 profile 的容器均停止；程序不会停止别的 profile。沿用原实时实验约 4.5 GiB 的分析 VM，先用 `start --stage storage` 启动 Kafka/FE/BE，验证健康和实际内存余量，再用 `start --stage realtime` 启动 Flink。首次存储阶段检查约 3.5 GiB 可用 RAM（为验收进程的 Python 模块导入预留 256 MiB；这是准入预算调整，尚不代表新峰值已测） 和 1.5 GiB 可用磁盘；新增实时阶段再检查 1.5 GiB RAM 和 256 MiB 磁盘。已经运行的阶段仅要求安全余量，不重新把完整初始预算计一次。
 
-各容器上限沿用原实验：Kafka 640 MiB、FE 1280 MiB、BE 1792 MiB、JobManager 896 MiB、TaskManager 1536 MiB。上限之和不是实际峰值，不能据此要求大幅扩容，也不能把既有 synthetic 配置的结果当成本次 real epoch 已测容量。04 的实际失败验收已验证修补后的 BE 可写层仅 724,992 字节；新存储阶段仍保留 1.5 GiB guest 磁盘准入，必须在启动前另做宿主项目 64 GiB/空闲 35 GiB 等资源门禁，不能仅靠 guest 检查。fixture 只需要 64 MiB 容器限额。这里是小样本准入阈值和配置上限，不是磁盘硬配额；实际 OOM、内存余量或空间不足时停止当前阶段和扩样，保存资源测量后再调整。
+各容器上限沿用原实验：Kafka 640 MiB、FE 1280 MiB、BE 1792 MiB、JobManager 896 MiB、TaskManager 1536 MiB。上限之和不是实际峰值，不能据此要求大幅扩容，也不能把既有 synthetic 配置的结果当成本次 real epoch 已测容量。04 的实际失败验收已验证修补后的 BE 可写层仅 724,992 字节；新存储阶段仍保留 1.5 GiB guest 磁盘准入，必须在启动前另做宿主项目 72 GiB/空闲 35 GiB 等资源门禁，不能仅靠 guest 检查。fixture 只需要 64 MiB 容器限额。这里是小样本准入阈值和配置上限，不是磁盘硬配额；实际 OOM、内存余量或空间不足时停止当前阶段和扩样，保存资源测量后再调整。
 
 首次实际引擎验收还必须核对锁定 Kafka 镜像中的 `/etc/kafka/docker/run`、Flink 的 `/docker-entrypoint.sh` 以及 Doris 原有入口在守护包装后正常运行。Flink 空集群启动不自动提交 JAR；提交前提供真实 Kafka cluster/topic identity、起始 offset、原时间可读窗口、到期禁止恢复时间及独立 Doris 用户，完成事件/诊断/迟到主题登记。缺少这些配置时 Java 作业会拒绝启动。不要把旧 synthetic 数据库凭据、Topic 或 Checkpoint 复制过来。
 

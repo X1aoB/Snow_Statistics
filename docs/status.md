@@ -1,5 +1,37 @@
 # 实施状态
 
+## 容量扩展、过期恢复与公开卡片候选（香港 2026-10-13）
+
+用户授权按实际需要扩容后，将本地项目文件预算从 64 GiB 调整为 72 GiB，运行停止线为 71.75 GiB；宿主空闲磁盘 35 GiB、可用 RAM 4 GiB 保持。此操作修改资源准入，不是虚拟磁盘扩容。小离线入口移除固定 64/63.75 GiB 门限，与 VMware 入口共同读取资源清单；历史验收继续保留当时预算。
+
+恢复发现 `real_lab` 的启动清理与 epoch supervisor 竞争同一 OS 锁，原入口立即失败并软关闭本轮 VM。公共 `expire_due` 现复用单层、最多 60 秒的锁获取重试，只处理 `PublicationLockBusy`，所有权及 I/O 错误不重试；冻结的 12 个 writer 文件未改。完整 Python **960 passed / 16 skipped**（1 条依赖弃用警告）、Ruff 与 diff 检查通过，见[容量和清理测试证据](evidence/resource-and-cleanup-recovery-20261013.json)。analysis 已在原 `0a548ec1` 基础上安装该单文件受测工作区补丁，保留旧文件与新旧哈希；这不是新签名源码归档。
+
+实际恢复：analysis 4608 MiB 观察到 3823 MiB 可用 RAM，epoch supervisor active；12 个过期登记均已实际核验退役，包含 real-prod-01 和 real-prod-02。HDFS 恢复到两台 DataNode 后，按原 real-prod-01 ODS 登记清理 1 个过期批次及快照引用，本地原始批次为空、剩余窗口批次为 0、清理 journal 已关闭，durable offset head 保留。先前 HDFS 安全模式导致的清理失败保留，等待正常恢复后同 journal 重试成功。synthetic 仓库未执行全局清理。回执位于 ignored `runtime/real/operator/startup-recovery-20261013.json`、`cleanup-retry-install-20261013.json`、`ods-expiry-20261013.json`。
+
+今日线上只读复核：两站及完整统计页 HTTP 200，collector 健康 lite，公开 v2 于香港 00:15:44 生成，未超过 26 小时；公开契约、隐藏值 null、今日 pending、私有与管理路径 404 通过。日志累计错误相较 9 月基线有变化，短间隔观察未新增；不据此声称历史全覆盖。源中可用的近期真实输入的 accepted_at 均为今日；接收时间不能代替 occurred_at 的业务日期，更不能据此宣称自然闭日、全天完整或成熟留存。accepted 与 aggregate 末端一致仅证明轻量聚合追平，不能证明本地数仓已同步。
+
+发现紧凑统计卡总取今天，导致已有历史公开数值无法显示。MyWebsite 隔离分支 `codex/statistics-latest-published` 已改为每应用选择最近有公开指标的一日、整卡保持同日并标注日期；全隐藏仍显示最新真实状态。正式源码测试 **77 项**、Astro check 和 35 页构建通过，尚未提交发布。历史“80 项”包含 ignored 旧基线中重复的 9 项；当前是原正式源码 71 项加新增 6 项，五分钟刷新测试保留。最初浏览器不可用，随后工具恢复，本地候选桌面1280×900、手机390×844、中英文、完整统计页与键盘重试实际验收通过。手机英文状态被省略的问题已改为换行，重新构建及77项测试通过；最终五个文件待签名发布。额外320px探针仍见现有全局320px最小宽度与305px内容区的差异，未扩大修改全站布局。公开门槛未变，也未把本地视觉验收当作Pages生产发布，见[统计卡候选证据](evidence/public-card-candidate-20261013.json)。预览已停止、浏览器尺寸恢复；按用户要求不自行触发GPG。
+
+独立学习手册已同步当前预算、过期恢复、接收时间乱序和显式缺口说明；40 个 Markdown、357 个本地链接、138 个代码围栏静态校验无错误。旧窗口不得重开，新真实窗口和报表的引擎验收继续逐项记录；本节不宣称真实离线、Hive/Iceberg、血缘或生产 P95 已通过。
+
+后续实测：`real-prod-03` 在首次同步完成前被操作者提前调用的对账清理触发未初始化目录保护，监督器停止引擎；没有成功导入，不记为恢复成功。原 source/target/cursor 保留，纯控制目录移到 ignored operator 路径保留失败证据，03 的已登记存储保持停止并继承原到期时间，未伪造 paused 或提前退役。
+
+另建 `real-prod-04` 后，Kafka/Doris/Flink 实际健康、writer 初始化/提交、真实同步和 capture 已成功。源归档与 Doris 整数指标一致；线上 SQLite 的同一源代际、同一接收和聚合前缀在只读事务中再次对账通过。实际 occurred_at 对应香港 2026-10-13，只证明当日截止范围；自然日报须闭日，留存仍受覆盖与成熟期约束。已观察到完成且取消后保留的 Checkpoint，完成真实 pause、analysis 整机软关和 0 台 VM 读回，再启动同一 VM；实际 restored Checkpoint 身份及恢复后的整数对账均通过。
+
+新 ODS 批次完成源归档精确内容对比、HDFS 哈希及两个实际副本读回，随后真实提交 Kafka 并独立读回集群/Topic 身份及 committed offset，本地 state/landed 一致、pending 消失。03 的未完成暂停状态仍会阻挡原通用离线入口，本轮使用经 35 项合成测试的独立 HDFS-only 窗口，核验03停止对象和04真实暂停记录，只启动既有 DataNode；正常与断管均有独立停止期限，不修改恢复账本或原通用门禁。它不是通用入口修复或离线计算成绩。验收后04再次正式暂停、原存储与期限保留、所有引擎和三台 VM 均已停止，最终冷态项目 59.25 GiB、宿主空闲磁盘 191.23 GiB。VM 全停后两站、完整统计页及公开 v2 仍 HTTP 200，快照未超26小时且保持 no-store；此 GET 复查没有生成新的模型请求或统计事件。详见[本轮真实闭环证据](evidence/real-recovery-20261013.json)。
+
+新增非零 rebase 元数据校验 helper，关联 59 项测试通过，随后 prefix/epoch/sync-retention 组合 **91 passed / 4 skipped**。该受测、未新签名的独立模块已安装到 analysis，12个冻结 writer 文件不变；实际源归档和 ODS/ACK 元数据调用通过。它不签发读取许可，不把元数据链当载荷等价或引擎证据；本轮载荷与引擎另有上述独立读回。手册进一步修正手算、SQLite 检查、留存覆盖、看板入口和无 VM 操作路线；示例实跑及 45 项相关测试通过，最新静态校验为 **40 篇、365 个本地链接、145 个代码围栏、无错误**。
+
+后续统一离线入口新增显式保留03失败现场的选项；仅核验已停止的原身份和04真实暂停链，不伪造暂停、删除存储或放宽默认入口。审阅发现的子进程退出后断连窗口已修复；完整回归 **1016 passed / 16 skipped**（1条依赖警告），23项浏览器适配、v1/v2契约、Ruff及diff检查通过。该受测工作区补丁已于05:40—05:44 UTC逐台安装三节点，原文件备份、源码摘要、CLI import及12个冻结writer不变读回通过；analysis原epoch/prefix补丁保持。这不是新的签名发布，05:45:26—05:50:48 UTC又实际完成新入口三机启动、状态和停止，所有预期服务身份及OOM检查通过，最终VM全关；采样项目63.749GiB，analysis可用194MiB（不是内存峰值或闭日计算成绩），见[后续工具证据](evidence/offline-followup-20261013.json)。闭日薄登记候选的24项合成测试通过，今日实际调用返回not_ready且不访问生产源；最早须香港10月14日00:00后重新取得真实同步和ACK范围，再执行闭日登记。
+
+## 新 real epoch 准备与 4096 MiB 来宾门禁复查（香港 2026-09-27）
+
+签名来源提交 `0a548ec12a20a5a9f0c2f7991fbec6000f696ab1` 已推送并通过 GPG Good signature；基于该 HEAD 重新生成的 `runtime/source.tar.gz` SHA256 为 `3a8f2e01ee6eef41ab6ecff9d3ca37f9feaba04149bdca875e73fc6f2b924f6f`，detached signature SHA256 为 `ce8efceaee0029cfad92904a8043b8c49208fdc376c4f128b4b497b4ff0d1c90`。V4 私有候选已重新绑定这两个哈希，84 项边界测试、py_compile 和 Ruff 通过；完整仓库回归仍为 937 passed、16 skipped。
+
+analysis 来宾已安装该源码并保留 12 份冻结 writer 文件。新 `real-prod-02` epoch 仅完成 manifest/compose/gate 元数据准备，generation 为 `23960234-d177-4deb-adbc-0afa86cd85fa`，窗口为 2026-09-27 至 2026-10-04；没有启动 Kafka、Doris、Flink、writer，也没有读取真实事件。`realtime-4096` 的宿主磁盘预算满足停止线，但来宾 MemAvailable 最高约 3466 MiB，低于 storage 启动要求 3584 MiB；Docker/containerd 和 epoch 监督服务未停止，最终 VM 已软关且 `vmrun list` 为零。不能把本轮写成真实引擎通过；后续需审阅更高内存 profile 或经测试的低内存引擎 profile。
+
+公网 v2 只读复查仍返回 HTTP 200/no-store，共 30 条日行，其中 1 条 quality published（project_snow，2026-09-24，requests 43、successes 21、success_rate 约 48.84%），其余继续按 pending/suppressed/empty 表达。浏览器适配 23 项通过；公开页面的 `null` 仍是隐私策略状态，不是刷新失败。私有回执见 `runtime/real/operator/real-prod-02-prepare-20260927.json`、`runtime/real/operator/realtime-4096-guest-capacity-block-20260927.json` 和 `runtime/real/operator/realtime-4096-guest-capacity-block-followup-20260927.json`；手册静态检查为 40 个 Markdown、351 个本地链接、136 个围栏、`errors: []`。
+
 ## 公开汇总与下一窗口准备复查（香港 2026-09-27）
 
 公网公开汇总 v2 在只读复查中返回 HTTP 200 和 no-store；统计页、个人站首页也返回 HTTP 200。快照截止 2026-09-26 16:15 UTC，公开投影已经出现一组满足门槛的真实数值：project_snow 在香港日期 2026-09-24 的服务质量组为请求 43、成功 21、成功率约 48.84%。其他日期和指标继续按 pending、suppressed 或 empty 表达，页面不会把隐私策略返回的 null 改成零。私有回执为 runtime/real/operator/public-summary-followup-20260927.json；本次没有发送测试事件或读取原始事件。

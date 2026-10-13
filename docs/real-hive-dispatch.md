@@ -38,7 +38,7 @@ sequenceDiagram
 4. 已有有效、登记过原 90 日期限的真实聚合发布物。未闭合的今天、空 ODS、缺失数据不会由这个工具补成零。
 5. 新的 Hive/Iceberg 连续验收采用 `real-small-1920`：control 2048 MiB、compute 1920 MiB、analysis 768 MiB，总计4.625 GiB。该配置的56条合成离线样例已通过，**Hive窗口仍待实际验证**。目录阶段 control 只运行 NameNode + Hive；compute、analysis各保留原 DataNode，ResourceManager和NodeManager停止。保持已存在的磁盘卷，禁止 `down -v` 或全局清理。独立历史 [hive-only 容量设计](real-hive.md)不是这套连续阶段配置的实际成功证据，不能混用其节点内存和副本状态。
 6. control 运行目录 worker 前仍必须实际有至少 768 MiB `MemAvailable`。当前 2 GiB control 能否同时满足 NameNode、metastore 与这个门槛，**仍待实测**。不能降低门槛、扩内存或降低副本要求来让候选“通过”。连续阶段始终保留两台DataNode并检查实际存活；每台来宾保持至少128MiB可用内存，不能只依据容器配额推断实际余量。
-7. 每次启动执行保留 256 MiB 项目空间，原 64 GiB 项目、35 GiB 宿主空闲磁盘、4 GiB 宿主可用 RAM 门槛不变。取消已启动 worker 的固定 SSH 不受启动空间门槛阻拦。
+7. 每次启动执行保留 256 MiB 项目空间，当前使用资源清单的 72 GiB 项目、35 GiB 宿主空闲磁盘、4 GiB 宿主可用 RAM 门槛。取消已启动 worker 的固定 SSH 不受启动空间门槛阻拦。
 
 这些操作不启动/停止 VM，也不会自动切换 Hive、YARN 或业务产品。资源窗口不满足即失败，保留现有状态。
 

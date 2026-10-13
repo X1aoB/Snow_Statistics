@@ -55,13 +55,13 @@
 uv run python tools/real_lab.py --config runtime/real/config/production.json start-offline --offline-profile real-small
 ```
 
-`real-small` 仅把 analysis 调整为 768 MiB，控制/计算仍各 2048 MiB；每台启动额外保留 256 MiB 作业余量，64 GiB 项目、35 GiB 宿主磁盘和 4 GiB 宿主可用 RAM 门禁不变。任一启动门禁失败，收尾本轮此前已启动的 VM。此选项不适用于实时存储阶段。
+`real-small` 仅把 analysis 调整为 768 MiB，控制/计算仍各 2048 MiB；每台启动额外保留 256 MiB 作业余量，72 GiB 项目、35 GiB 宿主磁盘和 4 GiB 宿主可用 RAM 门禁不变。任一启动门禁失败，收尾本轮此前已启动的 VM。此选项不适用于实时存储阶段。
 
 容量依据是 2026-09-11 百万条合成实验中 analysis DataNode 峰值 371.6 MiB、1 GiB VM 可用内存 428 MiB。它支持一次受监测的小配置验证，**不是已经完成 768 MiB 配置的证明，也不是承诺更大输入可用**。本轮应先以合成小样例验收同一配置，再接实际输入；每阶段记录余量、实际两副本与失败收尾。768 MiB analysis 不同时运行 Doris、Flink、Hive 客户端或治理。Hive/私有看板需要单独核验自己的内存窗口。
 
 ### 低流量实时存储候选
 
-正式 storage 历史 profile 为 analysis 4608 MiB，本机当前项目占用叠加 256 MiB 启动预留后会越过 63.75 GiB 停止线。新增的 realtime-4096 只设置 analysis 为 4096 MiB，默认 realtime 不变；它仅解决容量门禁，不能视作 Kafka、Flink、Doris 或 writer 在较小内存下已经通过。使用前必须在 VM 全关、真实 epoch 新建且来源已安装的独立窗口中先做引擎健康和小批量合成验证，失败就恢复 4608 或停止，不得降低 64/35/4 硬门槛。
+正式 storage 历史 profile 为 analysis 4608 MiB。2026-09-27 的项目占用叠加 256 MiB 启动预留后会越过当时 63.75 GiB 停止线；新增的 realtime-4096 只设置 analysis 为 4096 MiB，默认 realtime 不变。该候选实际来宾可用内存未达 storage 门槛，未进入引擎运行验收。2026-10-13 按用户授权将项目预算提高到 72 GiB、停止线改为 71.75 GiB，宿主 35 GiB 磁盘和 4 GiB RAM 门槛不变，详见 [资源说明](resources.md)。优先按新容量检查结果使用原 4608 MiB 配置；新 epoch 仍须先完成源码身份、过期清理、引擎健康和小批量合成验收，预算调整不能作为运行证据。
 
 ## 阶段表
 
@@ -91,7 +91,7 @@ uv run python tools/real_lab.py --config runtime/real/config/production.json sta
 
 start-* 对运行中的 VM 不强制改内存。切换阶段前须显式停止原服务并软关机。启动失败只尝试软停止本次已经启动的 VM；不会硬关其他 VM。单项停止失败会继续尝试其余节点，并返回失败状态供检查。
 
-正式 start-storage 仅启动 4.5 GiB analysis，私有同步和 Kafka/Flink/Doris 均在该 VM；此阶段不额外启动 2 GiB control。离线阶段才启用三台 scale 2/2/1 GiB VM。合成验收若显式把 transport 设为 control，则存储阶段仍需 control/analysis。每次启动照常检查 64 GiB 项目、35 GiB 宿主空闲磁盘及 4 GiB 宿主可用 RAM，不因减少节点而跳过门禁。
+正式 start-storage 仅启动 4.5 GiB analysis，私有同步和 Kafka/Flink/Doris 均在该 VM；此阶段不额外启动 2 GiB control。离线阶段才启用三台 scale 2/2/1 GiB VM。合成验收若显式把 transport 设为 control，则存储阶段仍需 control/analysis。每次启动照常检查 72 GiB 项目、35 GiB 宿主空闲磁盘及 4 GiB 宿主可用 RAM，不因减少节点而跳过门禁。
 
 ## 传输与计算的顺序
 

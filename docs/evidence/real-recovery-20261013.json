@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-10-13T05:18:06.150581+00:00",
+  "input_origin": "real",
+  "epoch_id": "real-prod-04",
+  "source": {
+    "analysis_signed_base": "0a548ec12a20a5a9f0c2f7991fbec6000f696ab1",
+    "control_compute_signed_base": "6c60f761fccf09bf8e67a75464714ef0619ff259",
+    "analysis_working_tree_additions": [
+      "src/snow_statistics/real_epoch.py",
+      "src/snow_statistics/real_prefix.py"
+    ],
+    "new_signature_claimed": false,
+    "frozen_writer_files_changed": false
+  },
+  "verified": {
+    "authenticated_incremental_sync": true,
+    "same_prefix_archive_doris_integers": true,
+    "same_current_prefix_readonly_production_sqlite": true,
+    "retained_checkpoint_actual_vm_restart": true,
+    "restored_checkpoint_identity": true,
+    "post_restore_integer_results_unchanged": true,
+    "source_archive_ods_envelope_equivalence": true,
+    "hdfs_content_hashes_and_two_actual_replicas": true,
+    "kafka_commit_then_independent_identity_offset_readback": true,
+    "rebased_prefix_metadata": true,
+    "controlled_final_pause": true,
+    "stored_data_preserved": true,
+    "original_expiry_preserved": true,
+    "all_vms_stopped": true,
+    "public_http_200_after_vms_stopped": true,
+    "public_snapshot_within_26_hours_after_stop": true
+  },
+  "measured_resources": {
+    "project_budget_gib": 72,
+    "stop_line_gib": 71.75,
+    "host_disk_floor_gib": 35,
+    "host_ram_floor_mib": 4096,
+    "realtime_analysis_mib": 4608,
+    "hdfs_stage_vm_mib": [
+      2048,
+      2048,
+      4608
+    ],
+    "hdfs_stage_project_gib": 67.74,
+    "hdfs_stage_host_free_disk_gib": 182.83,
+    "virtual_disks_resized": false
+  },
+  "limitations": {
+    "business_date": "2026-10-13",
+    "scope": "bounded accepted prefix within the current business day",
+    "closed_day_offline": false,
+    "mature_retention": false,
+    "production_p95": false,
+    "duplicate_import_experiment_repeated": false,
+    "generic_offline_entry_passed": false,
+    "public_metrics_republished": false,
+    "new_signed_release": false,
+    "private_rows_or_identifiers_exported": false,
+    "post_stop_new_event_generated": false
+  },
+  "earlier_failure": {
+    "epoch": "real-prod-03",
+    "reason": "Premature comparison initialized control files before first successful sync; supervisor stopped the epoch",
+    "preserved": true,
+    "recovery_claimed": false,
+    "paused_state_fabricated": false,
+    "unexpired_storage_removed": false
+  },
+  "private_evidence": {
+    "initial_metrics": {
+      "path": "runtime/real/operator/real-prod-04-aggregates-20261013.json",
+      "sha256": "862fc77d574794f88a9ad5abccc37dcc767501521a1c092d275c63e69c1bde77"
+    },
+    "restored_metrics": {
+      "path": "runtime/real/operator/real-prod-04-aggregates-afterrestart-20261013.json",
+      "sha256": "84ce76429d113a4137afdf6835782b2a80aa8afbd974f2d6458a4a0f4a42f223"
+    },
+    "checkpoint": {
+      "path": "runtime/real/operator/real-prod-04-checkpoint-afterrestore-20261013.json",
+      "sha256": "c1a0e5a0e045cc054cab4995204f0567504b7031ded7c60504b017329af860fc"
+    },
+    "hdfs": {
+      "path": "runtime/real/operator/real-prod-04-landed-verification-20261013.json",
+      "sha256": "a39ac990c39b2190346b3a1818206b97fb134b453e751ea7ae6a91800b03e7d0"
+    },
+    "hdfs_window": {
+      "path": "runtime/real/operator/hdfs-only-real04-result-a06f105e0225416793de0b6cc1b85839.json",
+      "sha256": "f04ee7796d51b6c90b484c9c0fd262c475374ae7f7e2f112f32aaf8c9696278c"
+    },
+    "ack": {
+      "path": "runtime/real/operator/real-prod-04-ack-verification-20261013.json",
+      "sha256": "22d66ac63a5d7412e3e14042c227bf0b731a149fa38f414e7b93ec9782796c40"
+    },
+    "prefix": {
+      "path": "runtime/real/operator/real-prod-04-prefix-20261013-c4f067538b6d4d5ba86cb96e0e10bc14.json",
+      "sha256": "de1e12c8a6e608a07a3c645419cba8edfd15c092edcfcc97b0500c1acc388aac"
+    },
+    "stop": {
+      "path": "runtime/real/operator/real-prod-04-final-paused-20261013.json",
+      "sha256": "b193855c57f26b565914f61ebb7b45548ab159465ebce42ef31357bfbdf0f1b8"
+    },
+    "sqlite": {
+      "path": "runtime/production-candidate/real-prod-04-lite-prefix-20261013.json",
+      "sha256": "782cbab80980dae1cd6c07fe7af88b1ad2049c4bb8079a31240e6686ca346f6d"
+    },
+    "final_host_state": {
+      "path": "runtime/real/operator/real-prod-04-host-stopped-20261013.json",
+      "sha256": "436ff097ddfcd970f89b8caa0c8771f5d1bf27b7289d6ae76d03f81268f1791c"
+    },
+    "post_stop_public_http": {
+      "path": "runtime/production-candidate/public-current-20261013T052012Z-5adcbc56.json",
+      "sha256": "acadb24f0cba28d7e64e805a92fc9ad3bd158d22b9fa5f2d48cb09e90afa9173"
+    }
+  },
+  "final_host_state": {
+    "checked_at": "2026-10-13T05:20:09.363691+00:00",
+    "running_vms": 0,
+    "project_gib": 59.25,
+    "host_free_disk_gib": 191.23
+  }
+}

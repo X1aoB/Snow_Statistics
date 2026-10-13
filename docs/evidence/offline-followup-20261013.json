@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-10-13T05:52:17.618819+00:00",
+  "provenance": "tested_working_tree_patch",
+  "new_signed_commit": false,
+  "tests": {
+    "python": {
+      "passed": 1016,
+      "skipped": 16,
+      "warnings": 1,
+      "seconds": 107.86,
+      "platform": "Windows"
+    },
+    "browser_adapter_passed": 23,
+    "event_summary_contracts": "passed",
+    "ruff": "passed",
+    "diff_check": "passed",
+    "closed_registration_synthetic_passed": 24
+  },
+  "frozen_writer_files_changed": false,
+  "installed_files": [
+    "src/snow_statistics/real_offline_small.py",
+    "src/snow_statistics/real_offline_preserved.py",
+    "tools/real_offline_preserved.py",
+    "deploy/resources.json"
+  ],
+  "unchanged_cli_verified": "tools/real_offline_small.py",
+  "installation": {
+    "snow-analysis": {
+      "path": "runtime/real/operator/offline-preserved-install-20261013-snow-analysis.json",
+      "sha256": "ab7a2176a5b7f442cd3267f5780da3f6b233605489bfa97a0d131d79ce758175",
+      "checked_at": "2026-10-13T05:40:17.405603+00:00",
+      "containers_stopped_during_install": true
+    },
+    "snow-control": {
+      "path": "runtime/real/operator/offline-preserved-install-20261013-snow-control.json",
+      "sha256": "e4ec6dd7e7b74fac19fafbc11fc3f15f6b96e40e0c7295b2fae2b06760f669ba",
+      "checked_at": "2026-10-13T05:43:04.760682+00:00",
+      "containers_stopped_during_install": true
+    },
+    "snow-compute": {
+      "path": "runtime/real/operator/offline-preserved-install-20261013-snow-compute.json",
+      "sha256": "9d1f2764c6eee2cbb541989456949d4a36792877ef6a5af5b54b605570eb885f",
+      "checked_at": "2026-10-13T05:44:37.486708+00:00",
+      "containers_stopped_during_install": true
+    }
+  },
+  "review_fix": "Verify controller heartbeat and cancellation once more immediately before recording successful child completion",
+  "acceptance": {
+    "installation_and_cli_imports": true,
+    "actual_offline_entry": "startup_status_and_stop_verified",
+    "closed_day_computed": false,
+    "compute_permit_created": false,
+    "real_rows_copied_for_this_install": false,
+    "new_images_or_dependencies": false,
+    "all_vms_stopped": true,
+    "failed03_preserved": true,
+    "current04_paused_admission": true,
+    "original_expiry_not_extended": true
+  },
+  "integration": {
+    "started_at": "2026-10-13T05:45:26.021354+00:00",
+    "finished_at": "2026-10-13T05:50:48.422017+00:00",
+    "profile": "real-small-1792",
+    "memory_mib": {
+      "snow-analysis": 768,
+      "snow-compute": 1792,
+      "snow-control": 2048
+    },
+    "resource_observation": {
+      "host_available_mib": 10705,
+      "host_free_bytes": 200763392000,
+      "project_bytes": 68450128526
+    },
+    "guest_observation": {
+      "snow-analysis": {
+        "available_ram_mib": 194,
+        "disk_free_mib": 2262,
+        "expected_services_running": 1,
+        "oom_seen": false
+      },
+      "snow-compute": {
+        "available_ram_mib": 1062,
+        "disk_free_mib": 4960,
+        "expected_services_running": 2,
+        "oom_seen": false
+      },
+      "snow-control": {
+        "available_ram_mib": 1179,
+        "disk_free_mib": 689,
+        "expected_services_running": 2,
+        "oom_seen": false
+      }
+    },
+    "observation_is_peak": false,
+    "new_hdfs_content_readback": false,
+    "daily_or_behavior_job_run": false,
+    "evidence": {
+      "acceptance": {
+        "path": "runtime/real/operator/offline-entry-acceptance-20261013.json",
+        "sha256": "347c2688bc0f32edc17fcc312d7449125a01467dad9d5236cfe38c6efd8b312f"
+      },
+      "start": {
+        "path": "runtime/real/offline-small/08930b80b69d4e1bb90bddea50e6c3ba/controller.json",
+        "sha256": "76bb75750321c7b0879ebcf6a49c0bd89ddd3d23c142acc3a407a0f9086b28ea"
+      },
+      "stop": {
+        "path": "runtime/real/offline-small/83cb9dd6b9ec41019b4c272eea1ce842/controller.json",
+        "sha256": "cb53d371ba6496975ea6ba6d72a354fe95d14ad61f548f79582a7ac9c81e7a64"
+      },
+      "observation": {
+        "path": "runtime/real/operator/offline-preserved-observation-20261013.json",
+        "sha256": "e0f322f7d319dba3b1cbcbdd1bc584db7278fe314b3a28fe6d6033b469b56565"
+      }
+    }
+  }
+}
