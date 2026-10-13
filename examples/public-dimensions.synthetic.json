@@ -1,0 +1,149 @@
+{
+  "attestations": [
+    {
+      "app": "mywebsite",
+      "checked_through": "2026-01-02T00:00:00+00:00",
+      "effective_at": "2026-01-01T00:00:00+00:00",
+      "observation_evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "observed_at": "2026-01-01T01:00:00+00:00",
+      "release_evidence_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "snapshot_id": "cff92642f8db5fa0ffd9446641eff0d401b5c352ba26182cdda617f505187e0b"
+    },
+    {
+      "app": "project_snow",
+      "checked_through": "2026-01-02T00:00:00+00:00",
+      "effective_at": "2026-01-01T00:00:00+00:00",
+      "observation_evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "observed_at": "2026-01-01T01:00:00+00:00",
+      "release_evidence_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "snapshot_id": "cff92642f8db5fa0ffd9446641eff0d401b5c352ba26182cdda617f505187e0b"
+    },
+    {
+      "app": "mywebsite",
+      "checked_through": "2026-01-05T00:00:00+00:00",
+      "effective_at": "2026-01-03T00:00:00+00:00",
+      "observation_evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "observed_at": "2026-01-03T01:00:00+00:00",
+      "release_evidence_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "snapshot_id": "db04991afb7df02b96470e3beb411ba10157df4f05817ac38864a1ea5a963405"
+    },
+    {
+      "app": "project_snow",
+      "checked_through": "2026-01-05T00:00:00+00:00",
+      "effective_at": "2026-01-03T00:00:00+00:00",
+      "observation_evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "observed_at": "2026-01-03T01:00:00+00:00",
+      "release_evidence_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "snapshot_id": "db04991afb7df02b96470e3beb411ba10157df4f05817ac38864a1ea5a963405"
+    }
+  ],
+  "coverage": [
+    {
+      "app": "mywebsite",
+      "covered_from": "2026-01-01T00:00:00+00:00",
+      "covered_to": "2026-01-02T00:00:00+00:00",
+      "evidence_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "snapshot_id": "cff92642f8db5fa0ffd9446641eff0d401b5c352ba26182cdda617f505187e0b",
+      "verified_at": "2026-01-06T00:00:00+00:00"
+    },
+    {
+      "app": "project_snow",
+      "covered_from": "2026-01-01T00:00:00+00:00",
+      "covered_to": "2026-01-02T00:00:00+00:00",
+      "evidence_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "snapshot_id": "cff92642f8db5fa0ffd9446641eff0d401b5c352ba26182cdda617f505187e0b",
+      "verified_at": "2026-01-06T00:00:00+00:00"
+    },
+    {
+      "app": "mywebsite",
+      "covered_from": "2026-01-03T00:00:00+00:00",
+      "covered_to": "2026-01-05T00:00:00+00:00",
+      "evidence_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "snapshot_id": "db04991afb7df02b96470e3beb411ba10157df4f05817ac38864a1ea5a963405",
+      "verified_at": "2026-01-06T00:00:00+00:00"
+    },
+    {
+      "app": "project_snow",
+      "covered_from": "2026-01-03T00:00:00+00:00",
+      "covered_to": "2026-01-05T00:00:00+00:00",
+      "evidence_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "snapshot_id": "db04991afb7df02b96470e3beb411ba10157df4f05817ac38864a1ea5a963405",
+      "verified_at": "2026-01-06T00:00:00+00:00"
+    }
+  ],
+  "knowledge_cutoff": "2026-01-06T00:00:00+00:00",
+  "schema_version": 1,
+  "snapshots": [
+    {
+      "apps": {
+        "mywebsite": {
+          "characters": [],
+          "content_sha256": "36560855e2d57e25e763698e5796b0fa4a11da7252616e394b9f7f26a4f18e09",
+          "origin": "https://xiaob.dev",
+          "paths": [
+            "/",
+            "/old"
+          ],
+          "release_at": "2026-01-01T00:00:00+00:00",
+          "release_sha": "1111111111111111111111111111111111111111"
+        },
+        "project_snow": {
+          "characters": [
+            "old-role",
+            "stable-role"
+          ],
+          "content_sha256": "2f4a602cc83d747914ba705bb3133349edab551e9cab1fcc208ac5966fdf76a8",
+          "origin": "https://snow.xiaob.dev",
+          "paths": [
+            "/"
+          ],
+          "release_at": "2026-01-01T00:00:00+00:00",
+          "release_sha": "1111111111111111111111111111111111111111"
+        }
+      },
+      "evidence": "explicit_release_declaration",
+      "identity_scope": "application_local_public_dimensions",
+      "kind": "public_product_catalog",
+      "recorded_at": "2026-01-01T01:00:00+00:00",
+      "schema_version": 1,
+      "snapshot_id": "cff92642f8db5fa0ffd9446641eff0d401b5c352ba26182cdda617f505187e0b",
+      "stage": "published"
+    },
+    {
+      "apps": {
+        "mywebsite": {
+          "characters": [],
+          "content_sha256": "f6ba1102c36a0b37ddc715beabe00e4fffcf014b3c4e149601aff88d927e83a6",
+          "origin": "https://xiaob.dev",
+          "paths": [
+            "/",
+            "/new"
+          ],
+          "release_at": "2026-01-03T00:00:00+00:00",
+          "release_sha": "2222222222222222222222222222222222222222"
+        },
+        "project_snow": {
+          "characters": [
+            "new-role",
+            "stable-role"
+          ],
+          "content_sha256": "5ad72dfd63df258d878f3929689549056e7e2a7b567b3ffbe4def968ad029ab1",
+          "origin": "https://snow.xiaob.dev",
+          "paths": [
+            "/"
+          ],
+          "release_at": "2026-01-03T00:00:00+00:00",
+          "release_sha": "2222222222222222222222222222222222222222"
+        }
+      },
+      "evidence": "explicit_release_declaration",
+      "identity_scope": "application_local_public_dimensions",
+      "kind": "public_product_catalog",
+      "recorded_at": "2026-01-03T01:00:00+00:00",
+      "schema_version": 1,
+      "snapshot_id": "db04991afb7df02b96470e3beb411ba10157df4f05817ac38864a1ea5a963405",
+      "stage": "published"
+    }
+  ],
+  "source": "synthetic"
+}

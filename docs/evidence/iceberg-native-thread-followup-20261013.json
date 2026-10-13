@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic fixtures",
+  "source_commit": "fa057fe1dca87f11c6edf10895820c55b6ae0d74",
+  "phase": "lake",
+  "attempt": "lake20261013",
+  "actual_exit_code": 1,
+  "iceberg_accepted": false,
+  "original_aggregate_expiry": "2026-12-14T00:00:00+08:00",
+  "retention_extended": false,
+  "failure": {
+    "stage": "control execution",
+    "symptom": "EAGAIN / unable to create native thread",
+    "failed_driver_pid_limit": 256,
+    "exact_pid_limit_cause_proven": false,
+    "failing_pid_counters_captured": false,
+    "complete_failing_memory_measurement": false
+  },
+  "resource_samples": {
+    "resource_samples": 39,
+    "incomplete_samples": 0,
+    "max_observed_project_bytes": 69105116866,
+    "max_sampled_oom_counter": 0,
+    "min_observed_guest_available_mib": {
+      "snow-analysis": 316,
+      "snow-compute": 420,
+      "snow-control": 514
+    },
+    "min_observed_guest_disk_mib": {
+      "snow-analysis": 2080,
+      "snow-compute": 4942,
+      "snow-control": 2385
+    },
+    "min_observed_host_available_mib": 5478,
+    "min_observed_host_free_bytes": 196267245568,
+    "monitor_error_count": 0
+  },
+  "cleanup": {
+    "all_vms_stopped": true,
+    "data_deleted": false,
+    "pending_transitions": 0,
+    "uncertain_lake_cleanup": false
+  },
+  "candidate": {
+    "driver_pid_limit": 512,
+    "driver_memory_mib": 1280,
+    "cpu": 2,
+    "actual_new_driver_tested": false,
+    "local_full_python_passed": 1096,
+    "skipped": 23,
+    "full_elapsed_seconds": 169.27,
+    "affected_lake_tests_passed": 48,
+    "affected_lake_tests_skipped": 1
+  },
+  "public_dimension_candidate": {
+    "new_tests": 25,
+    "total_related_tests_passed": 36,
+    "synthetic_artifact_generated": true,
+    "real_dimension_materialized": false,
+    "hive_spark_join_measured": false,
+    "existing_metrics_unchanged": true
+  },
+  "evidence": [
+    {
+      "path": "runtime/real/operator/v18-phase-metadata-lake-d1b37c3257504c12856faf65af80e7c7.json",
+      "sha256": "3770c211dbee90bdccd466bdec00edc21aa1fcc86d112c9bb8d87a82bc805797"
+    },
+    {
+      "path": "runtime/real/operator/fixture-lake-01-lake-891d840fc6904469b9ac305ab7886035-windows-v18-resources.json",
+      "sha256": "3409cc187dfdcb79ee3bd31f627df1dd26c44a1b1d44dbeb6f8eabc6ced12433"
+    },
+    {
+      "path": "runtime/real/operator/lake-v18-synthetic-spark-tail-20261013.private.txt",
+      "sha256": "04a954bc8c0d166a1bbda50e1cf6b1a29f4bf57fc11502e35b8da2e86d23a6a1"
+    },
+    {
+      "path": "runtime/real/operator/public-dimensions-candidate-validation-20261013.json",
+      "sha256": "29292c98ef3f83dd0f36fc3b9db62d10b874cb68e90264a6ce4123ecb5708097"
+    },
+    {
+      "path": "runtime/real/operator/pid-dim-independent-review-20261013.json",
+      "sha256": "5738442e28d2a5e0ee5fe1a6548a3fda2f9fc88cecb51bfb550561cf13f6b573"
+    }
+  ],
+  "limits": [
+    "The log proves a native-thread creation failure, not uniquely a PID-limit or memory cause.",
+    "Sampled cgroup OOM counters do not negate the observed Java native-thread error.",
+    "The partial attempt remains retained and cannot be reused; the next attempt inherits the original expiry.",
+    "The bounded PID change and public DIM module are candidates, not completed engine integrations."
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "expires_at": "2026-12-14T00:00:00+08:00",
+  "fixture": "fixture-lake-01-r1",
+  "full_topology_accepted": false,
+  "hive_readback_accepted": true,
+  "hive_registration_accepted": true,
+  "iceberg_accepted": false,
+  "input_origin": "synthetic fixtures",
+  "installed_source_files": 452,
+  "limitations": [
+    "Isolated synthetic aggregates only; no production events or production closed-day proof.",
+    "Independent register and verify Spark local[1] applications; not a distributed YARN engine claim.",
+    "Process exits were recorded by the operator from tool results; this exporter did not observe processes.",
+    "Full process start/end timestamps were not measured; engine freshness uses actual first/last resource samples.",
+    "Bounded resource samples are not continuous peaks or proof of absence of unsampled OOM.",
+    "Hive verification does not accept Iceberg; lake execution, readback and confirmation remain separate."
+  ],
+  "memory_mib": {
+    "snow-analysis": 1024,
+    "snow-compute": 1792,
+    "snow-control": 2048
+  },
+  "original_at": "2026-09-15T00:00:00+08:00",
+  "phases": [
+    {
+      "application_id": "local-1791904234704",
+      "checked_at": "2026-10-13T15:11:14.013646+00:00",
+      "engine": "Spark 3.5.7",
+      "evidence": {
+        "capture": {
+          "path": "runtime/real/operator/v18-hive-capture-r2-hive-register-8235a4b01c594b96bd3800bb8092570e/capture.json",
+          "sha256": "8a2965cd3403ca0b1fc92d4ae33f3a5d413431e40a005b16f57f9e0560f01dc0"
+        },
+        "process_observation": {
+          "path": "runtime/real/operator/v18-process-exit-register-20261013.json",
+          "sha256": "60a1c6a071073ff1a921efeca12d25aa007e733d32f533d0384d600ccf66a7bf"
+        },
+        "resource_receipt": {
+          "path": "runtime/real/operator/fixture-lake-01-hive-register-5411e6d6efcd490d9b360a42b3a45de8-windows-v18-resources.json",
+          "sha256": "980342ffb04747c62ba1661e4da9023bac895098ef2c2083f446f0b0a0408ded"
+        }
+      },
+      "freshness_witness": {
+        "complete_process_window_measured": false,
+        "first_resource_sample_at": "2026-10-13T15:06:21.358708+00:00",
+        "last_resource_sample_at": "2026-10-13T15:13:03.696601+00:00"
+      },
+      "groups": {
+        "daily": {
+          "rows": 6,
+          "rows_sha256": "86d0e10b4bb0ff1638c5ab84a519e1b60bad31ee7c371572f30238ed389a9230"
+        },
+        "funnel": {
+          "rows": 3,
+          "rows_sha256": "2b987bb689e413d31b23388fceec6ea136d95be3da87489bb2c7fb2d54b8806d"
+        },
+        "retention": {
+          "rows": 2,
+          "rows_sha256": "5f448f415b839fa5e08615812e7eb7099a413478bb0c949f269c2bd8063ac3ef"
+        },
+        "session_daily": {
+          "rows": 6,
+          "rows_sha256": "79d59a0174e42b1cf55500f669ec63924009f6f4a398592ad6725de6f2fa9fda"
+        }
+      },
+      "master": "local[1]",
+      "phase": "hive-register",
+      "process_exit_code": 0,
+      "process_exit_observation": "operator_recorded_from_exec_session",
+      "process_observation": {
+        "helper_independently_observed_exit": false,
+        "process_start_end_measured": false,
+        "result_chunk_ref": "6e65a0"
+      },
+      "process_session_id": 68017,
+      "request_sha256": "f8262412d456215e4156532b0da5cb37e5b596149884adfa7dd8304968b0b4b7",
+      "resources": {
+        "exact_continuous_peak_measured": false,
+        "incomplete_samples": 0,
+        "max_observed_project_bytes": 69075241420,
+        "max_sampled_oom_counter": 0,
+        "min_observed_guest_available_mib": {
+          "snow-analysis": 333,
+          "snow-compute": 1155,
+          "snow-control": 503
+        },
+        "min_observed_guest_disk_mib": {
+          "snow-analysis": 2136,
+          "snow-compute": 5039,
+          "snow-control": 2390
+        },
+        "min_observed_host_available_mib": 7027,
+        "min_observed_host_free_bytes": 198977716224,
+        "resource_samples": 41
+      }
+    },
+    {
+      "application_id": "local-1791904937393",
+      "checked_at": "2026-10-13T15:22:51.508152+00:00",
+      "engine": "Spark 3.5.7",
+      "evidence": {
+        "capture": {
+          "path": "runtime/real/operator/v18-hive-capture-r2-hive-verify-03d11d6c36444774a4efa7eb3c96a4e7/capture.json",
+          "sha256": "e96eb5fcbbc37eec2147b8b3fb52bbf7b73f103dadfcbd3ace2c3f3e4efa2810"
+        },
+        "process_observation": {
+          "path": "runtime/real/operator/v18-process-exit-verify-20261013.json",
+          "sha256": "4027bf342b6de0ec368687d5b919c8a9b2ca36b4d535e5c73fc26e90da969ec1"
+        },
+        "resource_receipt": {
+          "path": "runtime/real/operator/fixture-lake-01-hive-verify-437a67ec51a241abb49929788a4eb998-windows-v18-resources.json",
+          "sha256": "eae9286b7326cc69b6a52263d31b583806a42a7ebf749d60dfacc8b780ea3f52"
+        }
+      },
+      "freshness_witness": {
+        "complete_process_window_measured": false,
+        "first_resource_sample_at": "2026-10-13T15:18:36.616707+00:00",
+        "last_resource_sample_at": "2026-10-13T15:24:29.075491+00:00"
+      },
+      "groups": {
+        "daily": {
+          "rows": 6,
+          "rows_sha256": "86d0e10b4bb0ff1638c5ab84a519e1b60bad31ee7c371572f30238ed389a9230"
+        },
+        "funnel": {
+          "rows": 3,
+          "rows_sha256": "2b987bb689e413d31b23388fceec6ea136d95be3da87489bb2c7fb2d54b8806d"
+        },
+        "retention": {
+          "rows": 2,
+          "rows_sha256": "5f448f415b839fa5e08615812e7eb7099a413478bb0c949f269c2bd8063ac3ef"
+        },
+        "session_daily": {
+          "rows": 6,
+          "rows_sha256": "79d59a0174e42b1cf55500f669ec63924009f6f4a398592ad6725de6f2fa9fda"
+        }
+      },
+      "master": "local[1]",
+      "phase": "hive-verify",
+      "process_exit_code": 0,
+      "process_exit_observation": "operator_recorded_from_exec_session",
+      "process_observation": {
+        "helper_independently_observed_exit": false,
+        "process_start_end_measured": false,
+        "result_chunk_ref": "01c16e"
+      },
+      "process_session_id": 99716,
+      "request_sha256": "37e3c2052bee85e8e56d2d6474e7def502145255056abcc44806ebbd5e867340",
+      "resources": {
+        "exact_continuous_peak_measured": false,
+        "incomplete_samples": 0,
+        "max_observed_project_bytes": 69078694504,
+        "max_sampled_oom_counter": 0,
+        "min_observed_guest_available_mib": {
+          "snow-analysis": 319,
+          "snow-compute": 1156,
+          "snow-control": 469
+        },
+        "min_observed_guest_disk_mib": {
+          "snow-analysis": 2128,
+          "snow-compute": 5041,
+          "snow-control": 2388
+        },
+        "min_observed_host_available_mib": 7273,
+        "min_observed_host_free_bytes": 196293550080,
+        "resource_samples": 39
+      }
+    }
+  ],
+  "process_evidence": {
+    "path": "runtime/real/operator/v18-hive-process-exits-20261013.json",
+    "sha256": "20ba4bb3ddbd18cbf6740e6c91baa1eb9c4a5df78d0d11567ca3adf3758b931e"
+  },
+  "production_data_tested": false,
+  "profile": "real-small-1792",
+  "recorded_at": "2026-10-13T15:29:16.245044+00:00",
+  "retention_extended": false,
+  "schema_version": 1,
+  "source_archive_sha256": "b0f845b2544b5bb8df956d2df2685b29da48fc7f15d8eb2d294a6f0d5735a6eb",
+  "source_commit": "fa057fe1dca87f11c6edf10895820c55b6ae0d74",
+  "source_install_evidence": {
+    "path": "docs/evidence/signed-source-install-fa057fe-20261013.json",
+    "sha256": "b7294cd4b3dccace3bc94ad28cf9c292ed9f57b0b5680c33169ac398f5dcb072"
+  }
+}

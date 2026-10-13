@@ -34,7 +34,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 sudo docker run --name "$driver_name" --cidfile "$cidfile" --pull=never \
-  --label "org.snow-statistics.lake-driver=$driver_name" --memory 1280m --cpus 2 --pids-limit 256 --network host --user 0:0 \
+  --label "org.snow-statistics.lake-driver=$driver_name" --memory 1280m --cpus 2 --pids-limit 512 --network host --user 0:0 \
   --add-host "snow-control:$CONTROL_IP" --add-host "snow-compute:$COMPUTE_IP" --add-host "snow-analysis:$ANALYSIS_IP" \
   -e HADOOP_CONF_DIR=/etc/hadoop -e PYSPARK_PYTHON=/usr/bin/python3 \
   -v "$PWD/warehouse/spark:/opt/snow/warehouse/spark:ro" \

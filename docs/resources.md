@@ -86,6 +86,16 @@ sudo bash deploy/prepare-state.sh
 
 ## 本地实验的资源取舍
 
+### 2026-10-13 Iceberg driver 的有限进程数调整
+
+合成湖仓 attempt `lake20261013` 在实际执行阶段失败。私有诊断记录了线程创建返回 `EAGAIN` 和 `unable to create native thread`；当时 driver 容器的 PID 上限为 256。旧 attempt 和失败回执保留，不能沿用该 attempt 重新宣称成功。尚未采到失败瞬间的 `pids.current`、`pids.events` 或完整内存事件，因此不能只凭这段日志断言唯一原因是 PID 上限。
+
+Apache Spark **3.5.7** 官方源码在 [BlockManagerStorageEndpoint](https://github.com/apache/spark/blob/v3.5.7/core/src/main/scala/org/apache/spark/storage/BlockManagerStorageEndpoint.scala#L35-L37) 与 [BlockManagerMasterEndpoint](https://github.com/apache/spark/blob/v3.5.7/core/src/main/scala/org/apache/spark/storage/BlockManagerMasterEndpoint.scala#L86-L88) 中，各以常量 100 创建对应异步线程池。这两处不是可直接调小的 SparkConf 配置；源码核对本身也不等于对正在运行的镜像 JAR 做过字节码测量。
+
+依据适度扩容授权，`tools/real_lake_spark.sh` 仅把独立 driver 容器的 **PID 上限从 256 提高至 512**。内存仍为 **1280 MiB**、CPU **2**、Java driver 堆 **640 MiB**，executor 与 VM 配置、所有权标签和精确 CID 清理逻辑不变。该改动没有取消进程上限，也不增加业务服务依赖。Bash 合成测试检查实际参数传递，以及成功、失败和所有权不匹配时的清理范围；它不证明 Docker 或 Spark 引擎已经通过。
+
+后续实际运行必须使用新的固定 attempt，保留原聚合到期时间，并采集该精确容器的 `pids.current/max/events` 和 `memory.current/events`。需同时确认独立执行、独立读回和最终确认通过，才能验收 Iceberg；PID 候选配置和采样工具都不替代引擎证据。项目 72 GiB、71.75 GiB 停止线、宿主 35 GiB 空闲磁盘和 4 GiB 可用 RAM 均保持不变。
+
 [10 万条与百万条 Spark/YARN](scale.md)均已在 2/2/1 GiB 完成。百万条应用时长 115.023 秒，累计磁盘 spill 约 423.17 MiB；NodeManager 容器（包含 AM / executor）记录的生命周期内存峰值约 1327.33 MiB。计算节点仍需容纳 DataNode 与操作系统，因此本轮保留 2 GiB，不再压缩。
 
 监测中项目文件最大 59.67 GiB、宿主磁盘最少空闲 48.27 GiB、RAM 最少可用 10459 MiB。历史保留后，下一次启动要按最新文件占用重新检查；两项验证完成后冷态文件约 54.79 GiB；按用户授权将初始 60 GiB 实验上限适度调整为 64 GiB，覆盖历史文件、5 GiB VM 内存后备和 1 GiB 作业余量，宿主 35 GiB 磁盘及 4 GiB RAM 余量保持不变。启动、监测和磁盘维护共同读取资源清单中的限额；成功一次不代表可以无界保留重复输出。日常让 VM 停止，离线查看已导出的模型、血缘和性能报告；优化或恢复实验按主题启动并使用新 attempt，始终保留宿主资源余量。
