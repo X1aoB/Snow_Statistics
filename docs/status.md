@@ -1,6 +1,24 @@
 # 实施状态
 
-## 当前停点：退出修复Linux实测通过，新增签名超时（2026-10-13）
+## 最新进展：Hive 原生解压故障已定位，修复与发布血缘候选通过回归（香港2026-10-13晚间）
+
+V13 私有诊断包装器曾错误使用 SSH 默认工作目录定位项目，worker 和 cancel 都在节点门禁前失败，未取得 V12 的 Spark 日志；该轮实际收尾全 VM 关闭、数据保留。V14 改为按脚本路径定位，实际默认 SSH 工作目录的四项预检复现旧缺陷并验证新 worker/cancel 路径门禁，不将预检误作引擎成功。
+
+V14 实际阶段切换及四次 Spark 清理成功，随后 register 的 driver 退出 1。有界私有日志取得 `UnsatisfiedLinkError`：Snappy 从 `/tmp` 解包本地库后无法映射；本轮仍判登记失败，已自动关闭三 VM，数据保留。随后只启动 control 做锁定镜像的小合成对照。第一版小探针复现同样 Java 错误，但未正确识别跨 Java 线程的返回，故仍判探针失败；旧回执和代码保留。V2 实际 old/new 对照均符合预期：旧配置实际 `/tmp` 为 noexec 并复现映射错误；新配置在专用目录完成 296 字节压缩/解压往返，普通 `/tmp` 仍为 noexec。两个容器均实际移除，随后 control 软关、vmrun 为 0；冷态项目 59.48 GiB、宿主空闲 190.89 GiB。该小实验不等于完整 Hive 登记或 Iceberg 通过，见[实际原生库对照](evidence/hive-snappy-native-20261013.json)。
+
+受测修复只让 Snappy 使用独立 16 MiB 临时目录，普通 `/tmp` 明确保留 noexec；容器 768 MiB 总内存、CPU、只读挂载、锁定 JAR、请求身份及收尾规则不变。另补齐固定 control 发布任务的自动表级血缘：实际读取受管 daily/behavior 文件，发布物在同一锁内读回一致才记录 COMPLETE；不记录行数据，transfer 不冒充新发布。两种存储的提交不是跨库原子事务，日志失败可能发生在指针写后，失败与重试分别记录。见[发布血缘候选与边界](evidence/real-publish-lineage-candidate-20261013.json)。
+
+公共工作区完整 Windows 回归 **1042 passed / 23 skipped**（1 条既有依赖弃用警告）、浏览器 23 项、v1/v2 契约、Ruff 及 diff 检查通过；独立源审查未发现 P1/P2。12 个冻结 writer 与 dc48 来源逐字一致。新候选尚未签名、CI 或安装，不将旧 dc48 安装回执算作新修复已部署。真实自然闭日、Hive/Iceberg、实际发布血缘投递及生产 P95 继续逐项验收。
+
+## V12 时点：新来源已安装，Hive清理通过，登记失败后已收尾（香港2026-10-13晚间）
+
+用户回应解锁后，16文件提交已签名为`dc48ff1a9786100bb79088c3c0f162a24311deb1`并推送。push与PR两轮Linux CI全部步骤成功；新437文件归档与签名Git树一致，detached签名通过。analysis、control、compute均完成固定507基线的安装及独立完整回读，原配置、analysis的03/04恢复元数据、12个冻结writer和依赖保持，见[签名与CI](evidence/signed-source-dc48ff1-20261013.json)及[三节点安装](evidence/signed-source-install-dc48ff1-20261013.json)。下方“等待GPG/未提交”保留较早时点。
+
+新V12/r3候选52项合成检查与独立复核通过。实际小内存离线启动成功；仅元数据预检确认03/04状态摘要仍为原值、本次Lake attempt在三机本地及analysis登记/HDFS中未使用、原聚合到期为香港12月14日00:00。附加安装后检查曾因操作者提前软关而中断，未记录成功；新的完整预检已重新通过，原失败保留。
+
+实际`hive-enter`及`hive-cleanup`已通过，这两个阶段的合法完成帧与进程退出0均通过，先前清理complete之后authority非零退出的故障在这次清理中未再出现。随后`hive-register`在Control RPC阶段出现RuntimeError，尚未确定具体原因，不能记为注册成功。监控错误为空，32次完整资源采样未观测到OOM；本次项目采样最高63.9357 GiB、宿主空闲最低186.7031 GiB、可用RAM最低8290 MiB，这些是采样值而非连续严格峰值。失败收尾实际确认三VM全关、`data_deleted=false`、无待处理阶段切换，见[本轮阶段、失败及资源证据](evidence/hive-catalog-followup-20261013.json)。保留此前清理成功及本次失败，下一步继续定位RPC错误；Hive登记、独立读回和Iceberg仍未验收。真实闭日最早须香港10月14日00:00以后，当前合成夹具运行不能代替真实闭日结果，也没有测试Kafka链路。
+
+## 历史停点：退出修复Linux实测通过，新增签名超时（2026-10-13）
 
 Hive输入线程修复在单台768 MiB analysis上的独立目录完成10项真实Linux管道/子进程合成检查：空输入、半帧、拆帧、超限、EOF、队列满，以及authority正常完成、半帧完成、操作失败和断连均符合预期。正常完成时父端仍保持stdin打开，子进程退出码为0；失败/断连分别保持1/143，没有将失败改成成功。旧安装模块前后摘要一致、容器运行数为0，测试后已软关，三VM运行数为0；项目59.42 GiB、宿主空闲189.60 GiB。见[Linux独立验证](evidence/hive-reader-linux-20261013.json)。这不是完整Linux CI或实际Hive/Iceberg验收。
 

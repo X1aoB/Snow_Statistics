@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-10-13T13:08:46.646952+00:00",
+  "source_base_commit": "dc48ff1a9786100bb79088c3c0f162a24311deb1",
+  "candidate_source": [
+    {
+      "path": "src/snow_statistics/real_publication.py",
+      "sha256": "ddbb3a8bbf9797b98460f66aae62075ab6032896aedfb7b7263ccf9bd7f61f14"
+    },
+    {
+      "path": "src/snow_statistics/real_lineage.py",
+      "sha256": "1daebdffc3cebbe3e3fb7b2962e3e73b29e80cf5a70efd86142d357b29d925f5"
+    },
+    {
+      "path": "tests/test_real_publish_lineage.py",
+      "sha256": "d4ea27add62fe01d5b69fe62953fdeec922b679c7193503db896f79bf1963ed2"
+    }
+  ],
+  "source_status": "working tree candidate; not yet signed or installed",
+  "input_origin": "synthetic fixtures only",
+  "changes": [
+    "fixed control publisher records managed daily/behavior file inputs",
+    "same publication lock verifies actual immutable pair before COMPLETE",
+    "failed attempts do not declare outputs; retries have separate identities"
+  ],
+  "frozen_writer_files_unchanged": 12,
+  "local_validation": {
+    "python_passed": 1042,
+    "python_skipped": 23,
+    "python_seconds": 110.44,
+    "warnings": [
+      "existing dependency deprecation"
+    ],
+    "related_publication_tests_passed": 70,
+    "new_publication_tests": 16,
+    "browser_passed": 23,
+    "ruff": "passed",
+    "v1_v2_contracts": "passed",
+    "diff_check": "passed",
+    "independent_source_review": "no P1/P2 found"
+  },
+  "actual_publication_tested": false,
+  "actual_marquez_delivery_tested": false,
+  "coverage_limits": [
+    "compute file-output edges are not added",
+    "Doris publisher currently publishes daily metrics only",
+    "transfer copies do not create a new business publish job",
+    "pointer and lineage journal are separate stores; journal failure may follow pointer write"
+  ],
+  "public_contracts_changed": false,
+  "credentials_or_rows_in_evidence": false
+}

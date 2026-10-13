@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-13T12:20:40.166506+00:00",
+  "source_commit": "dc48ff1a9786100bb79088c3c0f162a24311deb1",
+  "input_origin": "synthetic fixtures",
+  "lane": "fixture-lake-01",
+  "controller_revision": "private-v12",
+  "profile": "real-small-1792",
+  "memory_mib": {
+    "snow-analysis": 768,
+    "snow-compute": 1792,
+    "snow-control": 2048
+  },
+  "scope": "Actual Hive phase transition and cleanup followed by a failed catalog registration; metadata only",
+  "phases": [
+    {
+      "phase": "hive-enter",
+      "complete": true,
+      "failure_type": null,
+      "monitor_errors": [],
+      "resources": {
+        "sample_count": 6,
+        "sample_start_at": "2026-10-13T12:08:37.776324+00:00",
+        "sample_end_at": "2026-10-13T12:09:24.030117+00:00",
+        "sampled_project_max_bytes": 68649426642,
+        "sampled_host_free_min_bytes": 200481918976,
+        "sampled_host_available_min_mib": 8641,
+        "guests": {
+          "snow-control": {
+            "sampled_disk_free_min_mib": 2536,
+            "sampled_available_ram_min_mib": 1019
+          },
+          "snow-compute": {
+            "sampled_disk_free_min_mib": 4954,
+            "sampled_available_ram_min_mib": 1039
+          },
+          "snow-analysis": {
+            "sampled_disk_free_min_mib": 2158,
+            "sampled_available_ram_min_mib": 179
+          }
+        },
+        "observed_oom_event_max": 0,
+        "observed_oom_kill_event_max": 0,
+        "exact_peak_measured": false
+      },
+      "evidence": {
+        "path": "runtime/real/operator/fixture-lake-01-hive-enter-ea51029d8abe4122b685cedfaaad99fa-windows-v12-resources.json",
+        "sha256": "fce448112d2c25f0be04cc26e58d0a3e144aa1eaf36eab5d84037a4342b709de"
+      }
+    },
+    {
+      "phase": "hive-cleanup",
+      "complete": true,
+      "failure_type": null,
+      "monitor_errors": [],
+      "resources": {
+        "sample_count": 8,
+        "sample_start_at": "2026-10-13T12:10:24.814422+00:00",
+        "sample_end_at": "2026-10-13T12:11:26.140527+00:00",
+        "sampled_project_max_bytes": 68649699882,
+        "sampled_host_free_min_bytes": 200477818880,
+        "sampled_host_available_min_mib": 8517,
+        "guests": {
+          "snow-control": {
+            "sampled_disk_free_min_mib": 2535,
+            "sampled_available_ram_min_mib": 708
+          },
+          "snow-compute": {
+            "sampled_disk_free_min_mib": 4954,
+            "sampled_available_ram_min_mib": 1175
+          },
+          "snow-analysis": {
+            "sampled_disk_free_min_mib": 2157,
+            "sampled_available_ram_min_mib": 163
+          }
+        },
+        "observed_oom_event_max": 0,
+        "observed_oom_kill_event_max": 0,
+        "exact_peak_measured": false
+      },
+      "evidence": {
+        "path": "runtime/real/operator/fixture-lake-01-hive-cleanup-0e77aa32eca34cc1bc1e3ab51d9596ef-windows-v12-resources.json",
+        "sha256": "c773e3318342580ee9ca1669ecaa279ba235e39e6ea94e6a64de803e3cad1a61"
+      }
+    },
+    {
+      "phase": "hive-register",
+      "complete": false,
+      "failure_type": "RuntimeError",
+      "monitor_errors": [],
+      "resources": {
+        "sample_count": 18,
+        "sample_start_at": "2026-10-13T12:12:25.733595+00:00",
+        "sample_end_at": "2026-10-13T12:14:57.712564+00:00",
+        "sampled_project_max_bytes": 68650434526,
+        "sampled_host_free_min_bytes": 200470908928,
+        "sampled_host_available_min_mib": 8290,
+        "guests": {
+          "snow-control": {
+            "sampled_disk_free_min_mib": 2535,
+            "sampled_available_ram_min_mib": 563
+          },
+          "snow-compute": {
+            "sampled_disk_free_min_mib": 4954,
+            "sampled_available_ram_min_mib": 1162
+          },
+          "snow-analysis": {
+            "sampled_disk_free_min_mib": 2157,
+            "sampled_available_ram_min_mib": 134
+          }
+        },
+        "observed_oom_event_max": 0,
+        "observed_oom_kill_event_max": 0,
+        "exact_peak_measured": false
+      },
+      "evidence": {
+        "path": "runtime/real/operator/fixture-lake-01-hive-register-2c000efd1cff496ea171786ee0201d94-windows-v12-resources.json",
+        "sha256": "8e3c21ee3df2fca5e052dd1dc52ff4b0751b43005a96eb4f3923dc4ae5bd5316"
+      }
+    }
+  ],
+  "resources": {
+    "sample_count": 32,
+    "sample_start_at": "2026-10-13T12:08:37.776324+00:00",
+    "sample_end_at": "2026-10-13T12:14:57.712564+00:00",
+    "sampled_project_max_bytes": 68650434526,
+    "sampled_host_free_min_bytes": 200470908928,
+    "sampled_host_available_min_mib": 8290,
+    "guests": {
+      "snow-control": {
+        "sampled_disk_free_min_mib": 2535,
+        "sampled_available_ram_min_mib": 563
+      },
+      "snow-compute": {
+        "sampled_disk_free_min_mib": 4954,
+        "sampled_available_ram_min_mib": 1039
+      },
+      "snow-analysis": {
+        "sampled_disk_free_min_mib": 2157,
+        "sampled_available_ram_min_mib": 134
+      }
+    },
+    "observed_oom_event_max": 0,
+    "observed_oom_kill_event_max": 0,
+    "exact_peak_measured": false
+  },
+  "resource_limits": {
+    "project_max_bytes": 77309411328,
+    "running_stop_line_bytes": 77040975872,
+    "host_free_min_bytes": 37580963840,
+    "host_available_min_mib": 4096,
+    "guest_available_min_mib": 128,
+    "guest_disk_free_min_mib": 384
+  },
+  "failure": {
+    "phase": "hive-register",
+    "type": "RuntimeError",
+    "diagnostic_at": "2026-10-13T12:14:52.326889+00:00",
+    "controller_operation": "perform",
+    "controller_stage": "invoke",
+    "operator_observed_stage": "Control RPC",
+    "detailed_cause_verified": false,
+    "note": "The retained resource receipt redacts the exception message; no root cause is inferred."
+  },
+  "cleanup": {
+    "status": "offline_stopped",
+    "verified_all_vms_stopped": true,
+    "actual_vm_state": {
+      "snow-control": false,
+      "snow-compute": false,
+      "snow-analysis": false
+    },
+    "data_deleted": false,
+    "pending_transitions": [],
+    "lake_cleanup_uncertain": false,
+    "note": "Actual shutdown result for this failed attempt; not a claim about a later diagnostic run."
+  },
+  "acceptance": {
+    "hive_enter": true,
+    "hive_cleanup": true,
+    "hive_registration": false,
+    "hive_independent_readback": false,
+    "iceberg": false,
+    "kafka_engine_tested": false,
+    "closed_real_business_day": false,
+    "full_topology_acceptance": false
+  },
+  "limits": [
+    "Resource maxima/minima are observations from 32 complete samples, not continuous exact peaks.",
+    "No OOM was observed in sampled owned cgroup counters; absence of sampled OOM does not identify the RPC failure cause.",
+    "Synthetic fixtures exercise the real pipeline contract but are not real user data or production acceptance.",
+    "The successful Hive cleanup remains valid for its own phase; registration, independent readback and Iceberg are pending."
+  ]
+}

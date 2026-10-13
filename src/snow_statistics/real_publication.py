@@ -2,9 +2,11 @@
 import json
 import math
 import re
+import socket
+from contextlib import contextmanager
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from .io import digest, write_json
 from .lifecycle import RealLifecycle
@@ -223,6 +225,43 @@ def read_real_release(directory, now=None):
     return result
 
 
+CONTROL_PUBLICATION = Path("/home/snow/Snow_Statistics/runtime/real/publication")
+
+
+@contextmanager
+def _publication_capture(result, directory, now=None):
+    """Observe the fixed control publisher; managed transfer copies stay separate."""
+    if directory.absolute() != CONTROL_PUBLICATION:
+        yield
+        return
+    if socket.gethostname() != "snow-control" or directory.resolve() != CONTROL_PUBLICATION:
+        raise ValueError("Real publication lineage requires the fixed control directory")
+    from .real_lineage import RealCapture, RealJournal, dataset
+    current = now or datetime.now(UTC)
+    original = RealLifecycle(directory.parent / "runs" / result["run_id"] / "data")
+    original.cleanup(current)
+    inputs = []
+    for kind in ("daily", "behavior"):
+        path = original.readable(kind + ".json", current)
+        if path.stat().st_size > 4 * 1024**2:
+            raise ValueError("Publication input package exceeds its bound")
+        body = path.read_bytes()
+        if len(body) > 4 * 1024**2 or json.loads(body) != result[kind]:
+            raise ValueError("Publication lineage input differs from its managed package")
+        inputs.append(dataset("file://snow-control/home/snow/Snow_Statistics/runtime/real/runs/"
+                              + result["run_id"] + "/data/" + kind + ".json"))
+    journal = RealJournal(directory.parent / "lineage/events.sqlite")
+    # Each real invocation is a separate attempt, including an idempotent retry.
+    # A failed attempt is never rewritten as COMPLETE by a later invocation.
+    with RealCapture(journal, "snow_real.publish", "publish-" + uuid4().hex, inputs) as capture:
+        yield
+        if read_real_release(directory, now) != result:
+            raise ValueError("Published pair readback differs before lineage completion")
+        relative = "releases/" + digest(canonical(result)) + ".json"
+        capture.outputs = [dataset("file://snow-control/home/snow/Snow_Statistics/runtime/real/publication/data/"
+                                   + relative)]
+
+
 def release_real(daily, behavior, directory, run_id, *, now=None):
     """Reserve immutable aggregate copy before write; pointer never holds rows."""
     current = now or datetime.now(UTC)
@@ -232,7 +271,7 @@ def release_real(daily, behavior, directory, run_id, *, now=None):
         raise ValueError("Cannot publish a future cutoff")
     origin = datetime.combine(date.fromisoformat(basic["date_from"]), time(), HK)
     directory = Path(directory)
-    with publication_lock(directory):
+    with publication_lock(directory), _publication_capture(result, directory, now):
         lifecycle = RealLifecycle(directory / "data")
         if not lifecycle.owner.exists():
             lifecycle.initialize()

@@ -1,0 +1,116 @@
+{
+  "config_and_recovery_metadata_unchanged": true,
+  "containers_started_during_install": false,
+  "dependencies_changed": false,
+  "engine_acceptance_claimed": false,
+  "evidence": [
+    {
+      "path": "runtime/real/operator/source-release-dc48ff1a9786/release.json",
+      "sha256": "957bf71038707413a1d92a859d3d421211dc726b8f46f0d072e4a96f5a5ae41e"
+    },
+    {
+      "path": "runtime/real/operator/source-release-dc48ff1a9786/generation-validation.json",
+      "sha256": "681554754a293e98372daf55994e83aad7dc93dc505c88083965b07f2d570c42"
+    },
+    {
+      "path": "runtime/real/operator/ci-dc48ff1-20261013.json",
+      "sha256": "f712ea6259b966551cbd34a2bd6894bf0cb9bb652e5a6c96109068787f2107f5"
+    }
+  ],
+  "frozen_writer_files_unchanged": 12,
+  "input_scope": "Source files and configuration/recovery metadata only; no event payloads",
+  "nodes": [
+    {
+      "changed_files": 16,
+      "complete_signed_archive_read_back": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "evidence": [
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/lake-source-update-dc48ff1a-snow-analysis.json",
+          "sha256": "593be5e33aa73cd824c3f38639aa9c44baa299820aff27e447036b6206474534"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-analysis-prepare-35ec152cc8cc43d1ac897d96b1d66f56.json",
+          "sha256": "6d6ab810071b376cd368ac32fe8d1dc3170c668daee598446e99fed1bd63a448"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-analysis-install-4957a849dc5b46438a56f82144315fc6.json",
+          "sha256": "ebff9649ea27a5d3bc63918e63a0d29e2b409ff2bb2315c74d0c563404dea15e"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-analysis-readback-93639d90ea9745fcbcfa4c599cafffa4.json",
+          "sha256": "5732d113308a5a849e8fd57ecc6abf5f556fe4a99290c24555a331917eb3f06e"
+        }
+      ],
+      "files_checked": 437,
+      "frozen_writer_unchanged": true,
+      "installed_at": "2026-10-13T11:54:10.485398+00:00",
+      "node": "snow-analysis",
+      "protected_metadata_scope": "existing configuration files and analysis-owned preserved epoch metadata"
+    },
+    {
+      "changed_files": 16,
+      "complete_signed_archive_read_back": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "evidence": [
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/lake-source-update-dc48ff1a-snow-control.json",
+          "sha256": "422c44280c21599abcf6d6d0db2036d5ad46936d082346b5effd4a31fe0cde8c"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-control-prepare-232e5a3076a643a1a42efcf67d1afc82.json",
+          "sha256": "bce7fcc5d3c112e24bbd0262abd363cbc63cbb23a9bbc7ba616885cba010598d"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-control-install-573c94eb73a94dc2aff6e65624b9f701.json",
+          "sha256": "d391e628db08d7ab6d37e78e43d354068d9a46bba75af5a6f7534ff5cd09ee2e"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-control-readback-7af237a6b08a47ba87102ad9166bcadb.json",
+          "sha256": "5732d113308a5a849e8fd57ecc6abf5f556fe4a99290c24555a331917eb3f06e"
+        }
+      ],
+      "files_checked": 437,
+      "frozen_writer_unchanged": true,
+      "installed_at": "2026-10-13T11:58:04.493207+00:00",
+      "node": "snow-control",
+      "protected_metadata_scope": "existing configuration files"
+    },
+    {
+      "changed_files": 16,
+      "complete_signed_archive_read_back": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "evidence": [
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/lake-source-update-dc48ff1a-snow-compute.json",
+          "sha256": "7d0f078fa5fdd3b1b0fc4a1769b7adb26c469f78d11f774360267824e22a21f8"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-compute-prepare-55a920d2f557441e83c231834ee6b07b.json",
+          "sha256": "2dc6761c1e335c7adcdaa3e4308b9659a88b80d6b7978c9f8416caf1902c84d0"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-compute-install-fe472a41ea8b423586cb067ae37e672f.json",
+          "sha256": "164f9826e0b54c4e3313f4f646e79194159116093b503c02eea64f8feb1c5f7b"
+        },
+        {
+          "path": "runtime/real/operator/source-release-dc48ff1a9786/snow-compute-readback-03573ce27f994cd58d437dd710c73ca5.json",
+          "sha256": "5732d113308a5a849e8fd57ecc6abf5f556fe4a99290c24555a331917eb3f06e"
+        }
+      ],
+      "files_checked": 437,
+      "frozen_writer_unchanged": true,
+      "installed_at": "2026-10-13T12:00:01.462647+00:00",
+      "node": "snow-compute",
+      "protected_metadata_scope": "existing configuration files"
+    }
+  ],
+  "note": "Each node checked the installed 50706a8 baseline and preserved existing configuration; analysis also preserved its owned epoch recovery metadata. Each node installed dc48ff1 and independently read back all 437 files. No engine run or current powered-off state is inferred from these receipts.",
+  "real_expiry_extended": false,
+  "recorded_at": "2026-10-13T12:03:37.748851+00:00",
+  "schema_version": 1,
+  "source_archive_sha256": "bc3fac05f78feb4b20dc11d8ac246e2b1f204d4b76f95c4611e1dcc6e86d0637",
+  "source_commit": "dc48ff1a9786100bb79088c3c0f162a24311deb1",
+  "source_files_sha256": "c273a9d352b3c1a8f974c6a56d3f1cf848014f2850af65159e429e68282f5459",
+  "source_installation_tests_passed": 43
+}

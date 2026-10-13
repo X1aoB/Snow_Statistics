@@ -22,6 +22,9 @@ def dataset(uri):
         return dict(namespace=parsed.scheme + "://" + parsed.netloc, name=parsed.path)
     if parsed.scheme == "file" and parsed.netloc == "snow-control" and re.fullmatch(r"/home/snow/Snow_Statistics/runtime/real/(?:publication|lake)/[A-Za-z0-9_./-]{1,200}", parsed.path) and ".." not in parsed.path:
         return dict(namespace="file://snow-control", name=parsed.path)
+    if parsed.scheme == "file" and parsed.netloc == "snow-control" and re.fullmatch(
+            r"/home/snow/Snow_Statistics/runtime/real/runs/[A-Za-z0-9_-]{1,100}/data/(?:daily|behavior)\.json", parsed.path):
+        return dict(namespace="file://snow-control", name=parsed.path)
     raise ValueError("Dataset is outside the explicit real metadata namespaces")
 
 

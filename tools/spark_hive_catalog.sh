@@ -57,7 +57,8 @@ trap 'exit 130' INT
 timeout --signal=TERM --kill-after=10s 240s sudo docker run --rm --pull=never --name "$name" --cidfile "$PWD/$cidfile" --label "snow.hive.request=$2" \
   --memory 768m --cpus 1 --pids-limit 128 --network host --user 0:0 \
   --add-host "snow-control:$CONTROL_IP" --add-host "snow-compute:$COMPUTE_IP" --add-host "snow-analysis:$ANALYSIS_IP" \
-  --tmpfs /tmp:rw,nosuid,size=192m --read-only \
+  --tmpfs /tmp:rw,noexec,nosuid,nodev,size=192m \
+  --tmpfs /opt/snow-native:rw,exec,nosuid,nodev,size=16m,mode=0700 --read-only \
   -e HADOOP_CONF_DIR=/etc/hadoop -e PYSPARK_PYTHON=/usr/bin/python3 \
   -v "$PWD/src:/opt/snow/src:ro" -v "$PWD/warehouse/spark:/opt/snow/warehouse/spark:ro" \
   -v "$PWD/lab/spark-submit-locked.sh:/opt/snow/lab/spark-submit-locked.sh:ro" \
@@ -65,6 +66,7 @@ timeout --signal=TERM --kill-after=10s 240s sudo docker run --rm --pull=never --
   -v "$PWD/$1:/opt/snow/$1:ro" -v "$PWD/lab/generated/hadoop:/etc/hadoop:ro" -w /tmp "$SPARK_IMAGE" \
   bash /opt/snow/lab/spark-submit-locked.sh --master 'local[1]' --driver-memory 512m \
   --conf spark.ui.enabled=false --conf spark.eventLog.enabled=false --conf spark.sql.shuffle.partitions=1 \
+  --conf spark.driver.extraJavaOptions=-Dorg.xerial.snappy.tempdir=/opt/snow-native \
   --conf spark.sql.hive.metastore.version=3.1.3 --conf spark.sql.hive.metastore.jars=path \
   --conf 'spark.sql.hive.metastore.jars.path=file:///opt/snow/runtime/hive-client/*.jar' \
   /opt/snow/warehouse/spark/real_hive_catalog.py --request "/opt/snow/$1" --sha256 "$2"

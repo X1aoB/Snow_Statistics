@@ -1,6 +1,18 @@
 # 完成范围与验收清单
 
-## 当前继续入口（2026-10-13 Linux退出验证后）
+## 当前继续入口（2026-10-13晚间 V14 诊断后）
+
+- V13 诊断包装器的默认 SSH 工作目录缺陷已保留为失败；V14 路径修正通过实际四项入口预检，阶段切换及四次 Spark 清理通过。实际登记仍失败，但已取得 Snappy 本地解压库在 `/tmp` 无法映射的具体异常；失败后实际三 VM 全关、数据保留。锁定镜像 V2 小合成对照已实际通过：旧配置复现错误，新配置完成 native 压缩/解压往返，普通 `/tmp` 保留 noexec；容器清理与 VM 全停实际回读通过，见[原生库对照](evidence/hive-snappy-native-20261013.json)。
+- Hive 专用 16 MiB 原生库目录及固定 control 发布血缘候选已合并工作区。完整 Windows Python **1042 passed / 23 skipped**、浏览器 23 项、契约/Ruff/diff 检查通过；12 冻结 writer 不变，独立审查无 P1/P2。候选待签名、CI、完整安装与实际引擎重跑，见[发布血缘候选](evidence/real-publish-lineage-candidate-20261013.json)。
+- 当前仍需完成 Hive 登记/独立读回、Iceberg、自然闭日后的真实模型与成对发布、实际血缘投递及生产 P95。当前 Doris 发布器只发布 daily，私有 pair/看板包含行为模型；不把未观察的真实请求、未成熟留存或合成性能写成生产成功。
+
+## V12 继续入口（2026-10-13晚间 V12 实测后）
+
+- 新签名来源`dc48ff1`已推送，push及PR两轮Linux CI全部作业/步骤成功；三节点完整437文件安装及独立回读通过，冻结writer、依赖、原配置及analysis恢复元数据保持。见[源码与CI](evidence/signed-source-dc48ff1-20261013.json)和[三节点安装](evidence/signed-source-install-dc48ff1-20261013.json)。下方等待GPG、未绑定V12等描述保留其历史时点。
+- V12实际`hive-enter`与`hive-cleanup`通过。后续`hive-register`在Control RPC阶段以RuntimeError失败，具体原因待诊断；不能将登记、独立读回或Iceberg勾为完成。32次完整资源采样没有监控报警或观测到OOM，失败收尾已实际确认三VM全关、数据未删除，见[本轮失败与资源证据](evidence/hive-catalog-followup-20261013.json)。下一步继续诊断并保留失败现场，不以清理成功替代注册成功。
+- 本轮输入为独立合成夹具，未测试Kafka链路，不代表真实用户数据全链验收。自然闭日最早仍须香港10月14日00:00后；真实离线模型、发布、Hive/Iceberg、血缘、P95与宣传素材继续分别验收。
+
+## 历史继续入口（2026-10-13 Linux退出验证后）
 
 - Hive输入线程候选在768 MiB analysis独立目录完成10项实际Linux合成管道/子进程检查，旧安装模块不变、无引擎或真实数据读取；测试后全部VM已关闭，见[独立验证](evidence/hive-reader-linux-20261013.json)。完整Windows1022项、浏览器23项、契约及Ruff已通过；Linux CI仍待新提交。
 - 新增GPG提交因解锁超时未生成，改动保留，等待用户回应后重新触发；随后签名归档、CI、逐台安装，再完成Hive清理/登记/读回和Iceberg。V12/r3保持未绑定和禁止执行，不复用已用的r2冷启动基线。

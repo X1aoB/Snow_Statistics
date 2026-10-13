@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-10-13T13:14:05.891816+00:00",
+  "source_base_commit": "dc48ff1a9786100bb79088c3c0f162a24311deb1",
+  "candidate_shell_sha256": "605eb1f14a4700c0a5b9fd52ef7482d351040bc411539c95d6d576a119ab5c17",
+  "input_origin": "synthetic fixtures and fixed synthetic bytes; no production events",
+  "failed_actual_register": {
+    "controller": "private-v14",
+    "accepted": false,
+    "exception": "Snappy UnsatisfiedLinkError: failed to map segment from shared object",
+    "driver_returncode": 1,
+    "actual_vm_cleanup": true,
+    "data_deleted": false,
+    "receipt_sha256": "f0fed6c75d2981420038c2deaa86d5f004a41a6b68af3ad1d186aa50c51d56c3"
+  },
+  "actual_default_ssh_cwd_cases": 4,
+  "cwd_receipt_sha256": "38a3c74c3c11a49dda520d19f6f1cc3ba91dd212dc5182da237a59dcab4fee21",
+  "actual_container_probe": {
+    "engine": "Spark 3.5.7 local[1]",
+    "image": "apache/spark@sha256:936ff39fd63e2bb5ed064f0fbe1518198473f1cdbfa2f863d087a9a8e58116ba",
+    "locked_files": {
+      "lab/locks/images.env": "41fc17c0a3bd1e7a9eff635505d9471162144ad85ae149ba4f15bc1c5abe4ca2",
+      "lab/locks/spark-jars.sha256": "3985d3cd4eeb47feda6c8ca33a57edb57752ec11824758372da5d685ea42775a",
+      "lab/spark-submit-locked.sh": "dad44db758e066d8e3200db1123eeb62a4c7a6f05ec750cbf4b3d0e75dbfb08b"
+    },
+    "probe_sha256": "0584e87779b6cf930023d68cfd3d812969d29141be36c2633244e826d1274bf0",
+    "network": "none",
+    "container_memory_mib": 768,
+    "driver_memory_mib": 512,
+    "ordinary_tmp_mib": 192,
+    "dedicated_native_tmp_mib": 16,
+    "cpu": 1,
+    "pids_limit": 128,
+    "old_expected_failure_and_new_roundtrip_verified": true,
+    "cases": [
+      {
+        "case": "old",
+        "started_at": "2026-10-13T13:09:58Z",
+        "finished_at": "2026-10-13T13:10:11Z",
+        "expected_outcome_observed": true,
+        "roundtrip": false,
+        "expected_native_error": true,
+        "mounts": {
+          "/tmp": {
+            "options": [
+              "rw",
+              "nosuid",
+              "nodev",
+              "noexec",
+              "relatime",
+              "size=196608k",
+              "inode64"
+            ],
+            "type": "tmpfs"
+          }
+        },
+        "native_tempdir": null,
+        "owned_container_removed": true,
+        "private_receipt_sha256": "260da47cacd1877dc3ce1e06a8a2768217012042e3a1c3b53f3dee3d1becc98e"
+      },
+      {
+        "case": "new",
+        "started_at": "2026-10-13T13:11:14Z",
+        "finished_at": "2026-10-13T13:11:25Z",
+        "expected_outcome_observed": true,
+        "roundtrip": true,
+        "expected_native_error": false,
+        "mounts": {
+          "/opt/snow-native": {
+            "options": [
+              "rw",
+              "nosuid",
+              "nodev",
+              "relatime",
+              "size=16384k",
+              "mode=700",
+              "inode64"
+            ],
+            "type": "tmpfs"
+          },
+          "/tmp": {
+            "options": [
+              "rw",
+              "nosuid",
+              "nodev",
+              "noexec",
+              "relatime",
+              "size=196608k",
+              "inode64"
+            ],
+            "type": "tmpfs"
+          }
+        },
+        "native_tempdir": "/opt/snow-native",
+        "owned_container_removed": true,
+        "private_receipt_sha256": "e29049132ce6ad34670bbc19158e88a0a110cd77e42d056b8e3f338c9c178a7d"
+      }
+    ]
+  },
+  "retained_failed_probe_v1": true,
+  "candidate_source_signed": false,
+  "hive_register_after_fix_tested": false,
+  "hive_verify_tested": false,
+  "iceberg_tested": false,
+  "capacity_limit_changed": false,
+  "dependencies_changed": false,
+  "primary_references": [
+    "https://raw.githubusercontent.com/xerial/snappy-java/develop/src/main/java/org/xerial/snappy/SnappyLoader.java",
+    "https://docs.docker.com/engine/storage/tmpfs/"
+  ],
+  "credentials_rows_or_stderr_in_evidence": false
+}
