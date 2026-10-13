@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-13T07:24:14.137547+00:00",
+  "source_sha": "e4d924277d2632bf618343911e1e55ff19e56a68",
+  "rollback_source_sha": "ef01efca4a91266521f67d0f52659a712d91cf91",
+  "gpg_signature": "Good signature, verified locally before push",
+  "pages_deployment_id": "d732649e-ac6e-439f-b054-d6a018a85f61",
+  "pages_check": {
+    "id": 115177538386,
+    "status": "completed",
+    "conclusion": "success",
+    "completed_at": "2026-10-13T07:18:16Z",
+    "head_sha": "e4d924277d2632bf618343911e1e55ff19e56a68",
+    "details_url": "https://dash.cloudflare.com/?to=/019848760cd3f4f7f410b578620af51f/pages/view/mywebsite/d732649e-ac6e-439f-b054-d6a018a85f61"
+  },
+  "production_url": "https://xiaob.dev",
+  "validation": {
+    "public_get_checks": 12,
+    "runtime_js_matches_signed_commit": true,
+    "public_json_cache_control": "no-store",
+    "cors_exact_website_origin": true,
+    "private_health_admin_paths_404": true,
+    "snapshot_fresh_under_26_hours": true,
+    "hidden_values_remain_null": true,
+    "desktop": "1280x900",
+    "mobile": "390x844",
+    "languages": [
+      "zh",
+      "en"
+    ],
+    "full_table_same_values": true,
+    "keyboard_retry": true,
+    "console_warnings_errors": 0
+  },
+  "public_display": {
+    "snow_date": "2026-09-24",
+    "requests": 43,
+    "success_rate": "48.8%",
+    "snow_access": "suppressed",
+    "website_date": "2026-10-13",
+    "website_state": "pending"
+  },
+  "model_requests_sent": false,
+  "collection_consent_unchanged": true,
+  "viewport_reset": true,
+  "browser_tab_closed": true,
+  "evidence": [
+    {
+      "path": "runtime/production-candidate/compact-production-http-20261013.json",
+      "sha256": "7db98d07371ca316d9643a8e8cac7f3b5b15d59f8e3418f3e4046596c13662f7"
+    },
+    {
+      "path": "runtime/production-candidate/compact-production-browser-20261013/acceptance.json",
+      "sha256": "6aa05a68bb42ba73eacef3418d973a8fa64dce2ba103b1230d9b25c8a0649a5c"
+    }
+  ],
+  "limits": [
+    "The preserved five-minute refresh test passed; this release did not measure a full five-minute browser cycle.",
+    "Public policy remains D+3 and threshold 10; no hidden values were made public by this display change."
+  ]
+}

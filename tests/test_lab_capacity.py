@@ -1,4 +1,7 @@
 import importlib
+import json
+import runpy
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -90,3 +93,56 @@ def test_offline_and_vmware_read_the_same_current_resource_policy(lab):
     assert small.STOP_BYTES == lab.MAX_PROJECT_BYTES - 256 * 1024**2
     assert small.MIN_HOST_FREE_BYTES == lab.MIN_HOST_FREE_BYTES == 35 * 1024**3
     assert small.MIN_HOST_AVAILABLE_MIB == lab.MIN_HOST_AVAILABLE_MIB == 4096
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_control_default_grows_only_a_new_disk(lab, monkeypatch, existing):
+    # Only synthetic local files and command captures: no VMware, network or keys.
+    directory = lab.RUNTIME / "snow-control"
+    directory.mkdir(parents=True)
+    (directory / "seed.iso").write_bytes(b"synthetic existing seed")
+    disk = directory / "system.vmdk"
+    retained = b"synthetic existing 18 GiB disk; default changes must preserve it"
+    if existing:
+        disk.write_bytes(retained)
+    monkeypatch.setitem(sys.modules, "pycdlib", SimpleNamespace())
+    monkeypatch.setattr(lab, "NODES", {"snow-control": (2048, 2)})
+    monkeypatch.setattr(lab, "capacity", lambda: {})
+    monkeypatch.setattr(lab, "download", lambda: lab.RUNTIME / "synthetic-image.vmdk")
+
+    def fake_keypair(path):
+        path.write_text("synthetic-key-not-usable")
+        path.with_suffix(".pub").write_text("synthetic-public-not-usable")
+
+    monkeypatch.setattr(lab, "keypair", fake_keypair)
+    calls = []
+    monkeypatch.setattr(lab, "run", lambda *args: calls.append(args))
+    lab.prepare()
+    if existing:
+        assert not calls
+        assert disk.read_bytes() == retained
+    else:
+        assert [args[1] for args in calls] == ["-r", "-x"]
+        assert calls[-1][2:] == ("20GB", disk)
+
+
+def test_compaction_refuses_budget_that_only_covers_old_control_capacity(lab, monkeypatch, capsys):
+    # 20 GiB total budget would cover the old 18+1 GiB copy, but not 20+1 GiB.
+    directory = lab.RUNTIME / "snow-control"
+    directory.mkdir(parents=True)
+    (directory / "system.vmdk").write_bytes(b"synthetic thin disk")
+    monkeypatch.setattr(lab, "MAX_PROJECT_BYTES", 20 * 1024**3)
+    monkeypatch.setattr(lab, "capacity", lambda: {"synthetic": True})
+    monkeypatch.setattr(lab, "run", lambda *args: "Total running VMs: 0")
+    monkeypatch.setattr(sys, "argv", ["compact_vm_disk.py", "--node", "snow-control"])
+    runpy.run_path(str(Path(__file__).resolve().parents[1] / "tools/compact_vm_disk.py"))
+    report = json.loads(capsys.readouterr().out)
+    assert report["temporary_copy_gib"] == 21
+    assert report["powered_off"] is True
+    assert report["eligible"] is False
+
+
+def test_new_disk_defaults_match_registered_capacity_without_maintenance_budget(lab):
+    assert lab.DISK_GB == lab.LIMITS["vm_disk_capacity"]["new_disk_default_gib"]
+    assert lab.MAX_PROJECT_BYTES == 72 * 1024**3
+    assert lab.LIMITS["vm_disk_capacity"]["control_expansion_20261013"]["normal_72_gib_budget_restored"]

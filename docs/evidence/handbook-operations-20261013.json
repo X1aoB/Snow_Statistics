@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-10-13T07:54:13.047177+00:00",
+  "source_commit": "50706a832dd4c3126b663c4d63c8f43c8f7fc17b",
+  "handbook_directory": "C:/Users/25685/Desktop/简历及相关材料/Snow_Statistics数据开发学习手册",
+  "markdown_files": 40,
+  "local_links": 392,
+  "fenced_blocks": 167,
+  "static_errors": [],
+  "current_status_corrections": [
+    "Website production e4d9242",
+    "Signed source 50706a8 and actual three-node installation",
+    "Current real-prod-04 already initialized; failed03 retained compatibility entry measured",
+    "Historical crash and candidate records retain their original dates"
+  ],
+  "expanded_operations_chapters": [
+    14,
+    15,
+    17
+  ],
+  "actual_local_synthetic_exercises": {
+    "kafka_landing_model": {
+      "records": 4,
+      "unique_events": 3,
+      "offset_next": 4,
+      "pending_recovery": true
+    },
+    "cdc_model": {
+      "business_changes": 15,
+      "reapplied_changes": 0,
+      "raw_envelopes": 16,
+      "normalized_changes": 15,
+      "tombstones": 1
+    },
+    "offline_model": {
+      "raw_rows": 56,
+      "valid_rows": 28,
+      "duplicates": 28,
+      "quarantine": 0,
+      "daily_rows": 6,
+      "replay_equal": true
+    }
+  },
+  "validation": {
+    "landing_tests_passed": 28,
+    "chapter14_15_python_blocks_compiled": 4,
+    "chapter14_15_bash_blocks_parsed": 5,
+    "chapter17_powershell_blocks_parsed": 9
+  },
+  "help_audit": "18 Python script references plus snow-stats statically inspected; no unknown help command was executed",
+  "correction": "register_cdc.py has no help parser: --help does not prevent MySQL/Connect writes; the handbook now inspects its source instead",
+  "no_vm_ssh_or_production_from_teaching_exercises": true,
+  "real_payload_in_handbook": false,
+  "new_kafka_debezium_spark_hive_engine_acceptance_claimed": false,
+  "evidence": [
+    {
+      "path": "runtime/real/operator/handbook-static-qa-expanded-chapters-20261013.json",
+      "sha256": "b884222f0ad9b7088bd71e7395e09b1737b91b7eb4f1e1e2c72578fae9eeb092"
+    },
+    {
+      "path": "runtime/real/operator/handbook-ch14-ch15-qa-20261013.json",
+      "sha256": "2e660348cd3ffdcb253323dede3fa870ba558ef31b59ae2eb68b07cce5136abd"
+    },
+    {
+      "path": "runtime/real/operator/handbook-help-static-audit-20261013.json",
+      "sha256": "bb66d3e610e744bc0bbbe12f4bec210c14538d17e05e1e49dbb9a6c3cfb00ece"
+    },
+    {
+      "path": "runtime/handbook/ch17-20261013/chapter-validation.json",
+      "sha256": "453d80586c5215280c3b87fb5016eb8a8044581cdd715e22351d2f9acec36da2"
+    }
+  ]
+}

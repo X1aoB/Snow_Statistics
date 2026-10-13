@@ -320,6 +320,23 @@
       "acceptance": "fixture-* physical markers and synthetic_engine_test are isolated synthetic fixtures and never authorize real reads",
       "synthetic_engine_receipts": "engine-test/{storage.json,job.json,fixture-input.json,acceptance.json,failure.json,publication/,local-collector/}; secrets.json and job.env remain private mode 0600 and are not exported"
     },
+    "vm_disk_capacity": {
+      "new_disk_default_gib": {"snow-control": 20, "snow-compute": 18, "snow-analysis": 29},
+      "existing_disk_policy": "prepare skips an existing VMDK; changing the new-disk default does not resize, replace, shrink or remove existing disks. Any existing-disk expansion needs its own exact-target capacity checks and guest verification.",
+      "control_expansion_20261013": {
+        "before_virtual_gib": 18,
+        "after_virtual_gib": 20,
+        "root_partition_growth_bytes": 2147483648,
+        "guest_verification": "The root partition and ext4 filesystem had already grown on first post-expansion boot inspection; growpart returned NOCHANGE and resize2fs confirmed nothing to do. Other partitions were unchanged.",
+        "temporary_cold_maintenance_limit_gib": 82,
+        "normal_72_gib_budget_restored": true,
+        "working_space_reserved_gib": 21,
+        "sampled_peak_project_bytes": 80783875941,
+        "exact_peak_measured": false,
+        "evidence": "docs/evidence/control-disk-growth-20261013.json",
+        "scope": "Completed cold maintenance only; this metadata does not authorize another 82 GiB window, engine concurrency, deletion, or a change to any data expiry. Normal admission remains 72 GiB project / 35 GiB host disk / 4 GiB host RAM."
+      }
+    },
     "vm_names": [
       "snow-control",
       "snow-compute",

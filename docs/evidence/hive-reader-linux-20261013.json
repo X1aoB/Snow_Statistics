@@ -1,0 +1,120 @@
+{
+  "all_passed": true,
+  "candidate_source_sha256": "313d289715ab99dfbe38fbaec2a96e8a6309c1daddac391c3bba7bf35a5365b1",
+  "cases": [
+    {
+      "case": "empty_cancel",
+      "maximum_buffer_bytes": 66,
+      "open_peer_at_close": true,
+      "passed": true,
+      "reader_stopped": true
+    },
+    {
+      "case": "partial_cancel",
+      "maximum_buffer_bytes": 66,
+      "open_peer_at_close": true,
+      "passed": true,
+      "reader_stopped": true
+    },
+    {
+      "case": "empty_eof",
+      "maximum_buffer_bytes": 66,
+      "open_peer_at_close": false,
+      "passed": true,
+      "reader_stopped": true
+    },
+    {
+      "case": "partial_eof",
+      "maximum_buffer_bytes": 66,
+      "open_peer_at_close": false,
+      "passed": true,
+      "reader_stopped": true
+    },
+    {
+      "case": "split_and_oversize",
+      "maximum_buffer_bytes": 66,
+      "open_peer_at_close": true,
+      "passed": true,
+      "reader_stopped": true
+    },
+    {
+      "case": "queue_bound",
+      "passed": true
+    },
+    {
+      "candidate_loaded_in_child": true,
+      "case": "authority_complete",
+      "complete_seen": true,
+      "exit_code": 0,
+      "passed": true,
+      "stderr_bytes": 0,
+      "stdin_held_open": true
+    },
+    {
+      "candidate_loaded_in_child": true,
+      "case": "authority_partial",
+      "complete_seen": true,
+      "exit_code": 0,
+      "passed": true,
+      "stderr_bytes": 0,
+      "stdin_held_open": true
+    },
+    {
+      "candidate_loaded_in_child": true,
+      "case": "authority_failure",
+      "complete_seen": false,
+      "exit_code": 1,
+      "passed": true,
+      "stderr_bytes": 1101,
+      "stdin_held_open": true
+    },
+    {
+      "candidate_loaded_in_child": true,
+      "case": "authority_disconnect",
+      "complete_seen": false,
+      "exit_code": 143,
+      "passed": true,
+      "stderr_bytes": 0,
+      "stdin_held_open": false
+    }
+  ],
+  "checked_at": "2026-10-13T08:26:59.660476+00:00",
+  "database_used": false,
+  "engine_started": false,
+  "failure_type": null,
+  "main_guest_source_replaced": false,
+  "node": "snow-analysis",
+  "platform": "linux",
+  "public_pytest_suite_executed": false,
+  "public_test_sha256": "4c18565cfd456e4b76fc77fc994112686439dc949acaf2c7f03b6593311c5b72",
+  "python_version": "3.12.3",
+  "real_payload_or_credentials_read": false,
+  "runner_sha256": "8c3f8aa2acaa0f04f45a65d0b16863202413394894ca3fef7a36c09893f3504e",
+  "schema_version": 1,
+  "scope": "10 focused synthetic OS-pipe/authority cases",
+  "synthetic_files_retained_for_review": true,
+  "recorded_at": "2026-10-13T08:28:26.898955+00:00",
+  "input_origin": "synthetic fixtures",
+  "source_commit": null,
+  "candidate_is_uncommitted": true,
+  "installed_baseline_commit": "50706a832dd4c3126b663c4d63c8f43c8f7fc17b",
+  "installed_module_sha256_before_and_after": "0c29576875bb4171a5d7985131ed5b2c7c3b1eced3359fc6e013e8c8e0298a35",
+  "candidate_lf_sha256": "313d289715ab99dfbe38fbaec2a96e8a6309c1daddac391c3bba7bf35a5365b1",
+  "private_result_sha256": "7c046bc37044b7a463936c22d5c55d0cdaf6333993d8556ffd439f719adb28d4",
+  "resources": {
+    "analysis_memory_mib": 768,
+    "other_vms_running": false,
+    "running_containers_before_and_after": 0,
+    "available_ram_mib_before": 327,
+    "available_ram_mib_after": 325
+  },
+  "first_fixture_attempt": "r1 passed six pipe cases but fixture lane naming was rejected before authority ready; retained separately",
+  "linux_ci": "pending signed commit",
+  "acceptance_limit": "Focused synthetic Linux process tests only. No installed-source change, Hive catalog, Iceberg, real rows, closed-day or production freshness acceptance.",
+  "post_validation_shutdown": {
+    "all_vms_stopped": true,
+    "project_files_gib": 59.42,
+    "host_free_disk_gib": 189.6,
+    "stored_data_deleted_by_stop": false
+  }
+}

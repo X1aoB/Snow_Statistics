@@ -1,6 +1,7 @@
 """Synthetic transport/catalog responses; no VM or Hive integration claims."""
 import io
 import json
+import os
 import subprocess
 import sys
 import threading
@@ -366,3 +367,114 @@ def test_real_local_process_boundary_rejects_unbounded_output_and_timeout(tmp_pa
         module.bounded_catalog_worker([sys.executable, "-c", "print('x' * 1000)"], cwd=tmp_path, timeout=5)
     with pytest.raises(TimeoutError):
         module.bounded_catalog_worker([sys.executable, "-c", "import time; time.sleep(5)"], cwd=tmp_path, timeout=.01)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Authority executes only on the Linux analysis node")
+@pytest.mark.parametrize("partial", [b"", b'{"unfinished":'])
+def test_pipe_reader_stops_even_when_peer_keeps_an_empty_or_partial_frame_open(partial):
+    read_fd, write_fd = os.pipe()
+    with os.fdopen(read_fd, "rb") as incoming, os.fdopen(write_fd, "wb", buffering=0) as outgoing:
+        reader = module.FrameReader(incoming)
+        try:
+            outgoing.write(partial)
+            with pytest.raises(TimeoutError):
+                reader.next(.05)
+        finally:
+            reader.close()
+        assert not reader.thread.is_alive() and reader.ended.is_set()
+        assert not outgoing.closed
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Linux raw pipe parsing")
+def test_pipe_reader_keeps_split_frames_and_rejects_unbounded_input(monkeypatch):
+    monkeypatch.setattr(module, "MAX_FRAME", 64)
+    read_fd, write_fd = os.pipe()
+    with os.fdopen(read_fd, "rb") as incoming, os.fdopen(write_fd, "wb", buffering=0) as outgoing:
+        reader = module.FrameReader(incoming)
+        try:
+            outgoing.write(b'{"n":')
+            with pytest.raises(TimeoutError):
+                reader.next(.05)
+            outgoing.write(b'1}\n{"n":2}\n')
+            assert reader.next(2) == {"n": 1}
+            assert reader.next(2) == {"n": 2}
+            outgoing.write(b"x" * 66)
+            with pytest.raises(ValueError, match="transport closed"):
+                reader.next(2)
+        finally:
+            reader.close()
+        assert len(reader.buffer) <= module.MAX_FRAME + 2
+
+
+def test_reader_queue_overflow_closes_instead_of_accumulating_frames():
+    reader = module.FrameReader(io.BytesIO(b'{}\n' * 8))
+    assert reader.ended.wait(2)
+    with pytest.raises(ValueError, match="closed"):
+        reader.next(1)
+    reader.close()
+    assert reader.queue.qsize() == 2
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Actual authority and signal lifecycle run on Linux")
+@pytest.mark.parametrize("case", ["complete", "partial", "failure", "disconnect"])
+def test_authority_real_process_exit_with_peer_still_open_or_disconnected(tmp_path, case):
+    """Synthetic operation; exercise real stdin locks, threads and exit status."""
+    root = source_root(tmp_path)
+    private = "runtime/real/config/test.json"
+    write_json(root / private, config())
+    (root / private).chmod(0o600)
+    operation = {
+        "complete": "return {'source': 'real'}",
+        "partial": "return {'source': 'real'}",
+        "failure": "raise RuntimeError('synthetic operation failure')",
+        "disconnect": "import time; time.sleep(60); return {'source': 'real'}",
+    }[case]
+    (root / "tools/real_hive.py").write_text("def execute(*args, **kwargs):\n    " + operation + "\n")
+    script = """
+import signal, sys
+from pathlib import Path
+from snow_statistics.real_hive_dispatch import authority
+def stopped(*_):
+    raise SystemExit(143)
+signal.signal(signal.SIGTERM, stopped)
+authority(Path(sys.argv[1]), 'runtime/real/config/test.json', 'cleanup', None,
+          None, None, 60, sys.stdin.buffer, sys.stdout.buffer)
+"""
+    process = subprocess.Popen([sys.executable, "-u", "-c", script, str(root)],
+                               stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    reader = module.FrameReader(process.stdout)
+    try:
+        if case == "partial":
+            process.stdin.write(b'{"unfinished":')
+            process.stdin.flush()
+        ready = reader.next(5)
+        assert ready["kind"] == "ready"
+        if case == "disconnect":
+            process.stdin.close()
+        if case in {"complete", "partial"}:
+            assert reader.next(5)["kind"] == "complete"
+        result = process.wait(timeout=5)
+        assert result == (0 if case in {"complete", "partial"} else 143 if case == "disconnect" else 1)
+        assert b"_enter_buffered_busy" not in process.stderr.read()
+        if case != "disconnect":
+            assert not process.stdin.closed
+    finally:
+        module.terminate(process)
+        reader.close()
+        for stream in (process.stdin, process.stdout, process.stderr):
+            if not stream.closed:
+                stream.close()
+
+
+def test_complete_frame_does_not_override_nonzero_authority_exit(tmp_path):
+    ready = dict(schema_version=1, kind="ready", session="b" * 64, operation="cleanup",
+                 expires_at=(datetime.now(UTC) + timedelta(seconds=899)).isoformat())
+    complete = dict(schema_version=1, kind="complete", session="b" * 64,
+                    operation="cleanup", result={"source": "real"})
+    process = FakeProcess([ready, complete])
+    process.returncode = 71
+    transport = SimpleNamespace(start=lambda *args, **kwargs: process)
+    with pytest.raises(RuntimeError, match="did not complete"):
+        module.HiveCoordinator(config(), "runtime/real/config/test.json", tmp_path,
+                               transport=transport).run("cleanup")
+    assert process.returncode == 71

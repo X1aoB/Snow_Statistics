@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-13T08:17:32.719930+00:00",
+  "source_commit": "50706a832dd4c3126b663c4d63c8f43c8f7fc17b",
+  "input_origin": "synthetic",
+  "hive_stage_transition_complete": true,
+  "hive_cleanup_complete": false,
+  "cleanup_failure_type": "RuntimeError",
+  "complete_frame_did_not_override_nonzero_exit": true,
+  "monitor_errors": [],
+  "pending_transitions": [],
+  "lake_cleanup_uncertain": false,
+  "all_vms_stopped": true,
+  "engine_lake_phase_executed": false,
+  "synthetic_diagnosis": {
+    "schema_version": 1,
+    "checked_at": "2026-10-13T08:15:20.625459+00:00",
+    "baseline_commit": "50706a832dd4c3126b663c4d63c8f43c8f7fc17b",
+    "baseline_source": "src/snow_statistics/real_hive_dispatch.py",
+    "baseline_source_sha256": "0c29576875bb4171a5d7985131ed5b2c7c3b1eced3359fc6e013e8c8e0298a35",
+    "python_version": "3.12.13",
+    "platform": "win32",
+    "implementation": "exact AST source segments frame_bytes/read_frame/FrameReader from signed baseline",
+    "cases": [
+      {
+        "partial_frame": false,
+        "parent_eof_after_complete": false,
+        "child_join_before_exit": false,
+        "complete_frame_seen": true,
+        "stdin_held_open_at_exit": true,
+        "exit_code": 3221225477,
+        "wait_timed_out": false,
+        "stderr_bytes": 295,
+        "buffered_lock_fatal": true,
+        "stdin_lock_named": true,
+        "daemon_shutdown_named": true
+      },
+      {
+        "partial_frame": true,
+        "parent_eof_after_complete": false,
+        "child_join_before_exit": false,
+        "complete_frame_seen": true,
+        "stdin_held_open_at_exit": true,
+        "exit_code": 3221225477,
+        "wait_timed_out": false,
+        "stderr_bytes": 295,
+        "buffered_lock_fatal": true,
+        "stdin_lock_named": true,
+        "daemon_shutdown_named": true
+      },
+      {
+        "partial_frame": false,
+        "parent_eof_after_complete": true,
+        "child_join_before_exit": true,
+        "complete_frame_seen": true,
+        "stdin_held_open_at_exit": false,
+        "exit_code": 0,
+        "wait_timed_out": false,
+        "stderr_bytes": 0,
+        "buffered_lock_fatal": false,
+        "stdin_lock_named": false,
+        "daemon_shutdown_named": false
+      }
+    ],
+    "watchdog_race": {
+      "finished_set_before_ended_check": true,
+      "old_watchdog_would_still_signal": true,
+      "signal_actually_sent": false
+    },
+    "conclusion": "closed Event does not interrupt a blocked BufferedReader; a complete frame is insufficient",
+    "eof_control_is_not_a_recommended_protocol_change": true,
+    "public_implementation_changed": false,
+    "vm_started": false,
+    "ssh_used": false,
+    "raw_or_credential_data_read": false,
+    "linux_integration_claimed": false
+  },
+  "private_receipt_sha256": {
+    "fixture-lake-01-hive-enter-d3d71006772b4b23864b153c50440ff2-windows-v11-resources.json": "37dd02b026c66338f7f0de8918712f108a9445eb89aecde46d6c4c228001b0bf",
+    "fixture-lake-01-hive-cleanup-716a315dc65442b99e3c3435b6f17b81-windows-v11-resources.json": "fe76dfb1e87e0909a7f7cff7ae2d698db4548e1ddf34b9ca049c82a25d96276e",
+    "hive-framereader-exit-diagnosis-20261013.json": "b265f6ab47182257a36a8b20a1f5ca1a85b805788cab52e7e281854d168d67e0"
+  },
+  "production_stderr_preserved": false,
+  "acceptance_limit": "Synthetic subprocess reproduced the original stdin-thread shutdown defect; it is not the discarded production stderr. Actual catalog cleanup and subsequent Hive/Iceberg acceptance remain pending.",
+  "candidate_checks": {
+    "windows_python_passed": 1022,
+    "windows_python_skipped": 23,
+    "browser_passed": 23,
+    "contracts": "passed",
+    "ruff": "passed",
+    "linux_ci": "pending",
+    "runtime_installed": false
+  }
+}

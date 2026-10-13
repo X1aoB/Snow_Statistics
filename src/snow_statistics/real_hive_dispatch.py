@@ -11,6 +11,7 @@ import os
 import queue
 import re
 import secrets
+import select
 import shlex
 import signal
 import socket
@@ -89,6 +90,10 @@ def frame_bytes(value):
 
 def read_frame(stream):
     body = stream.readline(MAX_FRAME + 2)
+    return decode_frame(body)
+
+
+def decode_frame(body):
     if not body or len(body) > MAX_FRAME + 1 or not body.endswith(b"\n"):
         raise ValueError("Hive RPC ended or produced an unbounded/incomplete frame")
     value = json.loads(body)
@@ -98,27 +103,65 @@ def read_frame(stream):
 
 
 class FrameReader:
-    """Bounded reader thread lets the coordinator enforce a finite session."""
+    """Exclusive stream reader with cancellable POSIX pipe reads.
+
+    The authority must stop while its peer still holds stdin open. A daemon
+    blocked in BufferedReader.readline would hold the interpreter's stdin lock
+    during shutdown. Poll the pipe directly, including for partial frames.
+    """
     def __init__(self, stream):
         self.queue = queue.Queue(maxsize=2)
         self.closed = threading.Event()
         self.ended = threading.Event()
+        self.buffer = bytearray()
+        self.fd = None
+        if os.name == "posix":
+            try:
+                self.fd = stream.fileno()
+            except (AttributeError, OSError):
+                pass  # In-memory synthetic streams have no OS pipe.
         def read():
-            while not self.closed.is_set():
-                try:
-                    item = read_frame(stream)
-                except BaseException as error:
-                    item = error
-                try:
-                    self.queue.put(item, timeout=1)
-                except queue.Full:
-                    self.closed.set()
-                    self.ended.set()
-                if isinstance(item, BaseException):
-                    self.ended.set()
-                    return
+            try:
+                while not self.closed.is_set():
+                    try:
+                        item = self._next_pipe_frame() if self.fd is not None else read_frame(stream)
+                    except BaseException as error:
+                        if self.closed.is_set():
+                            return
+                        item = error
+                    try:
+                        self.queue.put(item, timeout=1)
+                    except queue.Full:
+                        self.closed.set()
+                    if isinstance(item, BaseException):
+                        return
+            finally:
+                self.ended.set()
         self.thread = threading.Thread(target=read, daemon=True)
         self.thread.start()
+
+    def _next_pipe_frame(self):
+        while not self.closed.is_set():
+            newline = self.buffer.find(b"\n")
+            if newline >= 0:
+                body = bytes(self.buffer[:newline + 1])
+                del self.buffer[:newline + 1]
+                return decode_frame(body)
+            if len(self.buffer) > MAX_FRAME:
+                raise ValueError("Hive RPC produced an unbounded frame")
+            if not select.select([self.fd], [], [], .1)[0]:
+                continue
+            chunk = os.read(self.fd, min(65536, MAX_FRAME + 2 - len(self.buffer)))
+            if not chunk:
+                raise ValueError("Hive RPC ended with no complete frame")
+            self.buffer.extend(chunk)
+        raise InterruptedError("Hive reader stopped")
+
+    def close(self):
+        self.closed.set()
+        self.thread.join(timeout=2)
+        if self.thread.is_alive():
+            raise RuntimeError("Hive transport reader did not stop")
 
     def next(self, timeout):
         if self.closed.is_set() or timeout <= 0:
@@ -491,7 +534,7 @@ class HiveCoordinator:
                         raise ValueError("Hive completion belongs to another session")
                     process.wait(timeout=15)
                     if process.returncode:
-                        raise RuntimeError("Analysis did not complete catalog authority checks")
+                        raise RuntimeError(f"Analysis did not complete catalog authority checks (exit {process.returncode})")
                     return frame["result"]
                 validate_envelope(frame)
                 sequence += 1
@@ -515,9 +558,11 @@ class HiveCoordinator:
                     if pending is not None:
                         self.transport.worker(pending, cancel=True)
                 finally:
-                    for stream in (process.stdin, process.stdout):
-                        if not stream.closed:
-                            stream.close()
+                    if not process.stdin.closed:
+                        process.stdin.close()
+                    reader.close()
+                    if not process.stdout.closed:
+                        process.stdout.close()
 
 
 def authority(root, config_file, operation, run_id, attempt, evidence_sha256, duration_seconds, incoming, outgoing):
@@ -534,8 +579,6 @@ def authority(root, config_file, operation, run_id, attempt, evidence_sha256, du
     reader = FrameReader(incoming)
     finished = threading.Event()
     adapter = AuthorityRunner(root, config, reader, outgoing, session, deadline)
-    outgoing.write(frame_bytes(dict(schema_version=1, kind="ready", session=session, operation=operation, expires_at=deadline.isoformat())))
-    outgoing.flush()
     timer = threading.Timer(duration_seconds, lambda: os.kill(os.getpid(), signal.SIGTERM))
     timer.daemon = True
     timer.start()
@@ -545,8 +588,11 @@ def authority(root, config_file, operation, run_id, attempt, evidence_sha256, du
                 adapter.closed = True
                 os.kill(os.getpid(), signal.SIGTERM)
                 return
-    threading.Thread(target=disconnect_watchdog, daemon=True).start()
+    watchdog = threading.Thread(target=disconnect_watchdog, daemon=True)
+    watchdog.start()
     try:
+        outgoing.write(frame_bytes(dict(schema_version=1, kind="ready", session=session, operation=operation, expires_at=deadline.isoformat())))
+        outgoing.flush()
         with publication_lock(root / "runtime/real/lifecycle" / config["lane"] / "hive-dispatch-session"):
             with catalog_runner_context(adapter), contextlib.redirect_stdout(sys.stderr):
                 if operation.startswith("lake-"):
@@ -572,8 +618,11 @@ def authority(root, config_file, operation, run_id, attempt, evidence_sha256, du
     finally:
         finished.set()
         adapter.closed = True
-        reader.closed.set()
         timer.cancel()
+        watchdog.join(timeout=2)
+        reader.close()
+        if watchdog.is_alive():
+            raise RuntimeError("Hive disconnect watcher did not stop")
 
 
 def node_guard(root, node):

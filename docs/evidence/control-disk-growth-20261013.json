@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-13T07:57:49.046849+00:00",
+  "status": "host_expanded_and_guest_capacity_verified",
+  "scope": "Capacity metadata for the existing snow-control disk; no row data, UUIDs, private configuration or credentials",
+  "node": "snow-control",
+  "virtual_disk_bytes": {
+    "before": 19327352832,
+    "after": 21474836480,
+    "growth": 2147483648
+  },
+  "thin_vmdk_file_bytes": {
+    "before": 17508859904,
+    "after": 17508990976,
+    "difference": 131072
+  },
+  "maintenance": {
+    "all_vms_stopped_during_host_expansion": true,
+    "original_vmx_bytes_unchanged": true,
+    "snapshot_metadata_absent": true,
+    "working_space_reserved_bytes": 22548578304,
+    "normal_project_limit_bytes": 77309411328,
+    "temporary_cold_project_limit_bytes": 88046829568,
+    "minimum_host_free_bytes": 37580963840,
+    "minimum_host_available_bytes": 4294967296,
+    "before_project_bytes": 63787830339,
+    "sampled_peak_project_bytes": 80783875941,
+    "exact_peak_measured": false,
+    "after_project_bytes": 63787965592,
+    "after_host_free_bytes": 204077768704,
+    "temporary_disk_and_lock_files_observed": true,
+    "unknown_residual_paths_count": 0,
+    "normal_budget_restored_at": "2026-10-13T07:56:38.205784+00:00",
+    "normal_resource_file_sha256": "08707fbb41637f1f6e34c6fd2b79ad6a7e5e2f6f38dcb3425c2a60701a333484",
+    "working_space_reference": "https://knowledge.broadcom.com/external/article?legacyId=2041556"
+  },
+  "guest": {
+    "filesystem": "ext4",
+    "root_partition_bytes": {
+      "cold_before": 18252545536,
+      "after": 20400029184
+    },
+    "cold_root_filesystem_total_bytes": 17602314240,
+    "cold_root_free_bytes": 614338560,
+    "root_filesystem_total_bytes": 19682557952,
+    "root_free_bytes": 2702868480,
+    "root_partition_identity_and_start_unchanged": true,
+    "other_partitions_unchanged_from_cold_before": true,
+    "filesystem_identity_unchanged_during_verification": true,
+    "containers_running_during_verification": false,
+    "partition_and_filesystem_already_grown_on_first_post_expansion_check": true,
+    "growpart_result": "NOCHANGE",
+    "resize2fs_result": "Filesystem already grown; nothing to do",
+    "manual_guest_growth_performed": false,
+    "data_deleted": false,
+    "filesystem_reformatted": false,
+    "retention_configuration_modified_by_this_script": false
+  },
+  "private_receipt_sha256": {
+    "cold_guest_before": "b176fa2170955ed9911d82e85eb784f5f415473e18daf9e84e02d9b870920550",
+    "host_expansion": "d331e34696734329e1e3f938c526441bdf07e7cfe1cefce65e19b07e26df0886",
+    "guest_verification": "6eb215b2023f7c36075a957510f901c244c530945a991b461934d37bcfee39b9",
+    "temporary_budget_restoration": "b71c91c04f44ab8def8cf7eb3f19d5550264085bd85a29b13294be2062ab1ab3"
+  },
+  "acceptance_limit": "Disk capacity maintenance only. This does not establish subsequent Hive/Iceberg or real closed-day acceptance. The project maximum is a file-size sum, not allocated filesystem blocks; sampling is not a strict peak measurement."
+}

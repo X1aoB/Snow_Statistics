@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-13T07:24:18.149354+00:00",
+  "source_sha": "50706a832dd4c3126b663c4d63c8f43c8f7fc17b",
+  "branch": "codex/production-integration",
+  "gpg_commit_verified": true,
+  "pushed": true,
+  "pull_request": "https://github.com/X1aoB/Snow_Statistics/pull/1",
+  "pull_request_still_draft": true,
+  "ci_runs": [
+    {
+      "id": 38361851377,
+      "event": "pull_request",
+      "url": "https://github.com/X1aoB/Snow_Statistics/actions/runs/38361851377",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 115177660976,
+          "name": "flink-build",
+          "conclusion": "success"
+        },
+        {
+          "id": 115177661051,
+          "name": "python-browser",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 38361845912,
+      "event": "push",
+      "url": "https://github.com/X1aoB/Snow_Statistics/actions/runs/38361845912",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 115177640957,
+          "name": "flink-build",
+          "conclusion": "success"
+        },
+        {
+          "id": 115177641276,
+          "name": "python-browser",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "archive": "runtime/real/operator/source-50706a8-20261013.tar.gz",
+  "archive_sha256": "140b58dda224c888cc5a31a73410842d5e71e6c7ac589859019db9ba17c74b0f",
+  "archive_files": 430,
+  "archive_matches_commit_tree": true,
+  "signature": "runtime/real/operator/source-50706a8-20261013.tar.gz.asc",
+  "signature_sha256": "54562641dca7084dc21e780751d0833ad558c90cfc0a31cde056a238124a052f",
+  "archive_signature_verified": true,
+  "frozen_writer_files_changed": false,
+  "new_archive_installed_in_guests": false,
+  "limits": [
+    "Guest nodes still have their previously verified baselines and installed working patches.",
+    "Signing and CI do not constitute new Hive/Iceberg or closed-business-day acceptance."
+  ]
+}

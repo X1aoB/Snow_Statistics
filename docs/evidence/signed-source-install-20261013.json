@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-13T07:35:18.176156+00:00",
+  "source_commit": "50706a832dd4c3126b663c4d63c8f43c8f7fc17b",
+  "source_archive_sha256": "140b58dda224c888cc5a31a73410842d5e71e6c7ac589859019db9ba17c74b0f",
+  "input_scope": "Source files and configuration/recovery metadata only; no event payloads",
+  "nodes": [
+    {
+      "node": "snow-analysis",
+      "installed_at": "2026-10-13T07:30:55.472504+00:00",
+      "files_checked": 430,
+      "changed_files": 62,
+      "frozen_writer_unchanged": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "evidence": [
+        {
+          "path": "runtime/real/operator/lake-source-update-50706a83-snow-analysis.json",
+          "sha256": "64006e2520980f0fafb0fc07dc3c7fa108f84bd574ca79a15041f64b57758718"
+        },
+        {
+          "path": "runtime/real/operator/source-readback-50706a8-snow-analysis.json",
+          "sha256": "c15a27bb2fd2a9649fcc5764b7c2f0d88e11e2896c099edb29acb132512324a0"
+        }
+      ]
+    },
+    {
+      "node": "snow-control",
+      "installed_at": "2026-10-13T07:33:00.391041+00:00",
+      "files_checked": 430,
+      "changed_files": 42,
+      "frozen_writer_unchanged": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "evidence": [
+        {
+          "path": "runtime/real/operator/lake-source-update-50706a83-snow-control.json",
+          "sha256": "531dce9cbada89d1deb775c776bb449bf79cbf21d62837c13b270bfaa5b72e0a"
+        },
+        {
+          "path": "runtime/real/operator/source-readback-50706a8-snow-control.json",
+          "sha256": "c15a27bb2fd2a9649fcc5764b7c2f0d88e11e2896c099edb29acb132512324a0"
+        }
+      ]
+    },
+    {
+      "node": "snow-compute",
+      "installed_at": "2026-10-13T07:34:10.692993+00:00",
+      "files_checked": 430,
+      "changed_files": 42,
+      "frozen_writer_unchanged": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "evidence": [
+        {
+          "path": "runtime/real/operator/lake-source-update-50706a83-snow-compute.json",
+          "sha256": "2add5ff0265d72596c33241438337ceed5617b17e2dd8d8ad5f99c3ac33fc0d5"
+        },
+        {
+          "path": "runtime/real/operator/source-readback-50706a8-snow-compute.json",
+          "sha256": "c15a27bb2fd2a9649fcc5764b7c2f0d88e11e2896c099edb29acb132512324a0"
+        }
+      ]
+    }
+  ],
+  "installation_tests_passed": 17,
+  "independent_review": "No P1/P2 blockers",
+  "dependencies_changed": false,
+  "real_expiry_extended": false,
+  "containers_started_during_install": false,
+  "all_vms_stopped_after_install": true,
+  "post_install_cold_project_gib": 59.25,
+  "post_install_host_disk_free_gib": 190.69,
+  "engine_acceptance_claimed": false,
+  "note": "Each exact existing deployed archive plus recorded patches was verified before replacement. This is actual source installation, not Hive/Iceberg integration evidence."
+}
