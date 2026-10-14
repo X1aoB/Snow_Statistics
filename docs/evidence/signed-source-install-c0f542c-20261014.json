@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-14T05:38:38.534276+00:00",
+  "source_commit": "c0f542cdc7c24610d6922d8748cd17bb0390a148",
+  "baseline_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+  "source_archive_sha256": "0a3a9b3ce3a5d5e029ae538d6ee816a740a5582c33cb99130e084330e9ebb19b",
+  "archive_signature_sha256": "0152afdff449cb2355248e7522907b24225f31b7ad56e15f9e2acf6d805a6360",
+  "verified_signer_fingerprint": "381D4D513D2E995D4D2BAF87DE65B83570F1955C",
+  "release_metadata_sha256": "0836e356b16d611de68f71b23a4ac2bc63bc539099af4863c9fcc1aa16e874aa",
+  "scope": "Source files and configuration/recovery metadata only; no event payloads or fixture contents read by the installer",
+  "nodes": [
+    {
+      "node": "snow-analysis",
+      "installed_at": "2026-10-14T05:28:29.216588+00:00",
+      "files_checked": 477,
+      "changed_files": 27,
+      "source_files_sha256": "332483e2f2b4ebccca5219828e0cf51419fc9c68f879c3a7921b977b0bbcb480",
+      "frozen_writer_unchanged": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "original_retention_unchanged": true,
+      "phase_receipt_sha256": {
+        "prepare": "d352a91c9fe0286601f6c95e0e8c502aa13e24d0b0468e3d19573b799e2e433e",
+        "install": "0d4a572444a3e488e584d8446c26381886f54d46cce526aa30a5d2abb0f613fd",
+        "readback": "9dbfc507f1c886a4b206102574dfe52c483edc3d8a99753130478df1b31d3741"
+      },
+      "actual_phase_exits": {
+        "prepare": {
+          "session_id": 25315,
+          "chunk_id": "705625",
+          "actual_exit_code": 0
+        },
+        "install": {
+          "session_id": 29024,
+          "chunk_id": "ff7271",
+          "actual_exit_code": 0
+        },
+        "readback": {
+          "session_id": null,
+          "chunk_id": "26a3a0",
+          "actual_exit_code": 0
+        }
+      }
+    },
+    {
+      "node": "snow-control",
+      "installed_at": "2026-10-14T05:32:18.192313+00:00",
+      "files_checked": 477,
+      "changed_files": 27,
+      "source_files_sha256": "332483e2f2b4ebccca5219828e0cf51419fc9c68f879c3a7921b977b0bbcb480",
+      "frozen_writer_unchanged": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "original_retention_unchanged": true,
+      "phase_receipt_sha256": {
+        "prepare": "bea7ee48204014e8981689a0094e00f453d1275f8bdabe2b8871b7844c681a38",
+        "install": "be05c134f140ef21626cf99cee573074926886ef6ce5f16712c4d25a26266dbb",
+        "readback": "9dbfc507f1c886a4b206102574dfe52c483edc3d8a99753130478df1b31d3741"
+      },
+      "actual_phase_exits": {
+        "prepare": {
+          "session_id": 61110,
+          "chunk_id": "5bbb04",
+          "actual_exit_code": 0
+        },
+        "install": {
+          "session_id": null,
+          "chunk_id": "efb7d5",
+          "actual_exit_code": 0
+        },
+        "readback": {
+          "session_id": null,
+          "chunk_id": "aaac5b",
+          "actual_exit_code": 0
+        }
+      }
+    },
+    {
+      "node": "snow-compute",
+      "installed_at": "2026-10-14T05:36:03.300570+00:00",
+      "files_checked": 477,
+      "changed_files": 27,
+      "source_files_sha256": "332483e2f2b4ebccca5219828e0cf51419fc9c68f879c3a7921b977b0bbcb480",
+      "frozen_writer_unchanged": true,
+      "config_and_recovery_metadata_unchanged": true,
+      "original_retention_unchanged": true,
+      "phase_receipt_sha256": {
+        "prepare": "b87633c6a3e3157334049293c118323106a81fb0c0fe586c284cbf69f1d4d077",
+        "install": "aebcdd5e6b012b3f756a92ff5120724c6a7809e01fa4df393f8e721f854a399d",
+        "readback": "9dbfc507f1c886a4b206102574dfe52c483edc3d8a99753130478df1b31d3741"
+      },
+      "actual_phase_exits": {
+        "prepare": {
+          "session_id": 60250,
+          "chunk_id": "fed61a",
+          "actual_exit_code": 0
+        },
+        "install": {
+          "session_id": null,
+          "chunk_id": "117f6a",
+          "actual_exit_code": 0
+        },
+        "readback": {
+          "session_id": null,
+          "chunk_id": "47187b",
+          "actual_exit_code": 0
+        }
+      }
+    }
+  ],
+  "dependencies_installed_by_source_operation": false,
+  "containers_started_during_source_operation": false,
+  "real_expiry_extended": false,
+  "engine_acceptance_claimed": false,
+  "post_install_power_observation": {
+    "actual_chunk_id": "76f071",
+    "actual_exit_code": 0,
+    "all_vms_stopped": true,
+    "current_vm_power_state_declared": false,
+    "cold_project_gib_rounded": 61.13,
+    "host_free_disk_gib_rounded": 197.69
+  },
+  "preserved_failures": [
+    "R2 installer rejected mixed real/fixture directory inventory before source replacement",
+    "Initial control SSH connection timed out during boot; subsequent prepare succeeded"
+  ],
+  "acceptance_limit": "Full source installation and independent readback only. UI optional dependencies and disk expansion were separate operations. This does not establish DIM/Hive/Iceberg/Marquez or UI engine success. Original BCE model runs retain their BCE source identity."
+}

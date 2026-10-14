@@ -69,16 +69,37 @@ def test_small_1792_capacity_manifest_matches_both_entry_points(lab):
     assert resources["guest_min_disk_free_mib"] == 384
 
 
-def test_dim_2304_profile_matches_both_entry_points_without_changing_defaults(lab):
+@pytest.mark.parametrize("profile,analysis_mib,total_mib", [
+    ("real-dim-2304", 2304, 6144), ("real-dim-2560", 2560, 6400),
+])
+def test_dim_profile_matches_both_entry_points_without_changing_defaults(lab, profile, analysis_mib, total_mib):
     from snow_statistics import real_offline_small as small
 
-    memory = {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 2304}
-    assert lab.PROFILES["real-dim-2304"] == small.profile_memory("real-dim-2304") == memory
-    assert sum(memory.values()) == 6144
-    assert lab.validate_memory("snow-analysis", 2304) == 2304
+    memory = {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": analysis_mib}
+    assert lab.PROFILES[profile] == small.profile_memory(profile) == memory
+    assert sum(memory.values()) == total_mib
+    assert lab.validate_memory("snow-analysis", analysis_mib) == analysis_mib
     assert small.PROFILE == "real-small-1920"
     assert lab.PROFILES["real-small-1792"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 1024}
     assert lab.PROFILES["realtime"] == {"snow-analysis": 4608}
+
+
+def test_dim_2560_manifest_keeps_actual_driver_preflight_and_hard_gates(lab):
+    from snow_statistics import real_dimensions as dimensions
+    from snow_statistics import real_offline_small as small
+
+    resources = lab.LIMITS["real_data"]["dim_2560_candidate"]
+    assert resources["vm_memory_mib"] == lab.PROFILES[resources["name"]] == small.profile_memory(resources["name"])
+    assert resources["cold_vm_backing_mib"] == sum(resources["vm_memory_mib"].values()) == 6400
+    assert resources["cold_write_budget_mib"] == small.COLD_WRITE_BUDGET_MIB == 128
+    assert resources["additional_start_reserve_mib"] == 256
+    assert resources["project_stop_gib"] * small.GIB == small.STOP_BYTES
+    assert resources["guest_min_available_mib"] == 128 and resources["guest_min_disk_free_mib"] == 384
+    assert resources["dimension_driver_preflight"] == {
+        "analysis_min_usable_total_mib": dimensions.MIN_TOTAL_MIB,
+        "analysis_min_available_mib": dimensions.MIN_AVAILABLE_MIB,
+        "driver_container_memory_mib": dimensions.DRIVER_MIB,
+    }
 
 
 def test_realtime_4096_storage_candidate_is_explicit(lab):

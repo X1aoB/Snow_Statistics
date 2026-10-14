@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-14T06:28:14.784839+00:00",
+  "source_commit": "c0f542cdc7c24610d6922d8748cd17bb0390a148",
+  "source_files_checked": 477,
+  "original_model_source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+  "business_date": "2026-10-13",
+  "cutoff_utc": "2026-10-13T16:00:00+00:00",
+  "scope": "Three original closed-day tasks; original seq 9-14. Eight historical fixture metadata records excluded.",
+  "snapshot_before_delivery_sha256": "d654f648477a4fc58aed2f6551a436fd99cb756f866fd0e01e92aa0e5d4a949f",
+  "metadata_events_delivered": 6,
+  "metadata_acknowledged": 6,
+  "scoped_pending": 0,
+  "independently_verified_runs": [
+    {
+      "job": "snow_real.compute_daily",
+      "state": "COMPLETED"
+    },
+    {
+      "job": "snow_real.compute_behavior",
+      "state": "COMPLETED"
+    },
+    {
+      "job": "snow_real.publish",
+      "state": "COMPLETED"
+    }
+  ],
+  "input_output_identities_verified": true,
+  "metadata_payloads_unchanged": true,
+  "graph_nonempty": true,
+  "observed_graph_nodes": 4,
+  "observed_graph_edges": 3,
+  "full_graph_or_column_lineage_claimed": false,
+  "business_rows_read": false,
+  "existing_backend_container_and_image_identities_preserved": true,
+  "loopback_only": true,
+  "governance_owned_stop_verified": true,
+  "data_deleted_by_owned_stop": false,
+  "actual_process_exits": {
+    "start": {
+      "session_id": 99004,
+      "chunk_id": "7a49e4",
+      "exit_code": 0
+    },
+    "deliver_and_independent_verify": {
+      "session_id": null,
+      "chunk_id": "d4f01a",
+      "exit_code": 0
+    },
+    "export_acknowledgments": {
+      "session_id": null,
+      "chunk_id": "ce7249",
+      "exit_code": 0
+    },
+    "stop": {
+      "session_id": 76809,
+      "chunk_id": "933968",
+      "exit_code": 0
+    }
+  },
+  "private_receipt_sha256": {
+    "before": "867204ea6558259aa085525eab9053e84ea447e15022b26d6a1dec8f7a787f4d",
+    "started": "799df66091a038fd6ae56dba41bf190660e41672ba68acb33bd88f0b8abec24f",
+    "delivered": "f6fc68dea7a16ae1ca316a65e59d82efa76d021ae8c6114f59a5cee7cd8ba4d6",
+    "backend": "cbdd6c578cab3413818b467927c8a53d2be406135f10e82a82e036d0b6852e0f",
+    "acks": "50ddc294e2ebd7e100fc8fe4bb895a68fbcbff429cf79689d7dbeaa171d4d1f5",
+    "stopped": "516812229a461f00eb6d170cc3c40e5cb9e12d23999b53997e2e7bcf71c2f8c5"
+  },
+  "original_control_journal_ACK_import_verified": false,
+  "acceptance_limit": "Backend run states and exact journal input/output identities plus a nonempty graph. No complete graph, column lineage, P95, or current VM power assertion."
+}

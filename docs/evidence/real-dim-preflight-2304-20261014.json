@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-14T05:59:41.460867+00:00",
+  "input_origin": "real",
+  "source_commit": "c0f542cdc7c24610d6922d8748cd17bb0390a148",
+  "source_files_checked": 477,
+  "profile": "real-dim-2304",
+  "analysis_configured_mib": 2304,
+  "actual_host_process": {
+    "session_id": 8443,
+    "final_chunk_id": "fd0eb1",
+    "wrapper_exit_code": 1,
+    "SSH_child_exit_code": 1,
+    "status": "failed",
+    "host_sample_count": 1,
+    "cleanup_grace_seconds": 180,
+    "guest_resources_measured_by_host_wrapper": false,
+    "data_deleted_by_host_wrapper": false,
+    "VMs_stopped_claimed": false
+  },
+  "failure": {
+    "reported_traceback_marker": "Analysis guest is too small",
+    "reported_stage": "resource_preflight",
+    "traceback_basis": "Operator actual CLI traceback report; host failure and independent no-driver readback are hash-bound",
+    "failed_MemTotal_or_MemAvailable_values": null,
+    "which_memory_threshold_failed": null,
+    "unique_root_cause_identified": false
+  },
+  "independent_postfailure_readback": {
+    "actual_chunk_id": "63f63b",
+    "actual_exit_code": 0,
+    "only_descriptor_user_artifact_created": true,
+    "driver_log_CID_spill_validation_acceptance_absent": true,
+    "owned_DIM_container_absent": true,
+    "only_analysis_DataNode_running": true,
+    "row_payloads_read_by_inspector": false,
+    "retention_or_source_configuration_changed": false
+  },
+  "Spark_driver_started": false,
+  "actual_DIM_engine_accepted": false,
+  "prior_no_engine_memory_sample": {
+    "observed_at": "2026-10-14T05:39:12.859902+00:00",
+    "usable_total_kib": 2269148,
+    "available_kib": 1814740,
+    "CLI_preflight_acceptance_claimed": false
+  },
+  "unchanged_DIM_preflight_mib": {
+    "minimum_usable_total": 2048,
+    "minimum_available": 1536,
+    "driver_container": 1280
+  },
+  "new_2560_actual_VM_or_DIM_acceptance_claimed": false,
+  "private_receipt_sha256": {
+    "dim_host": "c4f99391e6529aded91683ed4fa622b7952d43d49a22003018792496f9c98b84",
+    "dim_readback": "b26d5344bce65a293dbe13c2892c326e1616fa6af67a1a21cb1a6bb3ddbac176",
+    "dim_admission": "26185c8ab4b07eddeb5c0bb095119bc14ecff957d962637f7f3c80dcb9ea56df"
+  },
+  "acceptance_limit": "2304 failed before Spark. Prior and postfailure small guest samples do not establish memory at the failed CLI preflight or a continuous resource minimum. New 2560 is a separate configuration candidate; original input times, permit and retention are not relaxed.",
+  "current_VM_power_state_declared": false
+}

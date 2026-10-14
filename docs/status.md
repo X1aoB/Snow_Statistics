@@ -1,5 +1,17 @@
 # 实施状态
 
+## 当前继续入口：三节点来源更新、私有看板通过，继续 DIM／Hive／血缘（香港2026-10-14）
+
+21文件提交 `c0f542cdc7c24610d6922d8748cd17bb0390a148` 已完成GPG签名、推送，push/PR两轮Linux CI的四个作业及全部步骤成功。三节点已各自实际完成prepare、install和完整477文件读回；每机相对BCE变化27文件，12冻结writer、依赖、配置字节及恢复期限保持，见[安装证据](evidence/signed-source-install-c0f542c-20261014.json)。首次prepare目录枚举拒绝及一次control启动SSH超时保留，不改写为成功；其后新命名空间的实际结果分别记录。来源安装不改变旧BCE日结发生时的来源。
+
+原BCE来源的真实闭日日结已实际完成独立Doris发布，publisher进程退出0，原内部SQL整数读回一致，结果元数据的独立读取也退出0。该读取没有重新执行独立SQL查询，不代表行为表、公开页面数据源或生产P95验收，见[本次Doris技术证据](evidence/real-closedday-doris-20261014.json)。离线模型、成对发布及三项journal COMPLETE仍以原[闭日证据](evidence/real-closedday-20261013-bce1289.json)记录，不覆盖其当时Doris尚未验证的标志。
+
+analysis磁盘已实际从29扩至34GiB，根分区身份和原数据保持，guest读回空闲约6.39GiB；临时98GiB冷维护预算已恢复72GiB，采样峰值和操作边界见[容量证据](evidence/analysis-disk-growth-20261014.json)。锁定Spark镜像已缓存。[私有看板](evidence/real-private-view-20261014.json)已实际通过浏览器检查：日指标、会话、留存、归因四页可读，截止与口径说明可见；未读取或公开业务小计数。原配置权限664导致暂停显示，已仅将该文件收紧为600，字节和所有者不变。有限900秒UI正常到期，精确进程组活成员为0，端口8502关闭；600秒host转发已收尾，host wrapper退出0和内层SSH退出1分别保留。
+
+[真实DIM的2304尝试](evidence/real-dim-preflight-2304-20261014.json)被实际CLI内存门禁拒绝，发生在Spark启动前；独立读回确认只有descriptor及生命周期控制元数据，没有CID、日志、spill或验收结果。新增2560候选只增加analysis 256MiB，293项相关测试通过、4项跳过；默认及Hive门禁不变，新候选仍须签名安装、实际VM资源和引擎验收。
+
+[真实Marquez后端](evidence/real-closedday-marquez-20261014.json)已实际接收原闭日三项任务的六条START/COMPLETE元数据，独立读回三个COMPLETED及输入输出身份一致；图非空，仅声明所验证的范围。原seq9–14内容/UUID保持，八条历史夹具元数据未投递；ACK已导出，原control日志的ACK导入仍待后续窗口。单台2048MiB治理窗口使用现有容器与镜像，结束后精确停服务并正常关闭VM，数据保留。真实DIM及Hive/Iceberg继续执行。没有新自然样本时，生产P95保持未验证；不主动生成付费模型请求或以合成样本代替。以下段落保留对应时点的历史状态。
+
 ## 当前继续入口：增量落地及闭日登记完成，继续模型验收（香港2026-10-14）
 
 八份验收文档已签名为 `1b910a23c8a135f042e32f43b7664ed9f534e885` 并推送；push/PR 两轮 CI 的四个作业、全部步骤通过。该提交只更新文档，三节点实际安装来源仍为 BCE463，不把文档提交冒充引擎更新。

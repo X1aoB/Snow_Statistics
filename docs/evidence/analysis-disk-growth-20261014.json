@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-14T05:24:46.217281+00:00",
+  "scope": "Technical capacity metadata only; no real rows, filesystem identifiers or credentials",
+  "node": "snow-analysis",
+  "virtual_disk_gib": {
+    "before": 29,
+    "after": 34,
+    "growth": 5
+  },
+  "filesystem": "ext4",
+  "guest_root_free_bytes": 6859120640,
+  "guest_root_total_bytes": 34243211264,
+  "partition_start_and_identity_unchanged": true,
+  "other_partitions_unchanged": true,
+  "all_vms_stopped_during_host_expansion": true,
+  "guest_containers_running": false,
+  "vmx_bytes_unchanged": true,
+  "unknown_residual_paths": [],
+  "temporary_cold_project_limit_gib": 98,
+  "reserved_working_space_gib": 35,
+  "normal_project_limit_gib": 72,
+  "normal_resource_bytes_restored": true,
+  "minimum_host_free_disk_gib": 35,
+  "minimum_host_available_ram_gib": 4,
+  "sampled_peak_project_bytes": 93063838144,
+  "exact_peak_measured": false,
+  "cold_project_bytes_after": 64601356019,
+  "automatic_guest_growth_observed": true,
+  "manual_guest_growth_performed": false,
+  "data_deleted": false,
+  "filesystem_reformatted": false,
+  "retention_configuration_modified_by_growth_tool": false,
+  "private_receipt_sha256": {
+    "analysis-disk-expansion-host-20261014.json": "ddbddbd7af0f40c2e442eca6fb5581ec49b457bceae7358d2db3a341f90b9405",
+    "actual-guest-expansion.json": "32b966fa9b3db95836ca64281cc46ecbd0cc64bd0e9588fa2ea087ee1cb68c64",
+    "analysis-expand-budget-20261014.json": "3c962a3483e560a6711aa6f9cbbecf36ee5dd69d50a65fab1fefefec2f04f864",
+    "analysis-disk-before-20261014.json": "b468701a0c9b6c05e6faedaf56be564f6fb7f40f2f36cd429c34c5a411ca7b69"
+  },
+  "working_space_reference": "https://knowledge.broadcom.com/external/article/311401",
+  "acceptance_limit": "Capacity maintenance only. The first post-expansion boot had already grown the root partition and filesystem; subsequent growpart/resize2fs made no growth. Sampling is not an exact peak. Source installation and actual Spark/DIM, Hive or private UI acceptance are separate."
+}

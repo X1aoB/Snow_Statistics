@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-14T06:22:27+00:00",
+  "input_origin": "real",
+  "source_commit": "c0f542cdc7c24610d6922d8748cd17bb0390a148",
+  "source_files_checked": 477,
+  "original_model_source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+  "business_date": "2026-10-13",
+  "cutoff_utc": "2026-10-13T16:00:00+00:00",
+  "browser": {
+    "evidence_basis": "Operator actual browser DOM report; no separate DOM JSON supplied",
+    "browser_tool_id": null,
+    "four_named_tabs_present": true,
+    "four_dataframe_components_present": true,
+    "date_cutoff_and_denominator_captions_verified": true,
+    "paused_warning_present": false,
+    "retention_explanation_present": true,
+    "sessions_30_minute_explanation_present": true,
+    "funnel_30_minute_explanation_present": true,
+    "private_business_values_read_or_exported": false,
+    "lease_rollover_after_60_seconds_verified": null,
+    "individual_D1_D7_state_values_verified": null,
+    "screenshot_or_private_rows_exported": false,
+    "temporary_browser_tab_closed": true
+  },
+  "view_process": {
+    "actual_session_id": 54840,
+    "actual_final_chunk_id": "f0701d",
+    "wrapper_exit_code": 0,
+    "timeout_child_exit_code": 124,
+    "finite_duration_seconds": 900,
+    "started_at": "2026-10-14T06:00:14.507018+00:00",
+    "finished_at": "2026-10-14T06:15:14.564025+00:00",
+    "active_members_after_cleanup": 0,
+    "kill_escalated": false,
+    "data_deleted_by_owned_stop": false
+  },
+  "loopback_forward": {
+    "actual_session_id": 93944,
+    "actual_final_chunk_id": "81654e",
+    "wrapper_exit_code": 0,
+    "SSH_child_exit_code": 1,
+    "owned_tunnel_stopped": true,
+    "finite_duration_seconds": 600,
+    "loopback_only": true,
+    "vm_or_data_deleted": false
+  },
+  "independent_exit_readback": {
+    "session_id": null,
+    "chunk_id": "b6e87e",
+    "actual_exit_code": 0,
+    "session_id_supplied_in_operator_report": false,
+    "observed_at": "2026-10-14T06:22:27+00:00",
+    "owned_child_absent": true,
+    "loopback_listener_absent": true,
+    "only_analysis_datanode_running": true,
+    "config_mode": "0600",
+    "config_bytes_unchanged": true,
+    "row_payloads_read": false,
+    "data_deleted": false
+  },
+  "configuration_permissions": {
+    "before_mode": "0664",
+    "after_mode": "0600",
+    "permission_changed": true,
+    "configuration_bytes_and_owner_unchanged": true
+  },
+  "private_receipt_sha256": {
+    "ui_worker": "52be327da73b5e8030e17d0b874a5714de2e51b18767d6baf466ba8ff96dc0aa",
+    "ui_stopped": "1d8b46e95991dd0c612c0a4bbf0fc366b4727dc7a53880c4cc621898182fd794",
+    "host_started": "d42212e299c719cc15cc024721f7c9730e1eb541ac847ad272cd951467cea45f",
+    "host_stopped": "b8da74b6120b2f905e9dd7b22d4e8efc965837d06aa75348a832a88cc950b405",
+    "permission": "ca33c14f515a27bb5daf549bee8e265d3fefc263510a1d75f543fa65e6bb56a1"
+  },
+  "acceptance_limit": "Actual private browser DOM and finite owned process cleanup. Original closed-day pair remains BCE. No independent Doris SQL, DIM output, mature retention values, continuous resource peak or 60-second browser lease rollover is claimed.",
+  "current_VM_power_state_declared": false,
+  "clock_absolute_or_continuous_accuracy_certified": false
+}

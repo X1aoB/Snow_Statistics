@@ -124,50 +124,60 @@ def test_cold_backing_and_write_budget_is_checked_before_configure_or_boot(tmp_p
     assert small.check_cold_start(host() | {"project_bytes": last_accepted}, "real-small-1920")["projected_bytes"] < small.STOP_BYTES
 
 
-def test_dim_profile_cold_budget_fails_before_configure_and_keeps_resource_gates(tmp_path):
-    profile = "real-dim-2304"
+@pytest.mark.parametrize("profile,total_mib", [("real-dim-2304", 6144), ("real-dim-2560", 6400)])
+def test_dim_profile_cold_budget_fails_before_configure_and_keeps_resource_gates(tmp_path, profile, total_mib):
     runner = FixtureRunner(tmp_path, profile=profile)
     value = small.description("start-offline", profile=profile)
     default = small.description("start-offline")
-    assert value["cold_vm_backing_mib"] == 6144 and value["cold_write_budget_mib"] == 128
+    assert value["cold_vm_backing_mib"] == total_mib and value["cold_write_budget_mib"] == 128
     for key in ("start_reserve_mib", "project_stop_bytes", "project_hard_bytes", "host_disk_min_bytes",
                 "host_ram_min_mib", "guest_ram_min_mib", "guest_disk_min_mib", "new_permit_implied"):
         assert value[key] == default[key]
-    boundary = small.STOP_BYTES - (6144 + 128) * small.MIB
+    boundary = small.STOP_BYTES - (total_mib + 128) * small.MIB
     runner.host = lambda: host() | {"project_bytes": boundary + 1}
     with pytest.raises(RuntimeError, match="128 MiB write budget"):
         runner.start()
     assert runner.calls == [] and not runner.owned_nodes
     assert small.check_cold_start(host() | {"project_bytes": boundary}, profile)["projected_bytes"] == small.STOP_BYTES
     assert small.check_cold_start(host() | {"project_bytes": boundary + 1}, "real-small-1792")["projected_bytes"] < small.STOP_BYTES
+    if profile == "real-dim-2560":
+        # The former 2304 boundary must no longer authorize the larger candidate.
+        with pytest.raises(RuntimeError, match="128 MiB write budget"):
+            small.check_cold_start(host() | {"project_bytes": boundary + 256 * small.MIB}, profile)
+        assert small.check_cold_start(host() | {"project_bytes": boundary + 256 * small.MIB}, "real-dim-2304")["projected_bytes"] == small.STOP_BYTES
 
 
-def test_dim_profile_describe_cli_accepts_the_explicit_route_without_running(tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("profile,analysis_mib,total_mib", [
+    ("real-dim-2304", 2304, 6144), ("real-dim-2560", 2560, 6400),
+])
+def test_dim_profile_describe_cli_accepts_the_explicit_route_without_running(tmp_path, monkeypatch, capsys,
+                                                                           profile, analysis_mib, total_mib):
     path = tmp_path / "runtime/real/config/test.json"
     path.parent.mkdir(parents=True)
     path.write_text(json.dumps(config()), encoding="utf-8")
     monkeypatch.setattr(small, "ROOT", tmp_path)
     monkeypatch.setattr(sys, "argv", ["real_offline_small.py", "--config", "runtime/real/config/test.json",
-                                     "--profile", "real-dim-2304", "start-offline", "--describe"])
+                                     "--profile", profile, "start-offline", "--describe"])
     monkeypatch.setattr(small, "SmallRunner", lambda *_, **__: pytest.fail("Describe must not construct a runner"))
     small.main()
     value = json.loads(capsys.readouterr().out)
-    assert value["profile"] == "real-dim-2304"
-    assert value["memory_mib"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 2304}
-    assert value["cold_vm_backing_mib"] == 6144
+    assert value["profile"] == profile
+    assert value["memory_mib"] == {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": analysis_mib}
+    assert value["cold_vm_backing_mib"] == total_mib
     assert not value["executes"] and not value["new_permit_implied"]
 
 
-def test_dim_analysis_vm_commands_keep_selected_profile_and_start_reserve(tmp_path, monkeypatch):
-    runner = FixtureRunner(tmp_path, profile="real-dim-2304")
+@pytest.mark.parametrize("profile,analysis_mib", [("real-dim-2304", 2304), ("real-dim-2560", 2560)])
+def test_dim_analysis_vm_commands_keep_selected_profile_and_start_reserve(tmp_path, monkeypatch, profile, analysis_mib):
+    runner = FixtureRunner(tmp_path, profile=profile)
     reservations = []
     monkeypatch.setattr(small, "check_host", lambda sample, reserve=0: reservations.append(reserve))
     small.SmallRunner.vm_command(runner, "configure", "snow-analysis")
     small.SmallRunner.vm_command(runner, "start", "snow-analysis")
-    assert runner.calls[0][1][-2:] == ["--profile", "real-dim-2304"]
-    assert runner.calls[1][1] == [sys.executable, "tools/vmware_lab.py", "status", "--reserve-mib", "2560"]
-    assert reservations == [2304 + 256]
-    assert "--profile real-dim-2304" in runner.ssh("snow-analysis", "probe")[-1]
+    assert runner.calls[0][1][-2:] == ["--profile", profile]
+    assert runner.calls[1][1] == [sys.executable, "tools/vmware_lab.py", "status", "--reserve-mib", str(analysis_mib + 256)]
+    assert reservations == [analysis_mib + 256]
+    assert "--profile " + profile in runner.ssh("snow-analysis", "probe")[-1]
 
 
 @pytest.mark.parametrize("node,memory", [("snow-compute", 1792), ("snow-analysis", 1024)])
@@ -338,7 +348,7 @@ def test_monitor_shutdown_failure_still_stops_every_owned_vm(tmp_path, monkeypat
 
 
 @pytest.mark.parametrize("phase", ["land", "stop-offline"])
-@pytest.mark.parametrize("profile", [small.PROFILE, "real-dim-2304"])
+@pytest.mark.parametrize("profile", [small.PROFILE, "real-dim-2304", "real-dim-2560"])
 def test_wrong_selected_profile_does_not_adopt_running_candidate(tmp_path, phase, profile):
     runner = FixtureRunner(tmp_path, profile=profile)
     runner.state = dict.fromkeys(small.NODES, True)
@@ -349,7 +359,7 @@ def test_wrong_selected_profile_does_not_adopt_running_candidate(tmp_path, phase
     assert not any(call[0] == "stop" for call in runner.calls)
 
 
-@pytest.mark.parametrize("profile", ["real-small-1792", "real-dim-2304"])
+@pytest.mark.parametrize("profile", ["real-small-1792", "real-dim-2304", "real-dim-2560"])
 def test_candidate_failure_cleanup_retains_selected_profile(tmp_path, profile):
     runner = FixtureRunner(tmp_path, profile=profile)
     runner.failure = ("node-start-offline", "snow-compute")
@@ -506,7 +516,7 @@ def test_controller_lock_failure_cannot_claim_or_stop_another_attempt(tmp_path, 
     assert not (tmp_path / "runtime").exists()
 
 
-@pytest.mark.parametrize("profile", ["real-small-1792", "real-dim-2304"])
+@pytest.mark.parametrize("profile", ["real-small-1792", "real-dim-2304", "real-dim-2560"])
 def test_different_lanes_share_the_same_physical_topology_lock(tmp_path, monkeypatch, profile):
     paths = []
     monkeypatch.setattr(small, "publication_lock", lambda path: paths.append(path) or nullcontext())

@@ -233,9 +233,22 @@
     "real_data": {
       "hive_metadata_profile": {
         "name": "hive-only",
-        "vm_memory_mib": {"snow-control": 2048, "snow-compute": 1024, "snow-analysis": 1536},
+        "vm_memory_mib": {
+          "snow-control": 2048,
+          "snow-compute": 1024,
+          "snow-analysis": 1536
+        },
         "additional_start_reserve_mib": 256,
-        "services": {"snow-control": ["namenode", "hive"], "snow-compute": ["datanode"], "snow-analysis": []},
+        "services": {
+          "snow-control": [
+            "namenode",
+            "hive"
+          ],
+          "snow-compute": [
+            "datanode"
+          ],
+          "snow-analysis": []
+        },
         "temporary_client": "snow-analysis only: existing locked Spark local[1], container 768 MiB, driver heap 512 MiB, observed guest MemAvailable at least 768 MiB before each request",
         "input_requirement": "Existing validated managed aggregate pair; all referenced HDFS blocks must be readable from compute before pausing the analysis DataNode",
         "replicas": "Keep both DataNode volumes. Only compute DataNode is online during catalog work; restore the offline phase and verify both replicas afterward. No new ODS landing or YARN computation in this window.",
@@ -245,7 +258,11 @@
       },
       "small_batch_profile": {
         "name": "real-small",
-        "vm_memory_mib": {"snow-control": 2048, "snow-compute": 2048, "snow-analysis": 768},
+        "vm_memory_mib": {
+          "snow-control": 2048,
+          "snow-compute": 2048,
+          "snow-analysis": 768
+        },
         "additional_start_reserve_mib": 256,
         "purpose": "Explicit low-volume offline acceptance; HDFS replicas stay online, using the current 72/35/4 host gates",
         "prior_measurement": "2026-09-11 million-row analysis DataNode peak 389677056 bytes and guest available 428 MiB at 1024 MiB VM; this is sizing evidence, not a completed 768 MiB integration test",
@@ -253,7 +270,11 @@
       },
       "small_batch_1920_candidate": {
         "name": "real-small-1920",
-        "vm_memory_mib": {"snow-control": 2048, "snow-compute": 1920, "snow-analysis": 768},
+        "vm_memory_mib": {
+          "snow-control": 2048,
+          "snow-compute": 1920,
+          "snow-analysis": 768
+        },
         "additional_start_reserve_mib": 256,
         "project_stop_gib": 71.75,
         "guest_min_available_mib": 128,
@@ -264,7 +285,11 @@
       },
       "small_batch_1792_candidate": {
         "name": "real-small-1792",
-        "vm_memory_mib": {"snow-control": 2048, "snow-compute": 1792, "snow-analysis": 1024},
+        "vm_memory_mib": {
+          "snow-control": 2048,
+          "snow-compute": 1792,
+          "snow-analysis": 1024
+        },
         "additional_start_reserve_mib": 256,
         "cold_vm_backing_mib": 4864,
         "cold_write_budget_mib": 128,
@@ -272,13 +297,54 @@
         "project_stop_gib": 71.75,
         "guest_min_available_mib": 128,
         "guest_min_disk_free_mib": 384,
-        "compute_memtotal_candidate_bands_mib": [[1664, 1792], [1800, 2048]],
-        "analysis_memtotal_candidate_bands_mib": [[640, 768], [896, 1024]],
+        "compute_memtotal_candidate_bands_mib": [
+          [
+            1664,
+            1792
+          ],
+          [
+            1800,
+            2048
+          ]
+        ],
+        "analysis_memtotal_candidate_bands_mib": [
+          [
+            640,
+            768
+          ],
+          [
+            896,
+            1024
+          ]
+        ],
         "analysis_memory_revision_20261013": "After V15 stopped at analysis MemAvailable 127 MiB below the unchanged 128 MiB floor, increase only this profile's analysis allocation from 768 to 1024 MiB. Control 2048 and compute 1792 MiB, containers and retention remain unchanged. This records a 256 MiB configuration revision; the actual powered-off VMX configure/readback and subsequent engine acceptance are pending. Previous V15 receipts retain their original 768 MiB allocation.",
         "sizing_estimate": "Historical estimate under the 64 GiB cap: rounded cold files 59.07 GiB gave projected running files 63.57 GiB, about 184 MiB below the then 63.75 GiB stop; subtracting 128 MiB from prior 1920 golden compute minimum 669 MiB gave about 541 MiB available. Both are estimates only, not observations of this candidate; use a fresh sample with the current cap.",
         "unchanged_limits": "Compute DataNode 384 MiB / NodeManager 1536 MiB, one bounded YARN job, same heaps/JARs/Compose identities. Container limits are upper bounds, not guaranteed available guest memory. Control catalog still requires 768 MiB actual available; analysis runs no catalog or realtime engines.",
         "entry": "tools/real_offline_small.py --profile real-small-1792; explicitly repeat the selected profile on later phases and stop. Default remains real-small-1920; shared physical-resource lock is unchanged.",
         "acceptance": "The revised 2048/1792/1024 MiB allocation is a configuration candidate; actual VMX readback and guest MemTotal/MemAvailable measurement, Hive and Iceberg completion under this allocation remain pending. Earlier profile evidence and the V15 monitor interruption keep their original resource conditions."
+      },
+      "dim_2560_candidate": {
+        "name": "real-dim-2560",
+        "vm_memory_mib": {
+          "snow-control": 2048,
+          "snow-compute": 1792,
+          "snow-analysis": 2560
+        },
+        "cold_vm_backing_mib": 6400,
+        "cold_write_budget_mib": 128,
+        "additional_start_reserve_mib": 256,
+        "project_stop_gib": 71.75,
+        "guest_min_available_mib": 128,
+        "guest_min_disk_free_mib": 384,
+        "dimension_driver_preflight": {
+          "analysis_min_usable_total_mib": 2048,
+          "analysis_min_available_mib": 1536,
+          "driver_container_memory_mib": 1280
+        },
+        "cold_admission": "All project VMs fully stopped; actual project bytes + 6400 MiB VM backing + 128 MiB job-write budget must be <= 71.75 GiB before configure/start. Current 72 GiB project, 35 GiB host free, 4 GiB host RAM and per-start 256 MiB reserve remain unchanged.",
+        "entry": "tools/real_offline_small.py --profile real-dim-2560; repeat the same selected profile for all phases and cleanup. Default remains real-small-1920; real-dim-2304 and the shared topology lock remain unchanged.",
+        "prior_measurement_limit": "The 2304 MiB DIM attempt failed the actual CLI resource_preflight before Spark launch. A minimal Python guest sample did not establish available memory after CLI imports and authority checks; preserve the failed attempt.",
+        "acceptance": "Configuration and synthetic tests only. The new 2560 MiB VMX/guest measurements and actual DIM driver/readback/cleanup remain pending; no change to historical Hive/Lake memory bands, frozen writers, disk capacity or original retention."
       },
       "identity": "Collector instance_id and generation, Kafka cluster/topic IDs, one partition and explicit offsets; new generations require an explicit new lane",
       "coordinator_host": "snow-analysis; stage verified immutable ODS metadata to snow-control for offline computation",
@@ -307,8 +373,20 @@
       "disk_budget_note": "Analysis guest was explicitly expanded from 28 to 29 GiB for the earlier phase and ext4 growth verified. Thin guest capacity is not host usage. The 2026-10-13 project-budget revision is 72 GiB; 35 GiB host disk and 4 GiB host available RAM checks remain. The budget revision does not itself resize a guest disk or filesystem; any later actual resize must be recorded separately.",
       "registry": "runtime/real/epochs/<epoch>/{manifest.json,compose.json,gate.json,retirement.json}; immutable writer registration and actual job receipts are separate from the startup gate",
       "compose_project": "snow-real-<epoch>",
-      "exact_container_roles": ["kafka", "doris-fe", "doris-be", "jobmanager", "taskmanager"],
-      "exact_local_volume_roles": ["kafka", "doris-fe", "doris-be", "checkpoints", "flink-state"],
+      "exact_container_roles": [
+        "kafka",
+        "doris-fe",
+        "doris-be",
+        "jobmanager",
+        "taskmanager"
+      ],
+      "exact_local_volume_roles": [
+        "kafka",
+        "doris-fe",
+        "doris-be",
+        "checkpoints",
+        "flink-state"
+      ],
       "resource_names": "snow-real-<epoch>-<role>; owner/source/epoch/generation/input-origin/expiry labels must all match",
       "topic_scope": "snow.real.<immutable_underscore_lane>.{events,late,duplicates,quarantine}.v1",
       "doris_scope": "snow_real_<immutable_underscore_lane>, independent user and events/daily tables",
@@ -323,7 +401,11 @@
       "synthetic_engine_receipts": "engine-test/{storage.json,job.json,fixture-input.json,acceptance.json,failure.json,publication/,local-collector/}; secrets.json and job.env remain private mode 0600 and are not exported"
     },
     "vm_disk_capacity": {
-      "new_disk_default_gib": {"snow-control": 20, "snow-compute": 18, "snow-analysis": 29},
+      "new_disk_default_gib": {
+        "snow-control": 20,
+        "snow-compute": 18,
+        "snow-analysis": 34
+      },
       "existing_disk_policy": "prepare skips an existing VMDK; changing the new-disk default does not resize, replace, shrink or remove existing disks. Any existing-disk expansion needs its own exact-target capacity checks and guest verification.",
       "control_expansion_20261013": {
         "before_virtual_gib": 18,
@@ -337,6 +419,19 @@
         "exact_peak_measured": false,
         "evidence": "docs/evidence/control-disk-growth-20261013.json",
         "scope": "Completed cold maintenance only; this metadata does not authorize another 82 GiB window, engine concurrency, deletion, or a change to any data expiry. Normal admission remains 72 GiB project / 35 GiB host disk / 4 GiB host RAM."
+      },
+      "analysis_expansion_20261014": {
+        "before_virtual_gib": 29,
+        "after_virtual_gib": 34,
+        "root_partition_growth_bytes": 5368709120,
+        "guest_verification": "Root partition and ext4 already grown on first post-expansion boot; NOCHANGE and nothing to do on subsequent growpart/resize2fs; identities/start/other partitions unchanged.",
+        "temporary_cold_maintenance_limit_gib": 98,
+        "normal_72_gib_budget_restored": true,
+        "working_space_reserved_gib": 35,
+        "sampled_peak_project_bytes": 93063838144,
+        "exact_peak_measured": false,
+        "evidence": "docs/evidence/analysis-disk-growth-20261014.json",
+        "scope": "Completed maintenance only; does not authorize another 98 GiB window or change normal 72/71.75/35/4 limits, existing-disk policy, real-data expiry or engine acceptance."
       }
     },
     "vm_names": [

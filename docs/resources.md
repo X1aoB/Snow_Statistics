@@ -11,6 +11,14 @@
 
 本地镜像和实验成果的磁盘占用不等于线上统计库的需要。轻量服务无需任何虚拟机、Kafka、Spark、Flink 或 Doris 在线；对两个产品的接口和开关没有新增依赖。
 
+## 2026-10-14 analysis 虚拟盘实际扩容
+
+analysis 根分区在补齐锁定的私有看板依赖后空闲约1.55GiB；为了容纳新增Spark镜像，独立薄盘已由 **29扩到34GiB**。依据用户已有容量授权，仅在全部VM关闭期间将项目维护门槛临时设为98GiB，预留29GiB单文件磁盘工作空间、5GiB增长及1GiB余量；宿主35GiB空闲磁盘、4GiB可用RAM要求保持。[Broadcom工作空间说明](https://knowledge.broadcom.com/external/article/311401)适用于该单文件虚拟盘和vmware-vdiskmanager。
+
+工具实际退出0，VMX保持原字节、无未知残留，采样项目峰值86.67GiB（非精确峰值）。完成后项目约60.16GiB，资源文件按原字节恢复72GiB后才单机启动analysis。首次启动时根分区和ext4已经自动增长；随后growpart返回NOCHANGE、resize2fs无需增长，文件系统身份、根分区起点和其他三个分区保持。核验时根分区空闲约6.39GiB，容器均停止。没有快照、全盘复制、格式化、数据删除或期限更新。见[实际容量证据](evidence/analysis-disk-growth-20261014.json)。后续缓存镜像会消耗其中一部分空间；该核验不是引擎运行峰值或DIM验收。
+
+新建analysis默认容量同步为34GiB；这个默认值不会自动修改已有虚拟盘。常态项目门槛继续72GiB，运行停止线71.75GiB，每个阶段重新检查资源。
+
 ## 2026-10-13 项目容量调整
 
 用户授权“如果碰到空间上限不足可适当扩容并标注相应操作”。本次将 `deploy/resources.json` 的项目文件预算从 **64 GiB（68,719,476,736 bytes）提高到 72 GiB（77,309,411,328 bytes）**。运行中仍提前 **256 MiB** 停止，因此停止线为 **71.75 GiB**；宿主空闲磁盘 **35 GiB**、可用 RAM **4 GiB** 的门槛不变。
@@ -54,21 +62,31 @@ V15 的合成 Hive 验证在监测到 analysis `MemAvailable` **127 MiB** 时停
 
 本次容量维护通过的独立元数据见 [analysis-memory-1024-20261013.json](evidence/analysis-memory-1024-20261013.json)。Hive登记、独立查询和Iceberg仍须新attempt的实际验收；不能复用V15已消耗的阶段记录宣称成功。此次未修改容器限制、冻结writer、数据或保留期，历史回执保留原768 MiB条件。
 
-## 2026-10-14 独立DIM窗口的显式内存配置候选
+## 2026-10-14 独立DIM窗口的显式内存配置
+
+### 原2304候选及实际前置失败
 
 依据既有适度扩容授权，新增 `real-dim-2304` profile：control **2048 MiB**、compute **1792 MiB**、analysis **2304 MiB**。三VM冷态内存后备合计 **6144 MiB**，`real_offline_small`仍另计原 **128 MiB** 作业写入预算，并在每台实际启动时保留原 **256 MiB** 启动余量。两个公开入口的profile表一致；默认 `real-small-1920`、历史/现有 `real-small-1792` 的2048/1792/1024 MiB以及实时analysis4608 MiB都保持原值。
 
 新配置为独立DIM driver窗口留出内核和DataNode所需空间。DIM前置检查要求analysis内核实际可见 `MemTotal` 至少 **2048 MiB**、`MemAvailable` 至少 **1536 MiB**，再使用 **1280 MiB** 的有限driver预算；分配2048 MiB VMX不能保证内核可见总量达到2048 MiB，因此显式候选采用2304 MiB。VMX数字不是guest或容器资源验收，仍须运行时实测并满足独立DIM的资源门禁。原离线通用128 MiB最小可用内存检查没有替代DIM专用前提，原Hive/Iceberg阶段的内存范围门禁也未扩大。
 
-**本次状态：只增加公开配置、合成测试和本操作说明，未修改任何实际VMX、启动VM或执行DIM引擎。** 必须先正常结束原离线窗口、保存恢复/发布证据并确认三VM完全关闭，才能在新的受控窗口选择该profile；后续phase和收尾都使用同一显式profile。当前BCE实际模型窗口仍使用原1792路线，不能把这处代码变化写成它已经切换内存、取得新许可或运行DIM成功。冻结 `real_lab --offline-profile` 入口及12个writer保持原字节，本次不对其增加profile选项。
+该段最初记录2304代码候选，随后已完成实际VMX配置和guest有限读回。2026-10-14的2304实际DIM CLI尝试在 `resource_preflight` 报 `Analysis guest is too small`，Spark尚未启动；较早minimal Python采样不能证明同一次CLI完成导入和权威检查后的资源条件。失败只表明该点组合内存门槛未满足，不由较早样本推断实际最低余量、唯一原因或引擎结果。原BCE模型仍保留1792路线及其历史来源，不把新profile改写成旧模型条件。
+
+### 新2560配置候选，尚未实际配置或运行
+
+新增独立 `real-dim-2560`：control **2048 MiB**、compute **1792 MiB**、analysis **2560 MiB**，三VM冷态内存后备 **6400 MiB**。相对2304只增加analysis的256 MiB；原 `real-dim-2304` 保留，默认 `real-small-1920`、现有1792、实时4608及其他profile不变。冷启动仍另计 **128 MiB** 作业写入预算，要求实际项目文件＋6400 MiB后备＋128 MiB写入预算不超过 **71.75 GiB**；analysis逐台启动的VM内存＋256 MiB预留为 **2816 MiB**。宿主可用RAM还须在此之上保留原4 GiB。
+
+DIM仍要求实际guest usable MemTotal至少 **2048 MiB**、MemAvailable至少 **1536 MiB**、空闲磁盘至少 **384 MiB**，driver容器预算 **1280 MiB**不变。通用离线128 MiB余量检查不代替DIM专用检查；旧Hive/Iceberg范围、容器配额、JAR与12份冻结writer不变。代码配置和合成测试就绪不能证明新VMX或引擎通过。
+
+必须先正常结束原窗口、保存失败及恢复/发布证据并确认三VM完全关闭；新来源签名/CI/安装读回后，才能在新受控窗口明确选择2560。后续phase和收尾均使用同一profile，不从运行状态猜选项，也不在运行中改内存。冻结 `real_lab --offline-profile` 入口不增加名称。新配置没有调整虚拟盘；已完成的analysis34GiB容量维护另保留原回执。
 
 可在**Windows PowerShell、仓库根目录**检查新配置的非执行描述；`--describe`只解析既有私有配置，不启动VM或授予许可：
 
 ```powershell
-.\.venv\Scripts\python.exe tools/real_offline_small.py --config runtime/real/config/production-real-prod-04.json --profile real-dim-2304 start-offline --describe
+.\.venv\Scripts\python.exe tools/real_offline_small.py --config runtime/real/config/production-real-prod-04.json --profile real-dim-2560 start-offline --describe
 ```
 
-项目仍限 **72 GiB**、运行停止线 **71.75 GiB**、宿主空闲磁盘至少 **35 GiB**、可用RAM至少 **4 GiB**。新增profile不提高这些上限，也不扩展虚拟盘、数据保留期限或旧epoch有效期。原1792及60/64 GiB历史回执保留原资源条件；真实2304 VMX与guest余量、DIM driver及精确收尾均待新的实际回执。
+项目仍限 **72 GiB**、运行停止线 **71.75 GiB**、宿主空闲磁盘至少 **35 GiB**、可用RAM至少 **4 GiB**。新增profile不提高这些上限，也不扩展虚拟盘、数据保留期限或旧epoch有效期。原1792及60/64 GiB历史回执保留原资源条件；真实2560 VMX、同一次CLI guest准入、DIM driver及精确收尾仍待新的实际回执。
 
 ## 小配置的实际验证
 

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "scope": "Technical acceptance only; no business values, rows, user identities or private addresses",
+  "recorded_at": "2026-10-14T04:34:23.055337+00:00",
+  "source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+  "source_files_checked": 463,
+  "business_date": "2026-10-13",
+  "cutoff": "2026-10-13T16:00:00Z",
+  "publisher_process_exit_code": 0,
+  "publisher_process_witness": {
+    "session_id": 35043,
+    "chunk_id": "aecae8"
+  },
+  "metadata_readback_process_exit_code": 0,
+  "publisher_internal_doris_integer_readback_equal": true,
+  "new_independent_sql_query_performed": false,
+  "doris_behavior_tables_verified": false,
+  "receipt_reader_business_rows_read": false,
+  "publisher_result_metadata_sha256": "7d44eb91ae9925de0269a14ff2d0a8392c7d349e2c9f98f48f531af3d0da9113",
+  "private_receipt_sha256": "de4a107cbfc2fe6386371b97990eaa3149667a771d077836906c599dc92d4eab",
+  "acceptance_limit": "The original publisher completed and its internal exact integer SQL readback agreed; this metadata inspection did not execute a second independent SQL query, verify behavior tables or establish production P95."
+}

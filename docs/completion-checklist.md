@@ -10,9 +10,16 @@
 - [x] R3只读血缘实际退出0，三项journal COMPLETE及原模型/发布边验证；R2字节表示差异导致的原失败保留。
 - [x] [本次公网只读复核](evidence/production-readonly-20261014.json)：两站/统计页HTTP200，v1/v2保护契约与新鲜快照、no-store及私有路径404；未写事件或调用模型。
 - [x] 两节点前后完整来源核验与26份允许元数据捕获，独立投影检查及[真实闭日技术证据](evidence/real-closedday-20261013-bce1289.json)公开写入完成；没有发布业务数值。
-- [ ] Doris、私有看板和Marquez；模型或journal退出0不代替这些验收。
+- [x] 原真实Doris日结publisher退出0及内部SQL整数读回一致，独立元数据读取通过，见[技术证据](evidence/real-closedday-doris-20261014.json)；新独立SQL及行为表不在本次范围。
+- [x] [私有看板](evidence/real-private-view-20261014.json)实际浏览器可读：日指标、会话、留存、归因，截止与口径说明可见；有限UI及host转发收尾，未发布小样本数值。
+- [x] [Marquez](evidence/real-closedday-marquez-20261014.json)实际投递六条原闭日元数据并独立后端读回三个COMPLETED及输入输出身份；精确治理停服务和VM正常关闭。
+- [ ] Marquez确认回执导回原control journal；八条历史fixture保持未投递，不追求整个历史pending归零。
 - [x] 新DIM只读入口及独立2304配置的本机1159项回归、Ruff、契约检查和独立P2修复复审通过。
-- [ ] 新增源码签名/CI/安装，2304实际资源窗口和真实DIM；旧默认与Hive/Lake准入不扩大。
+- [x] 新增21文件c0f542c提交GPG签名、推送及push/PR两轮全部CI通过，完整477文件归档独立验签。
+- [x] analysis磁盘29→34GiB实际扩容及guest核验，临时冷维护98GiB预算已按原字节恢复72GiB，见[容量证据](evidence/analysis-disk-growth-20261014.json)。
+- [x] c0f477三节点实际prepare/install/readback，见[安装证据](evidence/signed-source-install-c0f542c-20261014.json)；旧BCE作业来源不重标。
+- [x] 2304实际DIM preflight拒绝及独立读回：Spark未启动，原失败和期限保留。
+- [ ] 独立2560候选已通过293项相关测试、4项跳过；仍待签名安装、VMX/guest读回和真实DIM引擎。
 - [ ] 真实DIM受控桥接和事实Join、真实Hive/Iceberg；准备材料与既有合成结果继续分开。
 
 ## 历史停点（香港2026-10-14，日结时钟门禁）

@@ -6,9 +6,9 @@ cutoff、计算 permit 和实际 lifecycle registry。它不修改原配置或�
 不执行原 daily/behavior 命令，不写 HDFS 模型或公开指标，也不调用 SSH、启动
 VM、调整资源 profile、创建事件或注册 Hive 表。
 
-本模块不属于此前安装的 BCE。当前源码实现和合成测试不能代替后续签名来源安装
-及真实 Spark 验收。只有 root 在原 BCE 闭日流程结束后完成新增来源的审阅、签名、
-安装/readback，再执行受控窗口，才能记录真实 DIM 引擎证据。
+本模块已随已签名的c0f542c完整477文件来源安装到三节点，并各自实际读回。
+原BCE闭日日结仍保持其发生时的来源；安装不代表真实Spark通过。2304配置的
+实际尝试被资源门禁拒绝，新的2560候选仍须单独签名安装及受控引擎验收。
 
 ## 权限与数据路径
 
@@ -84,11 +84,18 @@ session 身份，再放行命令。收尾总是检查此已拥有 session 的精
 容器另按本次 label/name/CID 单独清理。Windows 合成子进程测试使用自己的 Job
 handle；它不授予真实 Windows authority，也不代替后续 Linux/Spark 实测。
 
-**当前 analysis 1024MiB offline profile 不能运行此 driver 加原 DataNode。**
+**原 analysis 1024MiB offline profile 不能运行此 driver 加原 DataNode。**
 CLI要求实际 guest usable MemTotal至少2048MiB、MemAvailable至少1536MiB及
 384MiB空闲磁盘；配置为2048MiB的VM可能因内核保留而不满足 usable 阈值。
-root 在原流程窗口结束后单独选择并记录2048/2304MiB等合适 profile，实测通过后
-才执行。CLI不会偷偷切回4608或改VM。宿主72GiB项目/71.75GiB停止线/35GiB空闲
+2026-10-14 的 `real-dim-2304` 实际CLI尝试在 `resource_preflight` 报
+`Analysis guest is too small`，尚未启动Spark；较早的minimal Python余量采样
+不能替代同一次CLI完成导入和权威检查之后的准入。保留该失败，不降低门槛。
+新增显式 `real-dim-2560` 候选为control2048／compute1792／analysis2560MiB，
+三VM冷态内存后备6400MiB，另留原128MiB作业写入预算；每台启动还保留256MiB
+余量。2304配置与默认 `real-small-1920` 保持，历史Hive/Lake内存范围不扩大。
+root须先结束窗口并确认全部VM关闭，在新签名来源安装后配置、读回并实际测量，
+新的2560 VMX、guest准入与DIM引擎/精确收尾仍待验收。CLI不会偷偷切回4608
+或改VM。宿主72GiB项目/71.75GiB停止线/35GiB空闲
 磁盘/4GiB可用RAM仍须 root 外部复核；本机 guest preflight 不是宿主峰值证据。
 
 在 **analysis 项目目录**，完成新增签名来源安装和原 fresh permit 后才可执行：
