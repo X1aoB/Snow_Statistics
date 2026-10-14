@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "scope_decision": {
+    "product_promotion_includes_statistics": false,
+    "promotion_materials_required_for_warehouse_delivery": false,
+    "original_product_promotion_task_continues_independently": true,
+    "existing_product_privacy_settings_or_collection_modified": false
+  },
+  "installed_engine_source_commit": "f8e3ca8c7823b8736150362ab57316f6a1bca75b",
+  "source_files_checked": 483,
+  "private_operator_tool_bindings": {
+    "initial_synthetic_tests_passed": 58,
+    "timeout_diagnostic_candidate_tests_passed": 62,
+    "source_http_timeout_seconds": 5,
+    "retries_added": false,
+    "metric_sampling_clock_accounting_or_retention_policy_changed": false,
+    "three_VM_engine_installation_changed": false
+  },
+  "actual_runtime_followup": {
+    "original_checkpoint_resumed": true,
+    "incremental_sync_completed": true,
+    "follow_900_seconds_exit_code": 0,
+    "follow_180_seconds_exit_code": 0,
+    "both_follow_groups_absent_at_final_check": true,
+    "both_follow_tunnels_closed": true,
+    "both_follow_operation_leases_released": true,
+    "first_observer_exit_code": 1,
+    "first_observer_failure_code": "adapter_ReadTimeout",
+    "first_observer_route_not_recorded": true,
+    "short_diagnostic_window_seconds": 60,
+    "short_diagnostic_drain_seconds": 15,
+    "short_diagnostic_exit_code": 0,
+    "short_diagnostic_complete_accounting": true,
+    "p95_evaluation": "new_visible_sample_conditions_not_met",
+    "production_ack_p95_verified": false,
+    "http_202_ack_measured": false,
+    "population_sla_claimed": false,
+    "event_payloads_or_per_event_identifiers_persisted_by_observer": false,
+    "production_events_created_or_models_called_by_operator": false,
+    "short_diagnostic_replaces_failed_long_window_claimed": false
+  },
+  "production_current_interval": {
+    "first_observed_at": "2026-10-14T11:11:01.164484+00:00",
+    "last_observed_at": "2026-10-14T11:11:36.194775+00:00",
+    "collector_lite_healthy": true,
+    "reader_and_forwarder_active_with_fresh_advancing_observations": true,
+    "failure_rejection_gap_and_restart_counters_unchanged_in_interval": true,
+    "historical_counter_changes_since_September_preserved": true,
+    "historical_gap_repaired_or_all_request_coverage_claimed": false,
+    "business_values_or_cursors_exported": false
+  },
+  "shutdown": {
+    "pause_writer_actual_exit_code": 0,
+    "stop_epoch_and_power_off_actual_exit_code": 0,
+    "data_deleted": false,
+    "independent_running_VM_count": 0,
+    "cold_project_GiB_rounded": 62.08,
+    "host_free_disk_GiB_rounded": 190.01,
+    "project_budget_GiB": 72,
+    "host_minimum_free_disk_GiB": 35,
+    "resource_values_are_point_observations": true
+  },
+  "handbook": {
+    "markdown_files": 40,
+    "local_links_and_anchors_checked": 590,
+    "fenced_blocks_checked": 186,
+    "powershell_blocks_parsed": 95,
+    "python_blocks_parsed": 12,
+    "bash_blocks_syntax_checked": 14,
+    "errors": [],
+    "independent_static_review_passed": true,
+    "learning_routes_before_historical_timeline": true,
+    "operating_command_blocks_unchanged": true,
+    "all_tutorial_commands_runtime_verified_claimed": false
+  },
+  "failure_history": [
+    "A short-interval sync and first pause attempt returned OSError; later checks and retries succeeded. No unique cause is claimed.",
+    "The first passive observer failed with ReadTimeout; its receipt remains unchanged. The later short diagnostic succeeded without an eligible new visible sample.",
+    "The September-baseline health comparison detected historical diagnostic changes; a separate current interval was healthy. The historical counters were not reset or reinterpreted as repaired."
+  ],
+  "limits": [
+    "These are finite checks in a low-volume single-host laboratory. Production P95 remains unverified and is not replaced by synthetic performance or historical backlog.",
+    "Public evidence excludes business counts, raw events, identifiers, credentials and reconstructible result metadata hashes.",
+    "The installed F8 engine identity and earlier BCE model or C0F UI/lineage identities retain their original provenance. Private operator diagnostics are separately reviewed tools."
+  ]
+}
