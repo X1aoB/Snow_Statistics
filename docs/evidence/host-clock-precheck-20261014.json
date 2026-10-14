@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "acceptance": "clock_alignment_precheck_only",
+  "closed_day_registered": false,
+  "compute_permit_granted": false,
+  "host_time_corrected": false,
+  "production_system_changed": false,
+  "source_status_freshness_guard_relaxed": false,
+  "observations": {
+    "windows_time_service": "running_automatic",
+    "windows_leap_indicator": 3,
+    "windows_stratum": 0,
+    "windows_time_source": "Local CMOS Clock",
+    "windows_last_successful_sync": null,
+    "existing_ntp_peer": "time.windows.com,0x9",
+    "existing_ntp_client_enabled": true,
+    "ordinary_resync_error": "0x80070005",
+    "existing_peer_probe": {
+      "samples_requested": 3,
+      "samples_returned": 0,
+      "timeouts": 3,
+      "timeout_code": "0x800705B4"
+    },
+    "alternate_read_only_probe": {
+      "peer": "ntp.aliyun.com",
+      "samples_returned": 3,
+      "offset_seconds": [-21.6413956, -21.6421197, -21.6406197],
+      "system_changed": false,
+      "continuous_clock_accuracy_claimed": false
+    },
+    "external_https_date_check": {
+      "reference": "uncached GitHub HTTPS Date",
+      "date_minus_host_start_seconds": -23.274965,
+      "date_minus_host_end_seconds": -23.937711,
+      "precision": "coarse HTTP Date and roundtrip interval; not an NTP measurement"
+    },
+    "guest_host_alignment": {
+      "guest_inside_host_request_interval": true,
+      "host_request_interval_seconds": 1.9369999999998981,
+      "absolute_utc_accuracy_proven": false
+    },
+    "private_source_clock_check": {
+      "http_date_and_generated_time_agree_to_coarse_precision": true,
+      "responses_no_store": true,
+      "source_identifiers_events_or_business_metrics_exported": false
+    }
+  },
+  "local_shutdown": {
+    "owned_kafka_stop_complete": true,
+    "all_project_vms_stopped": true,
+    "retained_data_deleted": false,
+    "historical_timestamps_rewritten": false
+  },
+  "limitations": [
+    "Operator-recorded tool observations; this document did not independently run the probes.",
+    "Earlier engine timestamps remain as recorded; absolute UTC accuracy is not newly certified by this precheck.",
+    "Host, guest and source freshness must be rechecked after an actual clock correction before closed-day registration or production latency measurement."
+  ],
+  "primary_reference": "https://help.aliyun.com/zh/eci/user-guide/configure-the-ntp-service"
+}

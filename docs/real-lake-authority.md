@@ -59,13 +59,13 @@ HDFS 目录固定为该 owner 的 `/snow/warehouse/real/<lane>/iceberg/<run>/<at
 
 先完成同版本代码分发、锁定 Spark/Iceberg 缓存检查，以及独立合成拓扑验收。资源仍受当前72GiB项目、35GiB宿主空闲磁盘和4GiB宿主可用内存约束；本工具不会自行启动VM、增大内存、删除缓存或改变配额。
 
-正式路线要求真实writer已按原流程暂停并停止，当前三台VM已经由操作者选择为`real-small`（2048／2048／768MiB）或明确的`real-small-1920`（2048／1920／768MiB）。入口用来宾实际MemTotal范围复核，而不设置VM参数；compute原容器配额不随VM候选改变。每台来宾的实际MemAvailable保留至少128MiB，control进入或恢复Hive阶段还必须至少768MiB；不足就停止，不能强行加内存或同时启动Hive和YARN。
+正式路线要求真实writer已按原流程暂停并停止。当前已部署的显式`real-small-1792`为control／compute／analysis **2048／1792／1024MiB**；旧`real-small`（2048／2048／768MiB）和`real-small-1920`（2048／1920／768MiB）保留各自配置与历史结果。调用、阶段切换和收尾必须选择同一已核验profile。入口用来宾实际MemTotal范围复核，而不设置VM参数；compute原容器配额不随VM候选改变。每台来宾的实际MemAvailable保留至少128MiB，control进入或恢复Hive阶段还必须至少768MiB；不足就停止，不能在运行中强行改内存或同时启动Hive和YARN。analysis的1024MiB配置和来宾读回见[容量证据](evidence/analysis-memory-1024-20261013.json)，不改变旧60／64GiB实验条件。
 
 2026-09-19的`real-small-1920`已完成56条合成golden离线实验：56原始、28有效、28重复，Parquet与基础整数对账一致，YARN应用`application_1789812889866_0001`，项目峰值63.62GiB，来宾最低可用control641／compute669／analysis202MiB，无OOM。**这些结果只证明该小样本离线阶段，不证明Hive＋Spark窗口、新Iceberg入口或真实闭日报表。** 既有百万行证据采用2／2／1GiB，不能把它改写成本轮低内存配置的百万行结果。
 
 入口前要求control的NameNode＋Hive运行、已存在的ResourceManager停止，compute的DataNode运行、已存在的NodeManager停止，analysis只运行DataNode。既有配额分别为NN512MiB、Hive1024MiB、RM384MiB、compute DN384MiB、NM1536MiB、analysis DN768MiB。若缺少容器或配额不符，本工具拒绝自动补建；由现有实验部署流程先处理并记录验收。容器配额不是内存实际用量，仍需实际资源检查。每台节点的持久阶段租约仅允许一个attempt；另一attempt必须等待前一轮恢复，不能夺取租约。
 
-analysis拥有原权威registry与管理范围，control拥有现有Spark/YARN/HDFS缓存。Spark driver固定1280MiB、2CPU和256进程上限，镜像`--pull=never`；仅挂载只读程序、锁和JAR，以及当前attempt的受管可写data目录。若已登记Hive，真实cleanup需要对应Hive检查能力可用，不能将后端改成“未初始化”来省资源。
+analysis拥有原权威registry与管理范围，control拥有现有Spark/YARN/HDFS缓存。当前bce1289已部署的Spark driver固定1280MiB、2CPU和**512进程上限**，镜像`--pull=never`；仅挂载只读程序、锁和JAR，以及当前attempt的受管可写data目录。旧`lake20261013`在256上限下出现native-thread错误的[失败证据](evidence/iceberg-native-thread-followup-20261013.json)保留；失败瞬间PID和完整内存计数缺失，不能唯一归因于旧上限。512是有限调整和源码安装结果，尚不代表新attempt或V19通过；旧partial不覆盖，原聚合期限不延长。若已登记Hive，真实cleanup需要对应Hive检查能力可用，不能将后端改成“未初始化”来省资源。
 
 聚合对必须先通过现有 daily/behavior 同截止校验、私有发布和 `stage-release`。analysis读取自己的受管pair副本并复核checksum及来源；没有合法pair时直接停止。三目录单测不能证明真实StoppedStorage、Hive、HDFS与YARN都在该资源配置下工作。
 

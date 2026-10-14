@@ -1,0 +1,212 @@
+{
+  "acceptance": "actual_two_application_iceberg_readback_and_authority_confirmation",
+  "attempt": "lake20261014r1",
+  "engine_acceptance_claimed": true,
+  "evidence": {
+    "capture_sha256": "25ea1635e5323ed34d4b2c51bc90e6991c7ab47216ce804a179742b3815fb857",
+    "core_sha256": "c77cf7a78e7675d2513037977b2ed5fc743072e5c918b1247c919782db2cb48b",
+    "partial_observation_sha256": "b438b72f2a8900d4d6e603f8b2b69715ad1d8c1fe9f1b8345db68e0a72b56e52",
+    "process_sha256": "acce77e357f994c66a8dc4398715d7d12f961e8c7f85546dd6bbf48d7f99772d",
+    "reader_sha256": "7d7621d6e7f7541863042df704f16b7becc97240d9d7a38d547b4012e355e267",
+    "resources_sha256": "798cfffc5788600835f845c781893b7628d5300631a6c48d111bfabe73e02889",
+    "source_install_sha256": "5928d16ee5bc3ab1fd490e276b42decc12fdb300668881890da6c329b48641cb"
+  },
+  "fixture": "fixture-lake-01-r1",
+  "freshness_witness": {
+    "complete_process_window_measured": false,
+    "first_resource_sample_at": "2026-10-13T16:21:38.161032+00:00",
+    "last_resource_sample_at": "2026-10-13T16:27:26.309910+00:00"
+  },
+  "input_origin": "synthetic fixtures",
+  "installed_source_files": 463,
+  "limitations": [
+    "Synthetic aggregate fixture only; no production data.",
+    "Per-group row hashes were not independently exported; fixed input/receipt hash chain and actual equality attestations are retained.",
+    "Sampled resource maxima are not continuous peaks; PID diagnosis/observation is separate.",
+    "Hive registration, column lineage and Iceberg high availability are not established by this test."
+  ],
+  "metadata": {
+    "column_lineage_verified": false,
+    "confirmation_sha256": "185651c60c9e335457c3b20414610ee42e8e4951d0aab9a59d212a244734a5bb",
+    "confirmed_at": "2026-10-13T16:27:13.927668+00:00",
+    "descriptor_sha256": "90896571456c0acbec5add06a5a5a644e0ed0e103aa3ff993a4d8c8ab4394654",
+    "engine": "Spark 3.5.7",
+    "execution_application_id": "application_1791908609747_0001",
+    "execution_receipt_sha256": "7904a5dcde48deb5688718c23e489536f6d33d82d54ae7674cd7e1869fe45581",
+    "expires_at": "2026-12-14T00:00:00+08:00",
+    "final_engine_acceptance_claimed": false,
+    "groups": {
+      "daily": {
+        "additive_column": "model_revision",
+        "current_snapshot": 8167723069072879247,
+        "exact_readback_equal": true,
+        "historical_readback_equal": true,
+        "original_snapshot": 8167723069072879247,
+        "rows": 6,
+        "table_metadata_sha256": "be54bc38685110b9558fa2d3b9d9bfe31375a090bf6f286dc0538295d342d85c"
+      },
+      "funnel": {
+        "additive_column": "model_revision",
+        "current_snapshot": 227272630193585043,
+        "exact_readback_equal": true,
+        "historical_readback_equal": true,
+        "original_snapshot": 227272630193585043,
+        "rows": 3,
+        "table_metadata_sha256": "3fe0b85126392cdbf92b80dab1c3dd2b8c5785bd42ac5b774774a96886223438"
+      },
+      "retention": {
+        "additive_column": "model_revision",
+        "current_snapshot": 5643992370356426921,
+        "exact_readback_equal": true,
+        "historical_readback_equal": true,
+        "original_snapshot": 5643992370356426921,
+        "rows": 2,
+        "table_metadata_sha256": "eea0d3d36d1a48b1be6f2ff496f1dc1fbcab942ceb1ebf4860dc144402ebc9f7"
+      },
+      "session_daily": {
+        "additive_column": "model_revision",
+        "current_snapshot": 5180011956888936353,
+        "exact_readback_equal": true,
+        "historical_readback_equal": true,
+        "original_snapshot": 5180011956888936353,
+        "rows": 6,
+        "table_metadata_sha256": "3d7ef59cb2f5ae049efae74a6aafb4012e7078932c416e7ac8a1602fe464edae"
+      }
+    },
+    "independent_per_group_row_hash_recorded": false,
+    "input_origin": "synthetic fixtures",
+    "input_sha256": "2ad5589f700a884b99477e07e7c25277b436254342c553f04288b554bcf1022d",
+    "issued_at": "2026-10-13T16:22:02.302411+00:00",
+    "master": "yarn",
+    "original_at": "2026-09-15T00:00:00+08:00",
+    "pair_sha256": "594f5b37277a013e25494e5bb30165bf652c5791a722d94a5962083125a474ce",
+    "production_data_tested": false,
+    "proof_scope": "Input/descriptor/receipt/proof hash chain and actual engine equality attestations; no row payload read.",
+    "read_until": "2026-10-13T16:37:02.302411+00:00",
+    "retention_extended": false,
+    "schema_version": 1,
+    "source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+    "verification_application_id": "application_1791908609747_0002",
+    "verification_sha256": "eed2589681d2dacc5a0e38135e13f111889e41e01270fa761d7746bebed561f6",
+    "verified_at": "2026-10-13T16:26:00.059113+00:00"
+  },
+  "partial_resource_observations": {
+    "attempt": "lake20261014r1",
+    "descriptor_sha256": "90896571456c0acbec5add06a5a5a644e0ed0e103aa3ff993a4d8c8ab4394654",
+    "limitations": [
+      "Only actual retained periodic samples are summarized; planned 180-sample windows both failed.",
+      "The observed terminal FileNotFoundError does not identify a unique cause by itself.",
+      "No complete resource peak, no full-duration PID guarantee, and no unobserved event count is inferred."
+    ],
+    "metadata_only": true,
+    "original_failed_observations_preserved": true,
+    "phases": {
+      "execute": {
+        "actual_ssh_exit_code": 1,
+        "complete_180_sample_window": false,
+        "counter_values_at_failure_known": false,
+        "driver_started_at": "2026-10-13T16:23:46.972363743Z",
+        "elapsed_seconds": 23.014999999999873,
+        "engine_acceptance_claimed": false,
+        "exact_continuous_peak_measured": false,
+        "first_sample_at": "2026-10-13T16:24:37.675748+00:00",
+        "fixed_phase_container_identity_verified": true,
+        "last_sample_at": "2026-10-13T16:24:56.848090+00:00",
+        "max_sampled_memory_current_bytes": 724901888,
+        "max_sampled_memory_events": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "max_sampled_pids_current": 295,
+        "max_sampled_pids_events_max": 0,
+        "memory_limit_bytes": 1342177280,
+        "original_failure_type": "FileNotFoundError",
+        "owned_process_cleanup_uncertain": false,
+        "phase": "execute",
+        "pids_limit": 512,
+        "planned_samples": 180,
+        "raw_metadata_sha256": "e114ad7af164ee4dfa4d94acb50dce608ebfeab1585c3a05a7a4c2fdf0e6c0ca",
+        "receipt_sha256": "2b0fbc9c3dce34ae1394f89609116a740644ea21b3cd86b148f8273aeae21b0d",
+        "status": "partial_observation_failed",
+        "timed_out": false,
+        "valid_samples": 10
+      },
+      "verify": {
+        "actual_ssh_exit_code": 1,
+        "complete_180_sample_window": false,
+        "counter_values_at_failure_known": false,
+        "driver_started_at": "2026-10-13T16:25:03.954985589Z",
+        "elapsed_seconds": 24.672000000000025,
+        "engine_acceptance_claimed": false,
+        "exact_continuous_peak_measured": false,
+        "first_sample_at": "2026-10-13T16:25:37.655315+00:00",
+        "fixed_phase_container_identity_verified": true,
+        "last_sample_at": "2026-10-13T16:25:59.039551+00:00",
+        "max_sampled_memory_current_bytes": 703197184,
+        "max_sampled_memory_events": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "max_sampled_pids_current": 288,
+        "max_sampled_pids_events_max": 0,
+        "memory_limit_bytes": 1342177280,
+        "original_failure_type": "FileNotFoundError",
+        "owned_process_cleanup_uncertain": false,
+        "phase": "verify",
+        "pids_limit": 512,
+        "planned_samples": 180,
+        "raw_metadata_sha256": "c41f31ea071c070a548430a360ee56a3b66e3f2f11e9a163a31990c9a44350a5",
+        "receipt_sha256": "ce8d25aea52a80c63e8ff63116be641b348b145ef7319c85a3b02675339f2d1c",
+        "status": "partial_observation_failed",
+        "timed_out": false,
+        "valid_samples": 11
+      }
+    },
+    "process_or_engine_acceptance_claimed": false,
+    "recorded_at": "2026-10-13T16:33:57.885928+00:00",
+    "schema_version": 1,
+    "source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c"
+  },
+  "process": {
+    "complete_process_start_end_measured": false,
+    "exit_code": 0,
+    "helper_independently_observed_exit": false,
+    "observation": "operator_recorded_from_exec_session",
+    "phase": "lake",
+    "result_chunk": "368119",
+    "session_id": 44655
+  },
+  "production_data_tested": false,
+  "recorded_at": "2026-10-13T16:36:17.820069+00:00",
+  "resources": {
+    "exact_continuous_peak_measured": false,
+    "incomplete_samples": 0,
+    "max_observed_project_bytes": 69243850379,
+    "max_sampled_oom_counter": 0,
+    "min_observed_guest_available_mib": {
+      "snow-analysis": 334,
+      "snow-compute": 409,
+      "snow-control": 521
+    },
+    "min_observed_guest_disk_mib": {
+      "snow-analysis": 2028,
+      "snow-compute": 4841,
+      "snow-control": 2341
+    },
+    "min_observed_host_available_mib": 13393,
+    "min_observed_host_free_bytes": 210132193280,
+    "resource_samples": 56
+  },
+  "retention_extended": false,
+  "schema_version": 1,
+  "source_archive_sha256": "9b8b65e280e88f0461536aceadfe949ff6bd99f472aa29b1be4512d64f02e163",
+  "source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c"
+}

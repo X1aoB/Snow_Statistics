@@ -168,9 +168,9 @@ Hive登记之后，后续cleanup/permit也需要实际catalog检查。现有Spar
 
 ## 检查与失败行为
 
-显式 `real-small-1792` 候选使用2048/1792/768 MiB，不改变Hive目录、表、原期限、Compose身份或control的768 MiB实际可用内存要求；客户端仍使用control已有镜像/JAR，analysis不复制或拉取镜像。Lake/Hive元数据检查只给compute新增1664–1792 MiB候选 `MemTotal` 带，原1800–2048带保留；control仍1800–2048，analysis仍640–768，所有guest的128 MiB实际可用余量保持。
+当前显式 `real-small-1792` 已部署为**2048/1792/1024 MiB**，不改变Hive目录、表、原期限、Compose身份或control的768 MiB实际可用内存要求；客户端仍使用control已有镜像/JAR，analysis不复制或拉取镜像。Lake/Hive元数据检查中，compute保留1664–1792与原1800–2048 MiB `MemTotal` 带，control仍1800–2048；analysis增加896–1024带并保留旧640–768带，所有guest的128 MiB实际可用余量保持。旧2048/1792/768 MiB配置及60／64GiB实验记录仍按原条件解释；实际扩容见[analysis容量证据](evidence/analysis-memory-1024-20261013.json)。
 
-这只是首次受控启动的准入范围，1792分配后的准确MemTotal及Hive/Iceberg峰值仍待实测。Windows统一入口和私有首次过渡工具必须显式选择同一profile，收尾也保持一致；不能只改VMX后用默认1920入口。冷启动须留足三台后备文件及128 MiB写入预算，见[小内存入口](real-offline-small.md)。已有1920 golden不能证明新候选通过，且不能扩大同时运行的服务。
+容量准入本身不代替引擎验收。V18已在fa057fe来源和2048/1792/1024 MiB下通过隔离合成Hive登记、独立读回，见[实际四表证据](evidence/hive-catalog-v18-20261013.json)；这是有界采样，不是严格峰值，也不证明后续Iceberg或真实DIM Join通过。Windows统一入口和私有过渡工具必须显式选择同一profile，收尾也保持一致；不能只改VMX后用默认1920入口。冷启动须留足三台后备文件及128 MiB写入预算，见[小内存入口](real-offline-small.md)。已有1920 golden保留其历史条件，不能扩大同时运行的服务。
 
 `register` 先持久化元数据登记意图，再登记 Hive 生命周期资源；即使中断，重试也不会丢失待清理范围。未实际创建的预登记表可以暂时不存在；已经验证的存活表消失则报错。`verify` 不创建缺失表。
 
