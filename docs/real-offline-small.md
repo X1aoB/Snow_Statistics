@@ -1,6 +1,6 @@
 # 小内存离线操作入口
 
-本入口将既有 `real_lab` 的固定离线阶段串起来，默认使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。另有显式的 `real-small-1792` 配置，只把 compute 改为 **1792 MiB**，合计 **4608 MiB**；已完成实际56条golden计算及独立收尾恢复，原失败控制器回执仍保留。入口按阶段执行，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
+本入口将既有 `real_lab` 的固定离线阶段串起来，默认使用 `real-small-1920`：control **2048 MiB**、compute **1920 MiB**、analysis **768 MiB**，三台合计 **4736 MiB**。当前显式的 `real-small-1792` 配置为 control **2048 MiB**、compute **1792 MiB**、analysis **1024 MiB**，三台合计 **4864 MiB**；9月19日实际56条golden计算及独立收尾恢复使用当时的 analysis **768 MiB**、三台合计 **4608 MiB**，原失败控制器回执和历史资源条件仍保留。入口按阶段执行，没有 `all`，不启动实时引擎、Hive、Iceberg或治理服务，也不切换统计来源。
 
 **2026-10-13 当前候选：**新增明确选择的“保留停止失败窗口”兼容入口，只针对 `real-prod-03` 与当前 `real-prod-04`。默认仍走原入口并拒绝未暂停窗口；候选逐次检查原登记、JAR、到期时间、实际停止容器/卷及 04 的完整暂停链。它已通过完整回归，逐台安装后又独立完成三机 `start-offline → status → stop-offline` 实测，最终三台VM软关；这项新入口证据与此前 HDFS-only 落地证据分开，未执行闭日计算。具体步骤与限制见[失败窗口兼容说明](real-offline-preserved.md)。
 

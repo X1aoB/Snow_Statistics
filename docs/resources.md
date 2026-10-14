@@ -54,6 +54,22 @@ V15 的合成 Hive 验证在监测到 analysis `MemAvailable` **127 MiB** 时停
 
 本次容量维护通过的独立元数据见 [analysis-memory-1024-20261013.json](evidence/analysis-memory-1024-20261013.json)。Hive登记、独立查询和Iceberg仍须新attempt的实际验收；不能复用V15已消耗的阶段记录宣称成功。此次未修改容器限制、冻结writer、数据或保留期，历史回执保留原768 MiB条件。
 
+## 2026-10-14 独立DIM窗口的显式内存配置候选
+
+依据既有适度扩容授权，新增 `real-dim-2304` profile：control **2048 MiB**、compute **1792 MiB**、analysis **2304 MiB**。三VM冷态内存后备合计 **6144 MiB**，`real_offline_small`仍另计原 **128 MiB** 作业写入预算，并在每台实际启动时保留原 **256 MiB** 启动余量。两个公开入口的profile表一致；默认 `real-small-1920`、历史/现有 `real-small-1792` 的2048/1792/1024 MiB以及实时analysis4608 MiB都保持原值。
+
+新配置为独立DIM driver窗口留出内核和DataNode所需空间。DIM前置检查要求analysis内核实际可见 `MemTotal` 至少 **2048 MiB**、`MemAvailable` 至少 **1536 MiB**，再使用 **1280 MiB** 的有限driver预算；分配2048 MiB VMX不能保证内核可见总量达到2048 MiB，因此显式候选采用2304 MiB。VMX数字不是guest或容器资源验收，仍须运行时实测并满足独立DIM的资源门禁。原离线通用128 MiB最小可用内存检查没有替代DIM专用前提，原Hive/Iceberg阶段的内存范围门禁也未扩大。
+
+**本次状态：只增加公开配置、合成测试和本操作说明，未修改任何实际VMX、启动VM或执行DIM引擎。** 必须先正常结束原离线窗口、保存恢复/发布证据并确认三VM完全关闭，才能在新的受控窗口选择该profile；后续phase和收尾都使用同一显式profile。当前BCE实际模型窗口仍使用原1792路线，不能把这处代码变化写成它已经切换内存、取得新许可或运行DIM成功。冻结 `real_lab --offline-profile` 入口及12个writer保持原字节，本次不对其增加profile选项。
+
+可在**Windows PowerShell、仓库根目录**检查新配置的非执行描述；`--describe`只解析既有私有配置，不启动VM或授予许可：
+
+```powershell
+.\.venv\Scripts\python.exe tools/real_offline_small.py --config runtime/real/config/production-real-prod-04.json --profile real-dim-2304 start-offline --describe
+```
+
+项目仍限 **72 GiB**、运行停止线 **71.75 GiB**、宿主空闲磁盘至少 **35 GiB**、可用RAM至少 **4 GiB**。新增profile不提高这些上限，也不扩展虚拟盘、数据保留期限或旧epoch有效期。原1792及60/64 GiB历史回执保留原资源条件；真实2304 VMX与guest余量、DIM driver及精确收尾均待新的实际回执。
+
 ## 小配置的实际验证
 
 使用新建的隔离 512 MiB ext4 文件系统，实际 Docker 容器限制为 256 MiB、0.25 CPU。真实 HTTP 测试先验证两个事件，再追加 10,000 个合成事件，总计 10,002 个。测试库使用 real 标签验证公开汇总，但监听仅在 VM 回环，未接触生产数据或生产采集配置。

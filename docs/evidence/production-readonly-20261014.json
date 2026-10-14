@@ -1,0 +1,26 @@
+{
+  "browser_runtime_checked": false,
+  "business_values_recorded": false,
+  "checked_at": "2026-10-14T04:10:35.765145+00:00",
+  "events_submitted": false,
+  "no_store": true,
+  "pages_http": {
+    "snow": 200,
+    "statistics": 200,
+    "website": 200
+  },
+  "paid_model_calls": false,
+  "private_routes_http": {
+    "/analytics/admin/": 404,
+    "/analytics/private/v1/events": 404,
+    "/analytics/private/v1/summary.json": 404,
+    "/healthz": 404
+  },
+  "schema_version": 1,
+  "snapshot_fresh_under_26_hours": true,
+  "snapshot_generated_at": "2026-10-13T16:15:00.327Z",
+  "source": "production_read_only_http",
+  "summary_v1_contract": true,
+  "summary_v2_contract": true,
+  "v1_hidden_date_bypass_absent": true
+}

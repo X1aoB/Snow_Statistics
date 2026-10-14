@@ -1,6 +1,8 @@
 # 公开页面与角色目录维度：独立 SCD2 候选
 
-本模块把两个产品已经发布的公开页面路径、角色选择 ID 做成独立版本维度。当前交付是纯 Python 构建、内存解析和只读 SQL 候选，**不表示真实 DIM Hive 表、Spark Join 或历史 SCD2 已在虚拟机验收**。现有 daily/behavior 指标、原始事件契约、真实作业 permit、冻结 writer 和保留期都不改动。
+本模块把两个产品已经发布的公开页面路径、角色选择 ID 做成独立版本维度。纯 Python 构建、内存解析及隔离合成 Spark SQL 对照已完成；**真实 DIM Hive 表、事实 Join 和历史 SCD2 覆盖仍需各自验收**。现有 daily/behavior 指标、原始事件契约、真实作业 permit、冻结 writer 和保留期都不改动。
+
+香港2026-10-14已读回原合成运行结果：Spark3.5.7/local[1]/Python3.8.10在禁网容器内完成缺口/连续两种模型、历史/当前两种模式的60条精确比较，进程退出0、容器收尾通过，见[实际合成证据](evidence/public-dim-spark-20261014.json)。实际窗口是control2048 MiB与闲置analysis4608 MiB同时运行；原guest时间在宿主校准前记录，保留原值，不宣称连续资源峰值或绝对UTC精度。此结果不接真实事件，也没有登记Hive表。
 
 ## 输入边界与时间含义
 
@@ -84,7 +86,7 @@ print(json.dumps(index.resolve_fact(projection, current_as_of="2026-01-04T00:00:
 4. 把 real 材料置于本项目 ignored runtime 的独立目录，用 `--check` 审查，随后显式 `--execute` 生成 `runtime/public-dimensions/real/<artifact_id>/`。先确认该源码已经完成计划中的签名来源安装；不要把宿主机未安装的新模块误说成 VM 已具备。
 5. 后续单独阶段在受控、同来源、有效期内的事实窗口生成临时投影，并把 DIM 的 `coverage` 和 `dimensions` 装成独立视图。现有真实作业没有这个输入字段，本次没有修改其配置或 permit。
 6. [public_dimensions_at_event.sql](../warehouse/spark/public_dimensions_at_event.sql) 给出只读 Join。未来实际 Spark/Hive阶段需固定三份视图 `public_dim_fact_projection`、`public_dim_coverage`、`public_dim_scd2`；`fact_ordinal` 只是当次临时序号，不能换成用户/事件/请求 ID。事实时间先转为产物同格式的 UTC 六位小数字符串；并在 Join 前验证同来源、唯一临时序号、路径/角色字段允许范围。此 SQL 自身不是导入器或权限边界。
-7. 先用合成样例对照 Python 结果、记录实际 Spark/Hive 版本与执行计划，再允许真实受控投影采样核验。只有实际跑过才记录引擎验收、表名、输入摘要、行数及覆盖；本轮只完成了 SQLite 合成 SQL 对照。
+7. 合成样例已完成Python、SQLite和实际Spark3.5.7只读SQL对照，执行计划摘要及精确行等值检查已保留。下一阶段仍须为真实受控投影核验独立建立原输入许可、受管输出和期限边界；现有合成成绩不证明真实事实Join或Hive登记。
 
 此 DIM 是公开元数据，不含真实匿名明细，按公开目录元数据规则保留。未来 Join 产生的事实/辅助输出仍继承原事实期限；不能因加入维度而延长 raw 7 天或辅助 30 天期限，也不能把真实 Join 输出写进这个不含事实的元数据目录。
 

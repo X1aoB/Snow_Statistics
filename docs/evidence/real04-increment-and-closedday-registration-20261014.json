@@ -1,0 +1,67 @@
+{
+  "business_cutoff_utc": "2026-10-13T16:00:00+00:00",
+  "business_date": "2026-10-13",
+  "business_timezone": "Asia/Hong_Kong",
+  "counts_offsets_paths_or_source_uuids_published": false,
+  "doris_or_dashboard_accepted": false,
+  "evidence_kind": "real_incremental_prefix_and_closed_business_day_registration",
+  "independent_incremental_verification": {
+    "empty_files_do_not_claim_physical_replicas": true,
+    "hdfs_byte_hashes_equal": true,
+    "nonempty_files_have_two_healthy_distinct_datanode_replicas": true,
+    "raw_normalized_source_envelopes_equal": true,
+    "source_archive_envelopes_equal": true,
+    "unique_kafka_positions": true,
+    "verification_granted_compute_permit": false,
+    "verification_itself_called_land_or_ack": false,
+    "writer_paused_and_epoch_engines_stopped_at_verification": true
+  },
+  "input_metadata_sha256": {
+    "coverage": "629f56eeeca740285572f2e740e7c04d3e0b08b756c127b7e461607210a6e6cc",
+    "incremental_verification": "27783c60c027c457ffda7173e73e14e9427ae28b5c7a4a14ac7c0df84b132c2e",
+    "job": "444dbcc0d973467acedc082f9e9632f9c82a29185a95f6eca609cb86fe415278",
+    "registration": "d160668343e77bdac5d52ce775e22ede10a415dd264add9c72a87cad8e3c2453"
+  },
+  "later_phases_not_evaluated_by_this_evidence": true,
+  "metric_values_published": false,
+  "model_computation_accepted": false,
+  "private_publication_accepted": false,
+  "process_exit_evidence": {
+    "kind": "root operator recorded actual tool outputs",
+    "precise_process_timing_instrumented": false,
+    "projector_independently_observed_processes": false,
+    "witnesses": {
+      "closed_business_day_registration": {
+        "actual_exit_code": 0,
+        "chunk_id": "cadca0",
+        "session_id": 54081
+      },
+      "following_kafka_ack": {
+        "actual_exit_code": 0,
+        "chunk_id": "3a563e0",
+        "session_id": 48527
+      },
+      "independent_incremental_verification": {
+        "actual_exit_code": 0,
+        "chunk_id": "40f33b",
+        "session_id": 36170
+      }
+    }
+  },
+  "production_p95_accepted": false,
+  "raw_identifiers_published": false,
+  "registration": {
+    "accepted_at_is_not_business_date": true,
+    "compute_permit_granted_at_registration": false,
+    "fixed_snapshot_matches_independently_verified_snapshot": true,
+    "fresh_protected_source_status_and_actual_ack_checked_by_registrar": true,
+    "full_business_day_coverage": false,
+    "natural_business_date_closed": true,
+    "original_seven_day_expiry_preserved": true,
+    "prior_gap_backfilled": false,
+    "registration_itself_verified_hdfs_or_payload_equivalence": false,
+    "wall_clock_watermark": false
+  },
+  "schema_version": 1,
+  "source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c"
+}

@@ -1,0 +1,58 @@
+{
+  "absolute_utc_millisecond_accuracy_certified": false,
+  "all_project_vms_stopped_before_alignment": true,
+  "clock_guard_or_event_timestamps_modified": false,
+  "clock_step_wall_duration_claimed": false,
+  "compute_permit_granted_by_clock_operations": false,
+  "continuous_windows_time_sync_certified": false,
+  "diagnostic_process": {
+    "actual_exit_code": 0,
+    "all_other_15_condition_checks_true": true,
+    "cursor_equals_latest_at_diagnostic": false,
+    "final_chunk": "28f316",
+    "session_id": 45633,
+    "stdout_chunk": "1dc616"
+  },
+  "evidence_type": "approved host time alignment and bounded source metadata checks",
+  "finite_ntp_offset_seconds_at_original_postcheck": [
+    0.0019748,
+    0.0026085,
+    0.001826
+  ],
+  "http_only_interval_is_full_protected_operation": false,
+  "http_only_probe_generated_after_response_end_seconds": [
+    0.102469,
+    0.103295
+  ],
+  "human_approval_recorded": true,
+  "last_sync_error_at_export": 2,
+  "last_sync_error_at_original_postcheck": 0,
+  "leap_indicator": 0,
+  "limits": [
+    "Finite relative NTP samples do not prove continuous or absolute millisecond accuracy.",
+    "The unmodified protected operation includes tunnel/client setup and teardown.",
+    "The HTTP-only probe is a narrower interval and is retained without padding.",
+    "The diagnostic identifies an advanced source cursor; it does not register or compute a day.",
+    "A later Windows Time error is preserved separately from the successful original resync."
+  ],
+  "original_data_retention_modified": false,
+  "original_full_operation_clock_guard_passed": true,
+  "original_redacted_admin_receipt_preserved": true,
+  "peer": "ntp.aliyun.com,0x9",
+  "peer_update_exit_code": 0,
+  "production_system_modified": false,
+  "recorded_at": "2026-10-14T03:12:42.746319+00:00",
+  "registration_completed_by_diagnostic": false,
+  "resync_exit_code": 0,
+  "schema_version": 1,
+  "selected_configuration_and_timezone_preserved": true,
+  "source_ids_offsets_event_rows_and_private_paths_exported": false,
+  "source_metadata_sha256": [
+    "09959a86c49e5789f703b6cf6ff3d70d5c589c968290d3036bff9861b0146730",
+    "3a96d9bc8f882d67cf2851b80eaad1db997b2a7f20ee24089451736777a1a433",
+    "960a650e24098eecaf86a373e14ee994dba393226b1d13c44514db337d04455d",
+    "ded94a8546ad71e7304c9bd9b8639884e15fb36638ef6deea9d035f96c6bd6fb"
+  ],
+  "source_readback_verified_after_trimming_whitespace": true,
+  "stratum_at_original_postcheck": 3
+}

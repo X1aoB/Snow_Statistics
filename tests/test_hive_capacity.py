@@ -14,6 +14,7 @@ def lab(monkeypatch):
     ("hive-only", (2048, 1024, 1536), 4608),
     ("real-small-1920", (2048, 1920, 768), 4736),
     ("real-small-1792", (2048, 1792, 1024), 4864),
+    ("real-dim-2304", (2048, 1792, 2304), 6144),
 ])
 def test_resource_profile_preserves_existing_data_disks(lab, monkeypatch, tmp_path,
                                                        profile, expected_memory, expected_total):
@@ -40,7 +41,7 @@ def test_resource_profile_preserves_existing_data_disks(lab, monkeypatch, tmp_pa
 
 
 @pytest.mark.parametrize("state", ["running", "locked", "suspended"])
-@pytest.mark.parametrize("profile", ["hive-only", "real-small-1920"])
+@pytest.mark.parametrize("profile", ["hive-only", "real-small-1920", "real-dim-2304"])
 def test_resource_profile_cannot_resize_active_vm(lab, monkeypatch, tmp_path, state, profile):
     vmx = tmp_path / "snow-analysis.vmx"
     original = 'memsize = "4608"\nscsi0:0.fileName = "system.vmdk"\n'

@@ -1,6 +1,24 @@
 # 实施状态
 
-## 当前继续入口：先校准宿主时间（香港2026-10-14）
+## 当前继续入口：增量落地及闭日登记完成，继续模型验收（香港2026-10-14）
+
+八份验收文档已签名为 `1b910a23c8a135f042e32f43b7664ed9f534e885` 并推送；push/PR 两轮 CI 的四个作业、全部步骤通过。该提交只更新文档，三节点实际安装来源仍为 BCE463，不把文档提交冒充引擎更新。
+
+用户批准的管理员校时已实际备份、修改单一 NTP peer 并完成一次 resync，均退出0；原有限 NTP 样本约1.8–2.6毫秒。原完整 protected 操作的时钟门禁实际通过，未修改门禁、事件时间或原期限。随后 Windows Time 出现 stale-time 错误2，原成功与后续状态分别记录，不宣称持续校准或毫秒绝对UTC准确。见[实际校时与边界](evidence/host-clock-alignment-20261014.json)。
+
+新鲜检查发现源末端已超过本地游标，故恢复原04 storage/realtime及原Checkpoint。10分钟跟随实际退出0，子进程、隧道和操作锁正常收尾；最终公共单次同步返回 `no_new_input`。被动观察也实际退出0，但没有可验证的新自然样本，`production_ack_p95_verified=false`，不是P95通过。
+
+随后 capture、实际暂停及增量HDFS落地通过；独立对照实际退出0，源归档信封、ODS规范化信封及HDFS字节摘要一致，非空文件读回两个健康且不同DataNode的副本。新的Kafka ACK与闭日登记均实际退出0，香港2026-10-13日、UTC截止2026-10-13T16:00:00固定，原7天期限保持。见[增量及登记证据](evidence/real04-increment-and-closedday-registration-20261014.json)。登记不授予计算许可，不补齐原缺口或证明整日覆盖；已另行实际执行prepare、cleanup、permit和stage-compute。
+
+daily、behavior、validate、publish-private及stage-release均已实际退出0，私有成对报表已转移到analysis。只读血缘R2因把analysis配置的原字节hash用于control的规范化副本而拒绝；原失败保留。R3只绑定control实测字节hash，canonical身份仍一致；实际退出0并验证两个模型及发布的三项journal COMPLETE与实际边。control/analysis各自完整BCE463前后核验及26份允许元数据捕获、独立投影检查和公开写入已实际完成，见[真实闭日技术证据](evidence/real-closedday-20261013-bce1289.json)。只含技术状态和摘要，不发布小样本业务数值；不将journal结果称作Marquez、全引擎图或列级血缘。随后小离线入口正常停止并独立读回全部VM为0，数据保留；继续独立Doris与私有浏览器看板验收。
+
+香港10月14日12:10的公网只读复核通过：两站及统计页HTTP200、v1/v2契约及保护投影一致、快照未超26小时、no-store，检查的私有/管理路径404。没有POST事件、调用模型或保存业务数值；这次HTTP检查不替代浏览器运行验证。见[本次公网复核](evidence/production-readonly-20261014.json)。
+
+独立手册完整静态核验覆盖40篇、500本地链接、185围栏，以及全部12段Python、94段PowerShell、14段Bash/sh语法，零错误；解析不表示教材命令均已执行。后续真实DIM桥接与Hive/Iceberg仍须各自实际来源、权限、引擎和退出证据。
+
+新增真实DIM只读入口与显式`real-dim-2304`配置已完成本机合成回归：1159通过、23跳过，Ruff及v1/v2契约检查通过；旧依赖的一条弃用警告保留。三个DIM审查问题（Hadoop路径、原期限预算、进程组/管道清理）修复后独立复审通过，原失败反例保留。当前仅为已验证源码，Linux CI、签名安装、新配置的实际资源以及真实DIM仍未提前验收；profile不改变默认配置、72/71.75/35/4资源门槛或旧Hive/Lake准入范围。
+
+## 历史停点：先校准宿主时间（香港2026-10-14）
 
 真实04原Kafka单独启动与当前ACK读回已实际通过；日结登记在`clock_proof`被拒绝，未授予计算许可。诊断发现Windows使用Local CMOS Clock、从未成功同步；原`time.windows.com`三次只读探测超时，`ntp.aliyun.com`三次返回约-21.64秒偏差。虚拟机跟随宿主，不能用二者相互一致证明绝对UTC准确；独立HTTPS Date仅作为粗交叉检查。见[校时前证据](evidence/host-clock-precheck-20261014.json)。不得放宽新鲜度、改日结截止或重写历史时间来通过。
 

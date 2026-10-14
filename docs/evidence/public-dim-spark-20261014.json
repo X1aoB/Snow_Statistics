@@ -1,0 +1,148 @@
+{
+  "acceptance": "actual_synthetic_spark_sql_comparison",
+  "actual_window_condition": {
+    "analysis_memory_mib": 4608,
+    "analysis_state": "running_idle",
+    "continuous_peak_measured": false,
+    "control_memory_mib": 2048,
+    "observation_basis": "operator-recorded actual execution condition",
+    "sampled_host_resources_attached": false
+  },
+  "all_rows_equal": true,
+  "cleanup": {
+    "all_containers_stopped": true,
+    "owned_container_removed": true
+  },
+  "comparisons": 60,
+  "contains_real_events": false,
+  "engine": {
+    "master": "local[1]",
+    "python_version": "3.8.10",
+    "spark_version": "3.5.7"
+  },
+  "evidence": {
+    "capture_receipt_sha256": "5b7011a8909825a147460412a3fa16801ed15b15557b6234fd7418418d855cb6",
+    "contract_sha256": "afbbbb48e733659994c23e17bba39f0b762d6590873dcba4d5df6ce379f5b318",
+    "process_observation_sha256": "343a614ebb53204fd3a3eb8848b3dd5802c6db1f52a6dc947d8517810d517632",
+    "reader_sha256": "89a667b8f6bb41b4076ccb7624cf7755ad5e02062eb0e4d6503328d61768705a",
+    "retained_result_bytes": 8616,
+    "retained_result_sha256": "f481ceb79a296f406bc3aeb13739674a7748b70abebdb5d841044bc0d16fe8d9"
+  },
+  "execution_limits": {
+    "cpu": 1,
+    "driver_heap_mib": 512,
+    "memory_mib": 1280,
+    "output_limit_bytes_per_stream": 1048576,
+    "pids": 512,
+    "process_timeout_seconds": 240
+  },
+  "fixture_sha256": "13663273c54572658d5245147255f0b4efc7215f6d3f62755d66dbe929398d56",
+  "guest_preflight": {
+    "guest_available_kib": 1627852,
+    "guest_free_disk_bytes": 2442252288
+  },
+  "guest_wall_timestamps": {
+    "absolute_utc_accuracy_accepted": false,
+    "finished_at": "2026-10-13T16:43:56Z",
+    "original_values_preserved": true,
+    "started_at": "2026-10-13T16:43:14Z"
+  },
+  "input_origin": "synthetic",
+  "launcher_sha256": "4ca6759a2300d3ad5ac6ff5963d16745a5c5c6c941536bfa807bea190c50df6d",
+  "limitations": [
+    "Synthetic SQL comparison only; no real DIM join or Hive registration.",
+    "Recorded guest wall timestamps predate host clock acceptance and do not establish absolute UTC accuracy.",
+    "The analysis VM was running idle at 4608 MiB alongside the control VM at 2048 MiB.",
+    "Guest preflight readings and configured limits do not establish host resource peaks or a complete monitored window.",
+    "Signed BCE input hashes were pinned; this run was not a fresh complete installation audit."
+  ],
+  "locked_image": "apache/spark@sha256:936ff39fd63e2bb5ed064f0fbe1518198473f1cdbfa2f863d087a9a8e58116ba",
+  "network_mode": "none",
+  "original_candidate_manifest_sha256": "d48e10f53656031634c16fb83a5c523a1ff4f40279129d8733d78a9c2f1383e6",
+  "process": {
+    "actual_outer_exit_code": 0,
+    "complete_process_timing_instrumented": false,
+    "drain_failure": null,
+    "driver_returncode": 0,
+    "helper_independently_observed_outer_exit": false,
+    "outer_exit_observation": "operator-recorded unified-exec process readback",
+    "readers_alive": false,
+    "result_chunk": "72e61e",
+    "session_id": 1329,
+    "stream_bytes": [
+      5530,
+      60523
+    ]
+  },
+  "scenarios": [
+    {
+      "modes": {
+        "at_event": {
+          "all_rows_equal": true,
+          "executed_plan_sha256": "1af0de05b5d34faba8337919134f4dc29e1c9e16820ab564e4f2b7ecfd0b783c",
+          "rows": 15,
+          "rows_sha256": "5e5883fa419a18a0555205fc0b28475cd4a8567e21d8e7402c5087bfa51171f3",
+          "status_counts": {
+            "not_present": 4,
+            "present": 8,
+            "unknown": 3
+          }
+        },
+        "current": {
+          "all_rows_equal": true,
+          "executed_plan_sha256": "31e5405df38f837b3592320f3ea2d85fb0d12ba9c24178618b1fc503db7bfb92",
+          "rows": 15,
+          "rows_sha256": "42a4012d1421804f8f73f991b109ff2dba2d6fc4330c195f52b58ec584891688",
+          "status_counts": {
+            "not_present": 3,
+            "present": 5,
+            "unknown": 7
+          }
+        }
+      },
+      "scenario": "continuous",
+      "synthetic_artifact_id": "81c5660d80f502b9efd10ad429f4a83eb8b6f2db9b97588625153a9300a123aa"
+    },
+    {
+      "modes": {
+        "at_event": {
+          "all_rows_equal": true,
+          "executed_plan_sha256": "39afeb6d18a3f62ffd235ef7bec2b2039b626367dca5e737ae142cc6861a4a54",
+          "rows": 15,
+          "rows_sha256": "15fc177db87d9ccd1df959022aa79885f5219e3f05a63b5f668bcf5de3d27fb0",
+          "status_counts": {
+            "not_present": 4,
+            "present": 5,
+            "unknown": 6
+          }
+        },
+        "current": {
+          "all_rows_equal": true,
+          "executed_plan_sha256": "175130a27bfe7c02ff840758fa7b744c5d908d41fee133818cdfdc8ef30ed73d",
+          "rows": 15,
+          "rows_sha256": "42a4012d1421804f8f73f991b109ff2dba2d6fc4330c195f52b58ec584891688",
+          "status_counts": {
+            "not_present": 3,
+            "present": 5,
+            "unknown": 7
+          }
+        }
+      },
+      "scenario": "gap",
+      "synthetic_artifact_id": "4e69b75ea18b29adf08a1847b94bdc1355a32d8860975a58ba7d5a012894e1f5"
+    }
+  ],
+  "schema_version": 1,
+  "scope": {
+    "foreign_source_rows_are_fabricated_negative_canaries": true,
+    "hive_table_registered": false,
+    "host_resource_gate_measured_by_launcher": false,
+    "production_data_tested": false,
+    "real_dim_join_accepted": false,
+    "real_state_registered": false,
+    "row_payload_exported": false
+  },
+  "source_basis": "BCE pinned SQL and precomputed synthetic Python reference, not a fresh full-tree installation audit",
+  "source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+  "sql_sha256": "a357162118817c8e5f195eb3f64822771cc5f1670b1d1ccdc1d69b77523f3450"
+}

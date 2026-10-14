@@ -1,6 +1,21 @@
 # 完成范围与验收清单
 
-## 当前继续入口（香港2026-10-14，日结时钟门禁）
+## 当前继续入口（香港2026-10-14，增量落地及闭日登记后）
+
+- [x] 八份文档GPG签名、推送及push/PR全部CI步骤通过；实际VM来源继续为BCE463。
+- [x] 用户批准的一次管理员校时完成；原clock_proof在实际完整操作区间通过。后续Windows Time stale-time错误保留，有限NTP样本不冒充连续绝对精度，见[实际校时](evidence/host-clock-alignment-20261014.json)。
+- [x] 原04 Checkpoint恢复、10分钟自然跟随及收尾、最终公共同步实际通过；被动观察退出0且没有足够的新自然样本，生产ACK P95仍未验证。
+- [x] capture/暂停、增量HDFS落地及独立同前缀对照、新鲜ACK与闭日登记，见[实际证据](evidence/real04-increment-and-closedday-registration-20261014.json)。不宣称整日覆盖或登记即授读取许可。
+- [x] 原权威prepare/cleanup/permit/stage-compute，daily/behavior及同口径质量校验、私有成对发布/stage-release均实际退出0；原期限、截止和输入不变。
+- [x] R3只读血缘实际退出0，三项journal COMPLETE及原模型/发布边验证；R2字节表示差异导致的原失败保留。
+- [x] [本次公网只读复核](evidence/production-readonly-20261014.json)：两站/统计页HTTP200，v1/v2保护契约与新鲜快照、no-store及私有路径404；未写事件或调用模型。
+- [x] 两节点前后完整来源核验与26份允许元数据捕获，独立投影检查及[真实闭日技术证据](evidence/real-closedday-20261013-bce1289.json)公开写入完成；没有发布业务数值。
+- [ ] Doris、私有看板和Marquez；模型或journal退出0不代替这些验收。
+- [x] 新DIM只读入口及独立2304配置的本机1159项回归、Ruff、契约检查和独立P2修复复审通过。
+- [ ] 新增源码签名/CI/安装，2304实际资源窗口和真实DIM；旧默认与Hive/Lake准入不扩大。
+- [ ] 真实DIM受控桥接和事实Join、真实Hive/Iceberg；准备材料与既有合成结果继续分开。
+
+## 历史停点（香港2026-10-14，日结时钟门禁）
 
 - 原04 Kafka启动/ACK实际通过；日结登记在时钟证明处拒绝，未开始计算。Windows未同步，备用NTP只读测得宿主约快21.64秒；[诊断证据](evidence/host-clock-precheck-20261014.json)不等于校时完成。
 - 原Kafka及所有项目VM已正常停止、数据保留。需完成宿主时间同步并重查源/guest时钟；不放宽门禁、不改截止或历史时间。之后继续原04日结、对账、成对发布、看板、实际血缘和被动新鲜度。
