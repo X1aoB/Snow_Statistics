@@ -1,0 +1,103 @@
+{
+  "actual_driver_exit_code": 0,
+  "actual_operator_tool_witnesses": {
+    "dim_host_window": {
+      "chunk_id": "6986f6",
+      "exit_code": 0,
+      "session_id": 27727
+    },
+    "original_prepare_check": {
+      "chunk_id": "bf1a5d",
+      "exit_code": 0
+    },
+    "readback_metadata_download": {
+      "chunk_id": "dac04f",
+      "exit_code": 0
+    },
+    "result_and_exact_container_absence_readback": {
+      "chunk_id": "ad8890",
+      "exit_code": 0
+    }
+  },
+  "attempt": "r2",
+  "business_counts_rows_or_status_counts_published": false,
+  "engine": {
+    "application_id": "local-1791971531318",
+    "master": "local[1]",
+    "python_version": "3.8.10",
+    "spark_version": "3.5.7"
+  },
+  "expires_at": "2026-10-20T04:06:35.627000+00:00",
+  "historical_coverage_filled": false,
+  "history_coverage": "unknown",
+  "host_window": {
+    "actual_ssh_exit_code": 0,
+    "continuous_guest_resources_measured": false,
+    "engine_peak_measured": false,
+    "first_host_sample_at": "2026-10-14T09:51:57.948058+00:00",
+    "global_offline_lock_held_through_finish": true,
+    "last_host_sample_at": "2026-10-14T09:52:48.565960+00:00",
+    "monitor_itself_verified_remote_cleanup": false,
+    "receipt_sha256": "a9d248eaab877d5ef43845e5aa8c7b50ff851f3a881c78ca2aa4c4f887b8456d",
+    "sample_count": 10,
+    "samples_sha256": "a32ee09135f7f556cb7b33acb947880a5c30c982cb192a431874dd2badc8d671",
+    "ssh_window_elapsed_seconds": 54.359,
+    "vms_stopped_claimed": false
+  },
+  "independent_exact_container_absence_verified": true,
+  "limits": [
+    "This verifies one real DIM r2 run using Spark local[1], not a distributed DIM or a new Hive/Iceberg acceptance.",
+    "History coverage remains unknown; equality does not fabricate historical classification coverage.",
+    "The 54.359 seconds measure the owned SSH window, not exact Spark execution duration. Ten host samples are not continuous guest or peak measurements.",
+    "Exact owned-container absence was independently checked by the later readback; the host monitor alone did not verify remote cleanup.",
+    "Original BCE model/metric publication remains unchanged. This does not publish DIM results to production or certify current VM power state.",
+    "Private DIM descriptor, validation, acceptance and readback byte hashes are excluded: a known result schema with small unknown business counts can permit dictionary enumeration. Their binding and validation were checked privately; only the verified boolean is published."
+  ],
+  "mode_verification": {
+    "at_event": {
+      "all_fields_equal": true,
+      "executed_plan_sha256": "9e5d53894cb633c57915ab66b6f443d9f49af6e410db8a248b46b8b8416311bc"
+    },
+    "current": {
+      "all_fields_equal": true,
+      "executed_plan_sha256": "e7faf76551bbdb9ef0ef739f4b2916d6a86f5036ae26aa16d826c12864c53d68"
+    }
+  },
+  "nonempty_real_dim_verification_accepted": true,
+  "observed_at": "2026-10-14T09:53:52.249641+00:00",
+  "original_at": "2026-10-13T04:06:35.627000+00:00",
+  "original_seven_day_retention_unchanged": true,
+  "prerequisite_phases": {
+    "hive-cleanup": {
+      "complete": true,
+      "operator_recorded_exit_code": 0,
+      "operator_tool_chunk": "9c3348",
+      "technical_receipt_sha256": "3ff89811568fbfe1d235708afa51010d69927a5113438968cf4cb5da62032fde"
+    },
+    "hive-enter": {
+      "complete": true,
+      "operator_recorded_exit_code": 0,
+      "operator_tool_chunk": "00c8fc",
+      "technical_receipt_sha256": "a5b3033037f013e3c435d30bf0f827a3999a17d384dcf11f0150891c2f1089fa"
+    },
+    "hive-permit": {
+      "complete": true,
+      "operator_recorded_exit_code": 0,
+      "operator_tool_chunk": "2a80bd",
+      "technical_receipt_sha256": "1a7dd6970b33a0334b09ad23a3fef8da4472ccc9d6a6dccd7abe3b7bd5d0b942"
+    }
+  },
+  "private_metadata_binding_and_validation_verified": true,
+  "production_statistics_modified": false,
+  "profile": "real-dim-2560",
+  "reported_owned_container_removed": true,
+  "schema_version": 1,
+  "source_commit": "f8e3ca8c7823b8736150362ab57316f6a1bca75b",
+  "source_files_checked": 483,
+  "vm_memory_mib": {
+    "analysis": 2560,
+    "compute": 1792,
+    "control": 2048
+  },
+  "witness_basis": "Root operator reported actual successful tool exits; downloaded technical receipts, hashes and fixed readback source were independently checked without business rows."
+}

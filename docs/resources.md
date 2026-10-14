@@ -11,6 +11,10 @@
 
 本地镜像和实验成果的磁盘占用不等于线上统计库的需要。轻量服务无需任何虚拟机、Kafka、Spark、Flink 或 Doris 在线；对两个产品的接口和开关没有新增依赖。
 
+## 2026-10-14 独立 DIM 容量实测
+
+显式`real-dim-2560`仅将analysis配置为2560MiB，control/compute仍为2048/1792MiB。F8源码、三节点安装、实际guest门槛与真实Spark只读DIM r2已通过，见[结果证据](evidence/real-dim-f8-r2-20261014.json)。运行前项目约67.51GiB、宿主空闲约191GiB；原72/71.75/35/4门槛保持。10份宿主样本与54.359秒SSH窗口不代表连续guest或精确峰值。退出专属Hive阶段后正常关闭全VM，数据保留；Hive/Iceberg另用analysis1024MiB的`real-small-1792`阶段，不能同时混用两种准入范围。
+
 ## 2026-10-14 analysis 虚拟盘实际扩容
 
 analysis 根分区在补齐锁定的私有看板依赖后空闲约1.55GiB；为了容纳新增Spark镜像，独立薄盘已由 **29扩到34GiB**。依据用户已有容量授权，仅在全部VM关闭期间将项目维护门槛临时设为98GiB，预留29GiB单文件磁盘工作空间、5GiB增长及1GiB余量；宿主35GiB空闲磁盘、4GiB可用RAM要求保持。[Broadcom工作空间说明](https://knowledge.broadcom.com/external/article/311401)适用于该单文件虚拟盘和vmware-vdiskmanager。

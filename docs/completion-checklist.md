@@ -6,7 +6,8 @@
 - [x] F8 三节点prepare/install/readback均实际退出0，同节点本轮保护状态不变，见[安装证据](evidence/signed-source-install-f8e3ca8-20261014.json)。历史BCE/C0F引擎结果不重标来源。
 - [x] analysis 2560MiB实际配置、单机启动及guest内存检查满足原DIM门槛；检查时零容器、r2未用。
 - [x] 原Marquez六条ACK实际导回control，原事件身份保持、八条历史夹具未确认，见[后续ACK证据](evidence/real-closedday-marquez-control-ack-20261014.json)。
-- [ ] 新鲜实际Hive清理与原job短期许可、真实DIM r2 Spark执行及独立元数据/容器退出验收。
+- [x] 新鲜实际Hive清理与原job短期许可、[真实DIM r2](evidence/real-dim-f8-r2-20261014.json) Spark执行及独立元数据/精确容器退出验收；历史coverage仍unknown，不改原指标。
+- [x] 独立Hive-exit后通用stop-offline及全VM为0核验完成、数据保留；首次未退出Hive即通用stop的拒绝保留。后续1792窗口另行运行。
 - [ ] 真实Hive独立verify、真实Iceberg执行/独立验证/权威确认；保留此前首次Hive登记成功与资源探测重跑失败。
 - [ ] 新结果校准外部学习手册及最终签名文档；自然生产P95与真人宣传素材仍按实际可获得范围记录。
 
