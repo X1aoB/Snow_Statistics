@@ -1,0 +1,25 @@
+{
+  "acceptance_limit": "Only six original closed-day lineage metadata acknowledgments imported; the original backend evidence remains at its earlier observation. No full graph, column lineage, metric or current VM power claim.",
+  "actual_operator_exits": {
+    "download": {
+      "chunk_id": "8dbe6f",
+      "exit_code": 0
+    },
+    "import": {
+      "chunk_id": "a62c56",
+      "exit_code": 0
+    }
+  },
+  "backend_ack_receipt_sha256": "50ddc294e2ebd7e100fc8fe4bb895a68fbcbff429cf79689d7dbeaa171d4d1f5",
+  "business_rows_read": false,
+  "historical_fixture_records_not_acknowledged": 8,
+  "observed_at": "2026-10-14T06:45:27.981892+00:00",
+  "original_control_journal_ACK_import_verified": true,
+  "original_event_identities_sha256": "4479efe45d0a57185fbd19aca35006b5ef5bd5deb0df901d655610c7e1e9071e",
+  "original_event_identities_unchanged": true,
+  "original_metadata_events_acknowledged": 6,
+  "private_import_receipt_sha256": "fa5a0047b348ca9b1a466ec82152c5b4e080396696d5a8ee7e1c5f675062d7fb",
+  "schema_version": 1,
+  "source_commit": "c0f542cdc7c24610d6922d8748cd17bb0390a148",
+  "source_files_checked": 477
+}

@@ -1,6 +1,16 @@
 # 完成范围与验收清单
 
-## 当前继续入口（香港2026-10-14，增量落地及闭日登记后）
+## 当前继续入口（香港2026-10-14，F8 已安装）
+
+- [x] F8 16文件GPG提交、独立验签、推送；push/PR两轮4作业54步骤成功，483文件归档匹配并验签，见[来源证据](evidence/signed-source-f8e3ca8-20261014.json)。
+- [x] F8 三节点prepare/install/readback均实际退出0，同节点本轮保护状态不变，见[安装证据](evidence/signed-source-install-f8e3ca8-20261014.json)。历史BCE/C0F引擎结果不重标来源。
+- [x] analysis 2560MiB实际配置、单机启动及guest内存检查满足原DIM门槛；检查时零容器、r2未用。
+- [x] 原Marquez六条ACK实际导回control，原事件身份保持、八条历史夹具未确认，见[后续ACK证据](evidence/real-closedday-marquez-control-ack-20261014.json)。
+- [ ] 新鲜实际Hive清理与原job短期许可、真实DIM r2 Spark执行及独立元数据/容器退出验收。
+- [ ] 真实Hive独立verify、真实Iceberg执行/独立验证/权威确认；保留此前首次Hive登记成功与资源探测重跑失败。
+- [ ] 新结果校准外部学习手册及最终签名文档；自然生产P95与真人宣传素材仍按实际可获得范围记录。
+
+## 历史截点（香港2026-10-14，增量落地及闭日登记后）
 
 - [x] 八份文档GPG签名、推送及push/PR全部CI步骤通过；实际VM来源继续为BCE463。
 - [x] 用户批准的一次管理员校时完成；原clock_proof在实际完整操作区间通过。后续Windows Time stale-time错误保留，有限NTP样本不冒充连续绝对精度，见[实际校时](evidence/host-clock-alignment-20261014.json)。

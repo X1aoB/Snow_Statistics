@@ -1,0 +1,130 @@
+{
+  "acceptance_limit": "Full F8 source installation and independent readback only. The source operation did not configure or prove the later 2560 MiB DIM profile. Subsequent VM startup and DIM execution are separate operations.",
+  "actual_exit_witness_basis": "Root operator supplied actual successful tool exits; phase receipt and downloaded canonical installation metadata were independently matched.",
+  "archive_signature_sha256": "f302a578d6f8f326a22840322b0b6130b9c415ecfda684b6b2d6899d15e7d338",
+  "baseline_commit": "c0f542cdc7c24610d6922d8748cd17bb0390a148",
+  "containers_started_during_source_operation": false,
+  "dependencies_installed_by_source_operation": false,
+  "engine_acceptance_claimed": false,
+  "nodes": [
+    {
+      "actual_phase_exits": {
+        "install": {
+          "actual_exit_code": 0,
+          "chunk_id": "0edae1",
+          "session_id": 55096
+        },
+        "prepare": {
+          "actual_exit_code": 0,
+          "chunk_id": "46d4f0",
+          "session_id": 53968
+        },
+        "readback": {
+          "actual_exit_code": 0,
+          "chunk_id": "5170a6",
+          "session_id": null
+        }
+      },
+      "canonical_install_receipt_sha256": "a4f1f86ef1df408bde76e21ab03eb85f12697a85cfc0c4efaee115d3492b0bbd",
+      "changed_files": 16,
+      "config_and_recovery_metadata_unchanged": true,
+      "downloaded_canonical_copies_matched": 2,
+      "files_checked": 483,
+      "frozen_writer_unchanged": true,
+      "installed_at": "2026-10-14T07:28:01.828629+00:00",
+      "node": "snow-analysis",
+      "original_retention_unchanged": true,
+      "phase_receipt_sha256": {
+        "install": "df5f46f07fb8524a2a670854f1127b35ab787f00242cee560571831dd1192699",
+        "prepare": "ae7328cee3f5f7a0142fad4599d9622f1a40e1e2179b30b7c5ba193d77ad4721",
+        "readback": "62076a06a36aa27351e3fb3101825939c0dce401496ec5ec43f9507cbc0b34a0"
+      },
+      "source_files_sha256": "38277fd19203e76404d65c76523bad1def6cb76460f6f4faefdb3cd1946078d7"
+    },
+    {
+      "actual_phase_exits": {
+        "install": {
+          "actual_exit_code": 0,
+          "chunk_id": "fdeda2",
+          "session_id": null
+        },
+        "prepare": {
+          "actual_exit_code": 0,
+          "chunk_id": "b9825e",
+          "session_id": 13815
+        },
+        "readback": {
+          "actual_exit_code": 0,
+          "chunk_id": "d88bbc",
+          "session_id": null
+        }
+      },
+      "canonical_install_receipt_sha256": "9255fb8adaf5de6703b499a968cc5b279018be465b90c0e40360288f23973bef",
+      "changed_files": 16,
+      "config_and_recovery_metadata_unchanged": true,
+      "downloaded_canonical_copies_matched": 2,
+      "files_checked": 483,
+      "frozen_writer_unchanged": true,
+      "installed_at": "2026-10-14T07:37:10.274327+00:00",
+      "node": "snow-control",
+      "original_retention_unchanged": true,
+      "phase_receipt_sha256": {
+        "install": "34c9c572df2a8e01274572237ad55e1735c24ebbcb03ccfef6b87783c49523d3",
+        "prepare": "bc3888aa241bddc7bf86a440c31d87744b4e8043ff5eb8d96f5b91cf410b20b2",
+        "readback": "62076a06a36aa27351e3fb3101825939c0dce401496ec5ec43f9507cbc0b34a0"
+      },
+      "source_files_sha256": "38277fd19203e76404d65c76523bad1def6cb76460f6f4faefdb3cd1946078d7"
+    },
+    {
+      "actual_phase_exits": {
+        "install": {
+          "actual_exit_code": 0,
+          "chunk_id": "cc4080",
+          "session_id": null
+        },
+        "prepare": {
+          "actual_exit_code": 0,
+          "chunk_id": "bbc7fd",
+          "session_id": 63200
+        },
+        "readback": {
+          "actual_exit_code": 0,
+          "chunk_id": "4d03a5",
+          "session_id": null
+        }
+      },
+      "canonical_install_receipt_sha256": "b559958c964b85546749de4b08fab465c397b40e2d4e3ea13b79d2c2713df36d",
+      "changed_files": 16,
+      "config_and_recovery_metadata_unchanged": true,
+      "downloaded_canonical_copies_matched": 2,
+      "files_checked": 483,
+      "frozen_writer_unchanged": true,
+      "installed_at": "2026-10-14T07:39:45.104932+00:00",
+      "node": "snow-compute",
+      "original_retention_unchanged": true,
+      "phase_receipt_sha256": {
+        "install": "2206881fcbfe93ce89c6f7940f76329457fcad4f9b0b4e73733223d47efbdeb4",
+        "prepare": "80744ae91338c34322fdb1776c8254ad287dcaa856bd6eb1f8f202df0a8a31ca",
+        "readback": "62076a06a36aa27351e3fb3101825939c0dce401496ec5ec43f9507cbc0b34a0"
+      },
+      "source_files_sha256": "38277fd19203e76404d65c76523bad1def6cb76460f6f4faefdb3cd1946078d7"
+    }
+  ],
+  "post_install_power_observation": {
+    "actual_chunk_id": "f0d646",
+    "actual_exit_code": 0,
+    "all_vms_stopped_at_observation": true,
+    "current_vm_power_state_declared": false,
+    "exact_observation_timestamp_not_recorded": true,
+    "observation_is_historical": true
+  },
+  "protected_metadata_comparison": "Fresh prepare and install compared within each same node and this release only; no cross-node or historical protected-state equality was assumed.",
+  "real_expiry_extended": false,
+  "recorded_at": "2026-10-14T07:44:56.202759+00:00",
+  "release_metadata_sha256": "d22ab5c278f841e5ef9d10ecd29dd96e367bed033904f420cfeeeffcdfb1c3dd",
+  "schema_version": 1,
+  "scope": "Public source files and bounded configuration/recovery metadata only; no event payloads or fixture contents read by the installer",
+  "source_archive_sha256": "fbb8928eade4265f7acb48f5021498879d66342ac047f64be8cbfef75c3b6d32",
+  "source_commit": "f8e3ca8c7823b8736150362ab57316f6a1bca75b",
+  "verified_signer_fingerprint": "381D4D513D2E995D4D2BAF87DE65B83570F1955C"
+}
