@@ -1,0 +1,181 @@
+{
+  "business_counts_or_row_digests_published": false,
+  "business_date": "2026-10-13",
+  "engine_source_commit": "f8e3ca8c7823b8736150362ab57316f6a1bca75b",
+  "hive": {
+    "distinct_spark_applications": true,
+    "group_comparisons": {
+      "daily": {
+        "count_matches_expected": true,
+        "present": true,
+        "private_row_digest_matches_expected": true
+      },
+      "funnel": {
+        "count_matches_expected": true,
+        "present": true,
+        "private_row_digest_matches_expected": true
+      },
+      "retention": {
+        "count_matches_expected": true,
+        "present": true,
+        "private_row_digest_matches_expected": true
+      },
+      "session_daily": {
+        "count_matches_expected": true,
+        "present": true,
+        "private_row_digest_matches_expected": true
+      }
+    },
+    "independent_verification": {
+      "actual_phase_exit_code": 0,
+      "application_id": "local-1791973714447",
+      "checked_at": "2026-10-14T10:29:02.274704+00:00",
+      "engine": "Spark 3.5.7",
+      "four_groups_present_and_match_expected": true,
+      "master": "local[1]",
+      "operator_tool_chunk": "88e29e",
+      "resource_observation": {
+        "complete_samples": 47,
+        "first_sample_at": "2026-10-14T10:24:37.355395+00:00",
+        "last_sample_at": "2026-10-14T10:30:48.592533+00:00",
+        "monitor_failure_recorded": false,
+        "precise_process_runtime_or_continuous_peak_claimed": false
+      },
+      "whole_phase_and_exact_one_action_accepted": true
+    },
+    "private_request_and_result_bindings_verified": true,
+    "registration": {
+      "actual_phase_exit_code": 0,
+      "application_id": "local-1791973277761",
+      "checked_at": "2026-10-14T10:21:47.768414+00:00",
+      "engine": "Spark 3.5.7",
+      "four_groups_present_and_match_expected": true,
+      "master": "local[1]",
+      "operator_tool_chunk": "5a11fb",
+      "resource_observation": {
+        "complete_samples": 54,
+        "first_sample_at": "2026-10-14T10:17:29.342992+00:00",
+        "last_sample_at": "2026-10-14T10:23:42.315857+00:00",
+        "monitor_failure_recorded": false,
+        "precise_process_runtime_or_continuous_peak_claimed": false
+      },
+      "whole_phase_and_exact_one_action_accepted": true
+    }
+  },
+  "iceberg": {
+    "actual_lake_phase_exit_code": 0,
+    "additive_model_revision_column_verified": true,
+    "aggregate_expires_at": "2027-01-11T00:00:00+08:00",
+    "all_three_stage_leases_absent": true,
+    "all_three_stages_restored_to_hive": true,
+    "analysis_confirmation_verified": true,
+    "column_lineage_claimed": false,
+    "confirmed_at": "2026-10-14T10:41:06.487471+00:00",
+    "distinct_yarn_applications": true,
+    "engine": "Spark 3.5.7",
+    "exact_control_driver_absence_confirmed": true,
+    "exact_control_node_worker_not_live": true,
+    "exact_readback_attestations_valid": true,
+    "execution_application_id": "application_1791974201828_0001",
+    "four_group_metadata_equal": true,
+    "hdfs_stage_unchanged": true,
+    "historical_snapshot_metadata_valid": true,
+    "independent_readbacks": {
+      "analysis": {
+        "actual_exit_code": 0,
+        "first_actual_tool_chunk": "b0d46c",
+        "observed_at": "2026-10-14T10:48:43.444867+00:00",
+        "saved_repeat_tool_chunk": "0401a3"
+      },
+      "compute": {
+        "actual_exit_code": 0,
+        "first_actual_tool_chunk": "d4615b",
+        "observed_at": "2026-10-14T10:48:43.538160+00:00",
+        "saved_repeat_tool_chunk": "fc95e0"
+      },
+      "control": {
+        "actual_exit_code": 0,
+        "first_actual_tool_chunk": "13dfc6",
+        "observed_at": "2026-10-14T10:48:43.548857+00:00",
+        "saved_repeat_tool_chunk": "1a8868"
+      }
+    },
+    "independent_verification_application_id": "application_1791974201828_0002",
+    "lake_tables_registered_in_hive_claimed": false,
+    "master": "yarn",
+    "operator_tool_chunk": "69b3c5",
+    "original_aggregate_at": "2026-10-13T00:00:00+08:00",
+    "original_container_identities_preserved": true,
+    "original_ninety_day_retention_unchanged": true,
+    "registered_driver_cid_absent": true,
+    "resource_observation": {
+      "complete_samples": 52,
+      "first_sample_at": "2026-10-14T10:33:53.964321+00:00",
+      "last_sample_at": "2026-10-14T10:41:19.334058+00:00",
+      "monitor_failure_recorded": false,
+      "precise_process_runtime_or_continuous_peak_claimed": false
+    }
+  },
+  "input_model_source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+  "input_origin": "real",
+  "limits": [
+    "BCE computed the original model pair; F8 ran these real Hive/Iceberg checks. Earlier synthetic experiments and C0F observations retain their original source identities.",
+    "Private counts, row digests and reconstructible request/result metadata hashes are not published. Equality and binding checks were verified privately.",
+    "The resource records are finite samples, not continuous peaks or exact caller runtimes. A complete phase and a later independent readback are separate observations.",
+    "Iceberg checks cover the two actual YARN applications, readback attestations, additive model_revision and applicable historical snapshots. They do not claim partition evolution, MERGE, Hive registration of Lake tables or column lineage.",
+    "Hive exit, public offline stop and independent VM power check completed as separate observations. Zero running VMs and disk values describe that check only, not a promise about future power state. The HTTP follow-up did not run browser interactions or submit events.",
+    "Historical classification coverage remains unknown; these engine comparisons do not fill missing public-catalog history.",
+    "This verification added no production P95 natural-traffic samples and does not constitute production P95 acceptance."
+  ],
+  "private_metadata_binding_and_validation_verified": true,
+  "production_readonly_followup": {
+    "actual_exit_code": 0,
+    "browser_runtime_checked": false,
+    "business_values_recorded": false,
+    "checked_at": "2026-10-14T10:50:48.210963+00:00",
+    "events_submitted": false,
+    "no_store": true,
+    "operator_tool_chunk": "ea3da4",
+    "paid_model_calls": false,
+    "snapshot_fresh_under_26_hours": true,
+    "summary_v1_and_v2_contracts_passed": true,
+    "tested_private_routes_HTTP_404": true,
+    "v1_hidden_date_bypass_absent": true,
+    "website_statistics_and_snow_HTTP_200": true
+  },
+  "production_statistics_modified": false,
+  "profile": "real-small-1792",
+  "request_validation_capture_or_result_metadata_hashes_published": false,
+  "schema_version": 1,
+  "shutdown": {
+    "hive_exit_actual_exit_code": 0,
+    "hive_exit_data_deleted": false,
+    "hive_exit_tool_chunk": "9316be",
+    "independent_VM_power_observation": {
+      "actual_exit_code": 0,
+      "exact_observation_timestamp_not_recorded": true,
+      "host_free_GiB_rounded": 194.52,
+      "minimum_host_free_GiB": 35,
+      "operator_tool_chunk": "4cbe36",
+      "point_in_time_only": true,
+      "project_GiB_rounded": 61.99,
+      "project_budget_GiB": 72,
+      "total_running_VMs": 0
+    },
+    "public_stop": {
+      "actual_exit_code": 0,
+      "data_deleted": false,
+      "operator_tool_chunk": "d58aa2",
+      "session_id": 2949,
+      "status": "offline_stopped"
+    },
+    "public_stop_and_VM_power_observation_included": true
+  },
+  "source_files_checked": 483,
+  "vm_memory_mib": {
+    "analysis": 1024,
+    "compute": 1792,
+    "control": 2048
+  },
+  "witness_basis": "Root operator supplied actual process exits; this projection independently checked only downloaded technical metadata, source bindings and phase consistency."
+}

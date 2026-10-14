@@ -1,15 +1,21 @@
 # 完成范围与验收清单
 
-## 当前继续入口（香港2026-10-14，F8 已安装）
+## 当前交付（香港2026-10-14，F8 真实链路验收）
 
 - [x] F8 16文件GPG提交、独立验签、推送；push/PR两轮4作业54步骤成功，483文件归档匹配并验签，见[来源证据](evidence/signed-source-f8e3ca8-20261014.json)。
 - [x] F8 三节点prepare/install/readback均实际退出0，同节点本轮保护状态不变，见[安装证据](evidence/signed-source-install-f8e3ca8-20261014.json)。历史BCE/C0F引擎结果不重标来源。
 - [x] analysis 2560MiB实际配置、单机启动及guest内存检查满足原DIM门槛；检查时零容器、r2未用。
 - [x] 原Marquez六条ACK实际导回control，原事件身份保持、八条历史夹具未确认，见[后续ACK证据](evidence/real-closedday-marquez-control-ack-20261014.json)。
 - [x] 新鲜实际Hive清理与原job短期许可、[真实DIM r2](evidence/real-dim-f8-r2-20261014.json) Spark执行及独立元数据/精确容器退出验收；历史coverage仍unknown，不改原指标。
-- [x] 独立Hive-exit后通用stop-offline及全VM为0核验完成、数据保留；首次未退出Hive即通用stop的拒绝保留。后续1792窗口另行运行。
-- [ ] 真实Hive独立verify、真实Iceberg执行/独立验证/权威确认；保留此前首次Hive登记成功与资源探测重跑失败。
-- [ ] 新结果校准外部学习手册及最终签名文档；自然生产P95与真人宣传素材仍按实际可获得范围记录。
+- [x] 2560DIM窗口独立Hive-exit后通用stop-offline及全VM为0核验完成、数据保留；首次未退出Hive即通用stop的拒绝保留。后续1792窗口结果见下项。
+- [x] [真实Hive登记及独立verify、真实Iceberg执行／独立验证／权威确认](evidence/real-hive-lake-f8-r2-20261014.json)；两个Hive和两个YARN应用分别核验，原模型及期限保持，保留旧成功和失败记录。
+- [x] 三节点独立Lake技术读回、阶段恢复／租约释放／精确driver退出；Hive-exit后公开stop-offline成功，独立全VM为0、数据保留。
+- [x] 最终公网只读复核：两站及统计页200、v1/v2保护／no-store／26小时新鲜度、所检查私有路径404；无测试事件和付费模型调用。
+- [x] 新结果已校准到独立40篇学习手册，[最终静态校验](evidence/handbook-final-20261014.json)的589本地链接、186围栏及95段PowerShell／12段Python／14段Bash无错误；不将语法检查称作全部教程命令实跑。最终文档提交与CI以本轮Git及Actions回执为准，文档提交不冒充节点安装。
+- [ ] 生产自然样本P95：此前被动观察无足够新样本，不用合成成绩代替；当前不为此保持VM常开。
+- [ ] 真人宣传素材与制作／成品审阅／指定账号发布：已移交“规划小吉终端宣传推广”，下一步仍由用户录制20–30秒测试素材。
+
+下面未勾选条目属于各自历史截点，最新进度以上表和页首证据为准；不将历史未完成状态误作当前重复待办。
 
 ## 历史截点（香港2026-10-14，增量落地及闭日登记后）
 

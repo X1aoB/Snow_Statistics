@@ -2,7 +2,9 @@
 
 此入口解决正式拓扑的登记位置问题：生命周期权威、StoppedStorage 与真实 writer 在 analysis，Spark/YARN 作业在 control。不得把 analysis 的 registry 复制到 control 再声称完成同一权威检查。新增入口只复制经过验证的聚合执行包，既有 writer 文件不变。
 
-本页记录实现和合成测试范围。尚未执行该新入口的实际三节点引擎验收，也没有真实闭日 Iceberg 成绩。2026-09-19 首次采集尚未形成自然闭日，不能倒填时间、覆盖声明或生产事件来制造当日报表；等香港时间9月20日以后按真实覆盖范围生成输入。
+2026-10-14正式真实聚合已完成此权威交接：F8来源／483文件、2048/1792/1024MiB三VM，两个不同Spark3.5.7/YARN应用执行Iceberg写入与独立读取，analysis实际确认成功。四组当前结果、历史快照和新增字段通过比较，三节点独立读回确认原阶段、容器身份与HDFS保持，阶段租约释放且临时driver退出，见[真实技术证据](evidence/real-hive-lake-f8-r2-20261014.json)。原模型仍归于BCE实际计算，原90天期限不延长；本轮未将Iceberg湖表登记到Hive metastore，不声明列级血缘或生产P95。
+
+随后Hive-exit与公开stop-offline均成功，三台VM全部关闭、数据保留。2026-09-19当时仅有实现和合成测试，尚无真实自然闭日；该历史状态不代表当前实测结果。下文解释固定入口的协议与边界，运行必须使用已有实际配置及受管发布物，不能倒填时间或生成生产事件补齐覆盖。
 
 ## 两条入口的适用范围
 
@@ -65,7 +67,7 @@ HDFS 目录固定为该 owner 的 `/snow/warehouse/real/<lane>/iceberg/<run>/<at
 
 入口前要求control的NameNode＋Hive运行、已存在的ResourceManager停止，compute的DataNode运行、已存在的NodeManager停止，analysis只运行DataNode。既有配额分别为NN512MiB、Hive1024MiB、RM384MiB、compute DN384MiB、NM1536MiB、analysis DN768MiB。若缺少容器或配额不符，本工具拒绝自动补建；由现有实验部署流程先处理并记录验收。容器配额不是内存实际用量，仍需实际资源检查。每台节点的持久阶段租约仅允许一个attempt；另一attempt必须等待前一轮恢复，不能夺取租约。
 
-analysis拥有原权威registry与管理范围，control拥有现有Spark/YARN/HDFS缓存。当前bce1289已部署的Spark driver固定1280MiB、2CPU和**512进程上限**，镜像`--pull=never`；仅挂载只读程序、锁和JAR，以及当前attempt的受管可写data目录。旧`lake20261013`在256上限下出现native-thread错误的[失败证据](evidence/iceberg-native-thread-followup-20261013.json)保留；失败瞬间PID和完整内存计数缺失，不能唯一归因于旧上限。512是有限调整和源码安装结果，尚不代表新attempt或V19通过；旧partial不覆盖，原聚合期限不延长。若已登记Hive，真实cleanup需要对应Hive检查能力可用，不能将后端改成“未初始化”来省资源。
+analysis拥有原权威registry与管理范围，control拥有现有Spark/YARN/HDFS缓存。BCE时期已部署并由本轮F8沿用的Spark driver固定1280MiB、2CPU和**512进程上限**，镜像`--pull=never`；仅挂载只读程序、锁和JAR，以及当前attempt的受管可写data目录。旧`lake20261013`在256上限下出现native-thread错误的[失败证据](evidence/iceberg-native-thread-followup-20261013.json)保留；失败瞬间PID和完整内存计数缺失，不能唯一归因于旧上限。512这项有限调整本身不证明引擎成功；V19合成及本轮真实结果分别见[状态记录](status.md)和页首实际证据。旧partial不覆盖，原聚合期限不延长。若已登记Hive，真实cleanup需要对应Hive检查能力可用，不能将后端改成“未初始化”来省资源。
 
 聚合对必须先通过现有 daily/behavior 同截止校验、私有发布和 `stage-release`。analysis读取自己的受管pair副本并复核checksum及来源；没有合法pair时直接停止。三目录单测不能证明真实StoppedStorage、Hive、HDFS与YARN都在该资源配置下工作。
 
@@ -119,6 +121,6 @@ HDFS范围仍由analysis原RemoteLifecycle管理。新工具没有删除整个HD
 
 新增合成测试检查两次实际cleanup调用的接线、owner/代际/路径/期限约束、受管副本先登记后复制、部分复制拒绝与到期删除、错hash、未登记文件、幂等重试、失败执行不覆盖、三节点固定协调顺序以及独立复核调用。阶段测试覆盖三节点精确启停顺序、内存不足拒绝、已有容器替换拒绝、YARN启动失败后恢复、HDFS漂移时先停止自身YARN、另一attempt租约冲突和逐节点尽力恢复。测试用合成聚合与替身后端，不连接正式服务或VM；“调用接线”不表示单测真正执行了HDFS cleanup。
 
-Bash语法检查、Python/Ruff和帮助入口检查只表示源码可加载及命令边界可审查。新实际Spark只读验证器、精确driver收尾、SSH拓扑和资源条件还需要独立三节点合成引擎回执；之后才执行自然成熟的真实闭日样本。当前没有把这些待测项写成完成。
+Bash语法检查、Python/Ruff和帮助入口检查只表示源码可加载及命令边界可审查。9月19日实现截点仍须独立三节点合成引擎回执及真实闭日验收；后续V19合成与本轮F8真实聚合已分别实际完成，见页首。真实结果只覆盖已观察输入，不将历史覆盖不足或未成熟留存补成完整数据。
 
 相关代码：[权威与副本](../src/snow_statistics/real_lake_authority.py)、[固定协调和实际执行](../src/snow_statistics/real_lake_dispatch.py)、[固定阶段与恢复](../src/snow_statistics/real_lake_stage.py)、[CLI](../tools/real_lake_authority.py)、[固定driver](../tools/real_lake_spark.sh)、[只读验证器](../warehouse/spark/real_iceberg_verify.py)、[权威合成测试](../tests/test_real_lake_authority.py)、[阶段合成测试](../tests/test_real_lake_stage.py)。

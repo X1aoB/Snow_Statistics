@@ -1,0 +1,200 @@
+{
+  "SQL_or_Mermaid_executed_by_this_QA": false,
+  "actual_QA_tool_witness": {
+    "chunk_id": "8ff25c",
+    "exit_code": 0
+  },
+  "additional_documents": [
+    "阅读地图与当前状态",
+    "编写校验记录"
+  ],
+  "all_tutorial_operations_runtime_verified_claimed": false,
+  "business_rows_or_credentials_read": false,
+  "engine_acceptance_proven_by_static_QA": false,
+  "latest_link_update": {
+    "DIM_and_real_Hive_Lake_links_use_published_evidence": true,
+    "exact_evidence_URL_only": true,
+    "number_of_chapters": 10,
+    "prose_and_tutorial_code_unchanged": true
+  },
+  "limits": [
+    "This is a static check of all 40 Markdown files and the stated syntax/link scopes. It does not claim every tutorial command or exercise was executed.",
+    "Engine acceptances rely on their separate real technical evidence; the static handbook check does not add production P95 samples or fill unknown historical classification coverage."
+  ],
+  "markdown_files": 40,
+  "numbered_topic_chapters": 38,
+  "private_owner_paths_or_input_file_hashes_published": false,
+  "recorded_at": "2026-10-14T10:56:50.355272+00:00",
+  "schema_version": 1,
+  "source_provenance": {
+    "documentation_commit_is_not_engine_installation_evidence": true,
+    "historical_UI_and_lineage_tool_source_commit": "c0f542cdc7c24610d6922d8748cd17bb0390a148",
+    "older_experiment_source_identities_retained": true,
+    "original_model_source_commit": "bce12898ea97028519bc589c4c198f1d9b8d581c",
+    "real_engine_source_commit": "f8e3ca8c7823b8736150362ab57316f6a1bca75b"
+  },
+  "static_checks": {
+    "bash_blocks_syntax_checked": 14,
+    "errors_count": 0,
+    "fenced_code_blocks": 186,
+    "local_file_links_and_heading_anchors": 589,
+    "powershell_blocks_parsed": 95,
+    "python_blocks_AST_parsed": 12
+  },
+  "status": "static_QA_passed",
+  "topics": [
+    {
+      "number": 1,
+      "topic": "从真实业务理解整个项目"
+    },
+    {
+      "number": 2,
+      "topic": "三种运行模式与解耦边界"
+    },
+    {
+      "number": 3,
+      "topic": "指标粒度口径与手算方法"
+    },
+    {
+      "number": 4,
+      "topic": "事件契约时间与来源隔离"
+    },
+    {
+      "number": 5,
+      "topic": "同意撤销跨站归因与可见告知"
+    },
+    {
+      "number": 6,
+      "topic": "轻量服务SQLite与WAL"
+    },
+    {
+      "number": 7,
+      "topic": "幂等至少一次与事务提交"
+    },
+    {
+      "number": 8,
+      "topic": "公开延迟汇总与小样本保护"
+    },
+    {
+      "number": 9,
+      "topic": "线上部署组件与安全启动顺序"
+    },
+    {
+      "number": 10,
+      "topic": "两个产品接入与日志质量链路"
+    },
+    {
+      "number": 11,
+      "topic": "PowerShellPythonNodeJava基础环境"
+    },
+    {
+      "number": 12,
+      "topic": "VMware网络资源与日常启停"
+    },
+    {
+      "number": 13,
+      "topic": "真实数据按需同步与观察完整性"
+    },
+    {
+      "number": 14,
+      "topic": "Kafka消息分区位点与重放"
+    },
+    {
+      "number": 15,
+      "topic": "运营模拟器MySQL与CDC"
+    },
+    {
+      "number": 16,
+      "topic": "ODS归档HDFS与不可变清单"
+    },
+    {
+      "number": 17,
+      "topic": "SparkYARNHive与离线分层"
+    },
+    {
+      "number": 18,
+      "topic": "DWD去重隔离与SQL窗口"
+    },
+    {
+      "number": 19,
+      "topic": "维度建模与SCD2历史归属"
+    },
+    {
+      "number": 20,
+      "topic": "工单轮次累积快照与每日快照"
+    },
+    {
+      "number": 21,
+      "topic": "会话留存与观察窗口"
+    },
+    {
+      "number": 22,
+      "topic": "渠道漏斗与最近有效入口归因"
+    },
+    {
+      "number": 23,
+      "topic": "Doris结果发布与看板一致性"
+    },
+    {
+      "number": 24,
+      "topic": "Flink水位线Checkpoint与迟到修正"
+    },
+    {
+      "number": 25,
+      "topic": "Airflow调度补数与失败恢复"
+    },
+    {
+      "number": 26,
+      "topic": "数据质量门禁与表级血缘"
+    },
+    {
+      "number": 27,
+      "topic": "Iceberg快照演进与文件维护"
+    },
+    {
+      "number": 28,
+      "topic": "Spark优化实验与诚实解读性能"
+    },
+    {
+      "number": 29,
+      "topic": "KafkaZooKeeper与HDFS故障专题"
+    },
+    {
+      "number": 30,
+      "topic": "日常运维备份精简与移除"
+    },
+    {
+      "number": 31,
+      "topic": "测试候选发布与视频前验收"
+    },
+    {
+      "number": 32,
+      "topic": "SQL入门窗口函数与完整练习"
+    },
+    {
+      "number": 33,
+      "topic": "JavaFlink代码阅读与面试基础"
+    },
+    {
+      "number": 34,
+      "topic": "数据分析问题实验设计与局限"
+    },
+    {
+      "number": 35,
+      "topic": "面试讲解简历表述与追问答案"
+    },
+    {
+      "number": 36,
+      "topic": "常用命令索引与执行位置"
+    },
+    {
+      "number": 37,
+      "topic": "术语表与容易混淆的概念"
+    },
+    {
+      "number": 38,
+      "topic": "学习路线复现清单与操作复盘"
+    }
+  ],
+  "tutorial_commands_executed_by_this_QA": false
+}

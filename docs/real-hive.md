@@ -1,6 +1,8 @@
 # 独立真实聚合 Hive 入口
 
-2026-09-19：实现和合成测试完成，**实际 Hive 引擎验收待离线窗口执行**。本轮没有操作虚拟机或生产服务器。不要把配置、单测或历史 synthetic Hive 结果当作这条新链路的实测证据。
+2026-10-14：正式真实聚合已在F8来源和2048/1792/1024MiB三VM配置下通过实际Hive登记与独立复核。Spark3.5.7/local[1]的两个不同应用核对四组外表、期限、位置、行数与内容一致，见[真实验收](evidence/real-hive-lake-f8-r2-20261014.json)。这里的公开证明只放技术比较结果；精确小样本聚合及其可枚举摘要留在私有运行目录。历史覆盖不足不因Hive登记变成完整覆盖。
+
+2026-09-19当时只有实现和合成测试，实际引擎尚待执行；下文保留该时点的候选流程和资源条件，当前阶段操作须同时参考[小内存入口](real-offline-small.md)。本轮按实际固定入口先Hive-exit、再stop-offline，三台VM已关闭且数据保留；不使用早期Hive-only配置直接拼接所有服务。
 
 ## 范围与数据流
 
@@ -21,6 +23,8 @@ flowchart LR
 四组沿用原报表起始香港日期加 90 天的期限。登记、复制、重跑或服务重启不会延期。真实来源混入 synthetic、代际变化、表位置或分区位置变化、未知字段、原期限变化都会阻断。
 
 ## 文件与命令
+
+以下Linux直调示例和紧随其后的独占analysis前置条件，属于9月19日Hive-only单机客户端设计。它们不是本轮1792的执行命令：当前实际使用Windows协调的[real_hive_dispatch](../tools/real_hive_dispatch.py)，由analysis保持权威、control运行缓存客户端，配合受管阶段切换。不要将两种布局的容器和内存条件混用，亦不要复用本轮已消耗的私有绑定及许可。
 
 - `tools/real_hive.py`：Linux 操作入口；读取与 `real_lab` 相同的严格配置，配置必须是私有 regular file，不可通过符号链接跳转。
 - `src/snow_statistics/real_hive.py`：受管发布物验证、登记意图、生命周期适配器、固定子进程调用。
@@ -52,7 +56,7 @@ cd /home/snow/Snow_Statistics
 
 没有 ODS 输入且从未初始化生命周期时，入口明确返回 `no_computable_input`，不创建零值报表。已经有登记资源却丢失 ODS 头时会失败关闭；不会把丢失当作没有数据。
 
-## 运行前置条件
+## 历史Hive-only直调的运行前置条件
 
 1. 已有锁定 Hive 3.1.3 metastore、原元数据卷及 HDFS；沿用 `tools/prepare_hive_client.sh` 准备的客户端和 `lab/locks/hive-client.sha256`。本入口不会下载镜像或自动启动服务。
 2. 未到期 epoch 先暂停真实同步和 writer，保留完整、合法的恢复状态；工具使用实际 `StoppedStorage` 检查容器/卷、源、窗口和 ledger。已到期 epoch 改走下述实际物理退役检查；不能以「服务停了」冒充未初始化或 SQL 清理通过。
@@ -164,7 +168,7 @@ sudo docker compose --env-file lab/locks/images.env --env-file lab/.env \
 
 回Windows逐台 `vmware_lab.py stop --node ...` 软关机并检查状态。然后才能按既有离线入口恢复scale/real-small，读回两台DN在线、原输入/聚合文件可读且两副本恢复。不能在compute仅1GiB时启动NodeManager，不能在analysis1536MiB时启动实时epoch；切阶段要先停再重新配置。整个过程保留Hive元数据、两份DN卷和所有历史实验，不提供prune或`down -v`。
 
-Hive登记之后，后续cleanup/permit也需要实际catalog检查。现有Spark计算入口排斥control同时运行Hive，且768MiB analysis排斥Hive客户端，因此不能把Hive注册后继续重算简单拼接成一段“全部up”。应在Hive窗口完成相应实际清理/短期许可，再在其期限内受控切换所需计算窗口；任何绑定、登记或期限改变均重新验收。Iceberg正式registry由analysis持有而作业在control执行，尚需独立受控交接核对，不能复制一份可随意变更的registry到control绕过真实登记。
+Hive登记之后，后续cleanup/permit也需要实际catalog检查。现有Spark计算入口排斥control同时运行Hive，且768MiB analysis排斥Hive客户端，因此不能把Hive注册后继续重算简单拼接成一段“全部up”。应在Hive窗口完成相应实际清理/短期许可，再在其期限内受控切换所需计算窗口；任何绑定、登记或期限改变均重新验收。Iceberg正式registry由analysis持有而作业在control执行，9月19日尚待核对的独立受控交接已在本轮完成，见页首；不能复制一份可随意变更的registry到control绕过真实登记。
 
 ## 检查与失败行为
 
