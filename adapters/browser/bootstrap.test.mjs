@@ -24,6 +24,28 @@ test("visible bilingual notice defaults off and exposes independent quality proc
   state.settings.click(); assert.equal(state.panel.hidden, false);
 });
 
+test("first layer stays short: quality and retention sit in a closed details block", () => {
+  const env = environment(); installAnalytics(config(), env); const { panel } = ui(env);
+  const copy = panel.all.find(node => node.className === "snow-statistics-copy");
+  assert.deepEqual(copy.children.map(node => node.tagName), ["P", "DETAILS", "A", "P"]);
+  const more = copy.children[1];
+  assert.equal(more.className, "snow-statistics-more"); assert.equal(more.getAttribute("open"), null);
+  assert.deepEqual(more.children.map(node => node.tagName), ["SUMMARY", "P", "P"]);
+  assert.equal(more.children[0].textContent, "展开说明");
+  assert.match(more.children[1].textContent, /服务质量统计/); assert.match(more.children[2].textContent, /30天/);
+  env.document.documentElement.lang = "en"; env.mutation(); assert.equal(more.children[0].textContent, "More details");
+});
+
+test("dismiss defers without storing before a choice and reads 完成 once reopened after one", () => {
+  const env = environment(); installAnalytics(config(), env); const state = ui(env);
+  assert.equal(state.close.textContent, "稍后再说");
+  state.close.click(); assert.equal(state.panel.hidden, true); assert.equal(env.saved.size, 0);
+  state.settings.click(); assert.equal(state.close.textContent, "稍后再说");
+  state.decline.click(); state.settings.click();
+  assert.equal(state.panel.hidden, false); assert.equal(state.close.textContent, "完成");
+  env.document.documentElement.lang = "en"; env.mutation(); assert.equal(state.close.textContent, "Close notice");
+});
+
 test("decline persists a preference without creating identifiers, and later grant never replays an old arrival", async () => {
   const events = [], env = environment(async (_, options) => { events.push(...JSON.parse(options.body).events); return { ok: true }; }, new Map(),
     "https://snow.xiaob.dev/#snow_jump=00000000-0000-4000-8000-000000000001");
