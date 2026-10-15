@@ -2,8 +2,8 @@ import { clearIdentifiers, consentExpiry, discardEntry, mountAnalytics, privacyB
 
 const COPY = {
   zh: {
-    title: "可选访问统计，由你选择", allow: "允许访问统计", decline: "暂不允许", withdraw: "关闭访问统计", close: "收起说明",
-    settings: "访问统计设置", on: "访问统计已开启", off: "访问统计已关闭", detail: "完整数据与隐私说明",
+    title: "可选访问统计，由你选择", allow: "允许访问统计", decline: "暂不允许", withdraw: "关闭访问统计", later: "稍后再说", close: "完成",
+    settings: "访问统计设置", on: "访问统计已开启", off: "访问统计已关闭", detail: "完整数据与隐私说明", more: "展开说明",
     web: "允许后，仅记录允许页面的访问和试玩入口点击，用于改进本站。不会读取工具输入、聊天内容或密钥。",
     snow: "允许后，仅记录页面访问、公开角色选择和请求编号，用于了解使用与入口转化。不会读取聊天正文、密钥、反馈或聊天数据库。",
     quality: "独立的服务质量统计：小吉终端已有的脱敏生成完成日志会用于计算已记录生成请求的数量、结果与耗时，不带访问统计标识；不受此访问统计选择影响。",
@@ -11,8 +11,8 @@ const COPY = {
     blocked: "浏览器隐私信号已阻止访问统计。", unavailable: "浏览器无法保存统计偏好，访问统计保持关闭。",
   },
   en: {
-    title: "Optional visit analytics — your choice", allow: "Allow visit analytics", decline: "Not now", withdraw: "Turn off visit analytics", close: "Close notice",
-    settings: "Visit analytics settings", on: "Visit analytics is on", off: "Visit analytics is off", detail: "Full data and privacy notice",
+    title: "Optional visit analytics — your choice", allow: "Allow visit analytics", decline: "Not now", withdraw: "Turn off visit analytics", later: "Close notice", close: "Close notice",
+    settings: "Visit analytics settings", on: "Visit analytics is on", off: "Visit analytics is off", detail: "Full data and privacy notice", more: "More details",
     web: "If allowed, we record visits to approved pages and clicks to try Xiaoji Terminal to improve this site. Tool input, chat content and API keys are not read.",
     snow: "If allowed, we record page visits, public character selections and request IDs to understand usage and entry conversion. Chat content, API keys, feedback and the chat database are not read.",
     quality: "Separate service quality statistics: Xiaoji Terminal's existing filtered generation-completion logs provide recorded request counts, outcomes and duration, without visit analytics identifiers. This visit analytics choice does not control that processing.",
@@ -36,7 +36,10 @@ export function installAnalytics(config, env = globalThis) {
     settings.setAttribute("aria-controls", panel.id); settings.setAttribute("data-no-translate", "");
     const heading = make("h2", panel); heading.id = "snow-statistics-title";
     const copyBody = make("div", panel); copyBody.className = "snow-statistics-copy";
-    const description = make("p", copyBody), quality = make("p", copyBody), retention = make("p", copyBody);
+    const description = make("p", copyBody);
+    // Secondary detail stays one click away so the first layer is a short bar.
+    const more = make("details", copyBody); more.className = "snow-statistics-more";
+    const moreLabel = make("summary", more), quality = make("p", more), retention = make("p", more);
     const detail = make("a", copyBody); detail.href = "/privacy/";
     const status = make("p", copyBody); status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
     const actions = make("div", panel); actions.className = "snow-statistics-actions";
@@ -49,8 +52,11 @@ export function installAnalytics(config, env = globalThis) {
       const copy = COPY[language()], active = Boolean(adapter?.active);
       heading.textContent = copy.title; description.textContent = copy[config.app === "mywebsite" ? "web" : "snow"];
       quality.textContent = copy.quality; retention.textContent = copy.retention; detail.textContent = copy.detail;
+      moreLabel.textContent = copy.more;
       allow.textContent = copy.allow; allow.disabled = active || privacyBlocked(env);
-      decline.textContent = active ? copy.withdraw : copy.decline; close.textContent = copy.close;
+      // Before any choice the button only defers the question; once reopened from settings it just closes the panel.
+      const decided = Math.abs(consentExpiry(config.app, env)) > now();
+      decline.textContent = active ? copy.withdraw : copy.decline; close.textContent = decided ? copy.close : copy.later;
       status.textContent = privacyBlocked(env) ? copy.blocked : failure ? copy.unavailable : active ? copy.on : copy.off;
       settings.textContent = `${copy.settings} · ${active ? copy.on : copy.off}`;
       settings.setAttribute("aria-expanded", String(!panel.hidden));
