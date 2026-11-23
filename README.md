@@ -16,22 +16,42 @@ Python + SQLite WAL → 基础汇总 JSON → MyWebsite 统计页面
 Python 运营状态流转 → MySQL → Debezium
 ```
 
-## 立即运行
+## 从 GitHub 克隆并构建
 
-需要 Python 3.12、[uv](https://docs.astral.sh/uv/)；浏览器测试需要 Node.js 22+。
+需要 Git、Python 3.12、[uv](https://docs.astral.sh/uv/) 和 Node.js 22+。以下命令在仓库根目录执行，CI 固定使用 uv 0.11.28。
 
 ```sh
-uv sync --extra dev
-uv run pytest -q
+git clone https://github.com/X1aoB/Snow_Statistics.git
+cd Snow_Statistics
+uv sync --frozen --extra dev
+uv run --frozen pytest -q
 node --test adapters/browser/*.test.mjs
-uv run snow-stats demo
+uv run --frozen snow-stats demo --users 100
+uv build --no-sources
 ```
 
-演示在 `runtime/demo` 生成固定种子、固定时钟的运营事件及模型结果，包括 SCD2 历史/当前分类、工单重开轮次、每日快照、会话、留存、漏斗和整数指标。原始及有效/重复/隔离数据可对账。
+演示在 `runtime/demo` 生成固定种子、固定时钟的合成运营事件及模型结果，包括 SCD2 历史/当前分类、工单重开轮次、每日快照、会话、留存、漏斗和整数指标。生成的输入、有效记录、重复记录和隔离记录可对账。Python wheel 和源码包输出到 `dist/`。
+
+Flink 作业使用 JDK 11 和 Maven 构建，JAR 输出到 `warehouse/flink/target/`。Windows 没有 Maven 时可运行 `pwsh -File tools/maven_build.ps1`，脚本会下载并校验固定版本。
 
 ```sh
-uv sync --extra dev --extra lab
-uv run streamlit run dashboard/app.py --server.address 127.0.0.1
+mvn -B -q -f warehouse/flink/pom.xml package
+```
+
+Linux 下可用仓库锁定的基础镜像构建轻量服务。
+
+```sh
+. lab/locks/images.env
+docker build --build-arg "PYTHON_IMAGE=$PYTHON_IMAGE" -f deploy/lite.Dockerfile -t snow-statistics-lite:0.1.0 .
+```
+
+以上构建和演示使用仓库源码、依赖锁与合成输入。实验环境按[分阶段运行手册](docs/runbook.md)新建 VM 和配置。历史生产数据库、凭据、VM 镜像和 Checkpoint 保存在各自的私有运行环境，复现时使用新建的合成运行目录。
+
+## 本地看板
+
+```sh
+uv sync --frozen --extra dev --extra lab
+uv run --frozen streamlit run dashboard/app.py --server.address 127.0.0.1
 ```
 
 无虚拟机时在侧栏选择“Python 正确性基准”。“Doris 已发布数仓结果”查询实际离线发布视图，需设置 `SNOW_DORIS_HOST` 并启动分析节点。已经验证的 HDFS/YARN/Hive → Doris → Streamlit 链路及分阶段 Airflow 调度，见[离线闭环手册](docs/offline-pipeline.md)。
@@ -77,6 +97,7 @@ HTTP：`POST /analytics/v1/events`、私有 `GET /analytics/private/v1/events?af
 
 ## 文档与验证边界
 
+- [数据开发学习手册（38 个专题及校验记录）](docs/handbook/00-阅读地图与当前状态.md)
 - [架构与口径](docs/architecture.md)
 - [本地及虚拟机运行](docs/runbook.md)
 - [离线闭环、发布与 Airflow](docs/offline-pipeline.md)

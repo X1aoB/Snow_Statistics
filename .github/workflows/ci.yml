@@ -16,9 +16,17 @@ jobs:
       - run: uv run pytest -q
       - run: node --test adapters/browser/*.test.mjs
       - run: uv run snow-stats demo --users 100
+      - run: uv run --frozen python docs/handbook/spark-oracle-exercise.py
       - run: uv run python tools/check_contracts.py
       - run: uv run python tools/smoke_lineage_interrupt.py --output runtime/ci-lineage-interrupt
       - run: uv run python tools/smoke_retirement.py --output runtime/ci-retirement
+      - run: uv build --no-sources
+      - run: |
+          uv venv runtime/ci-wheel
+          uv export --frozen --no-dev --no-emit-project -o runtime/ci-wheel-requirements.txt
+          uv pip sync --python runtime/ci-wheel/bin/python runtime/ci-wheel-requirements.txt
+          uv pip install --python runtime/ci-wheel/bin/python --no-deps dist/*.whl
+          runtime/ci-wheel/bin/snow-stats --help
   flink-build:
     runs-on: ubuntu-latest
     steps:
@@ -30,3 +38,11 @@ jobs:
         with: {python-version: '3.12'}
       - run: mvn -B -q -f warehouse/flink/pom.xml org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath -Dmdep.outputFile=../../runtime/flink-classpath.txt -DincludeScope=runtime
       - run: python tools/verify_flink_dependencies.py --classpath runtime/flink-classpath.txt
+  lite-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          . lab/locks/images.env
+          docker build --build-arg "PYTHON_IMAGE=$PYTHON_IMAGE" -f deploy/lite.Dockerfile -t snow-statistics-lite:ci .
+          docker run --rm --network none snow-statistics-lite:ci /app/.venv/bin/snow-stats --help

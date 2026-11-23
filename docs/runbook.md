@@ -8,7 +8,7 @@
 
 VMware：`C:\Program Files (x86)\VMware\VMware Workstation\vmware.exe`；同目录 `vmrun.exe`、`vmware-vdiskmanager.exe`。
 
-FinalShell：`C:\Users\25685\AppData\Local\finalshell\finalshell.exe`。可导入本地实验 SSH 连接；脚本使用 SSH，便于重复验证。不要导出生产密码或私钥到仓库。
+FinalShell 可导入本地实验 SSH 连接。脚本使用 OpenSSH；在 PATH 中准备 `ssh` 和 `scp`。实验用 SSH 密钥及节点配置由本机生成，保存在忽略目录。
 
 ## 虚拟机
 
